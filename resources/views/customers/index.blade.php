@@ -5,7 +5,7 @@
 
 @section('header-actions')
     <a href="{{ route('customers.create') }}"
-       class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
+       class="nrh-btn nrh-btn-primary">
         + New Customer
     </a>
 @endsection
@@ -17,8 +17,8 @@
     <form method="GET" action="{{ route('customers.index') }}" class="flex items-center gap-3 flex-1">
         <input type="text" name="search" value="{{ request('search') }}"
                placeholder="Search name, registration no, email…"
-               class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-80">
-        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-1.5 rounded-md transition-colors">
+               class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 w-80">
+        <button type="submit" class="nrh-btn nrh-btn-primary">
             Search
         </button>
         @if(request('search'))
@@ -61,7 +61,7 @@
                 <td class="px-4 py-2.5 text-gray-500">{{ $customer->screening_requests_count }}</td>
                 <td class="px-4 py-2.5 text-gray-500">{{ $customer->invoices_count }}</td>
                 <td class="px-4 py-2.5 text-right">
-                    <a href="{{ route('customers.show', $customer) }}" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">View →</a>
+                    <a href="{{ route('customers.show', $customer) }}" class="text-emerald-700 hover:text-emerald-900 text-xs font-medium">View →</a>
                 </td>
             </tr>
             @empty

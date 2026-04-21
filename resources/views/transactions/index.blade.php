@@ -5,7 +5,7 @@
 
 @section('header-actions')
     <a href="{{ route('transactions.create') }}"
-       class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
+       class="nrh-btn nrh-btn-primary">
         + Record Payment
     </a>
 @endsection
@@ -16,8 +16,8 @@
     <form method="GET" action="{{ route('transactions.index') }}" class="flex items-center gap-3 flex-1">
         <input type="text" name="search" value="{{ request('search') }}"
                placeholder="Search by customer name…"
-               class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-72">
-        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-1.5 rounded-md transition-colors">
+               class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 w-72">
+        <button type="submit" class="nrh-btn nrh-btn-primary">
             Search
         </button>
     </form>
@@ -43,7 +43,7 @@
             <tr class="hover:bg-gray-50">
                 <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $tx->created_at->format('d M Y') }}</td>
                 <td class="px-4 py-2.5 font-medium text-gray-900">
-                    <a href="{{ route('customers.show', $tx->customer) }}" class="hover:text-indigo-600">{{ $tx->customer->name ?? '—' }}</a>
+                    <a href="{{ route('customers.show', $tx->customer) }}" class="hover:text-emerald-700">{{ $tx->customer->name ?? '—' }}</a>
                 </td>
                 <td class="px-4 py-2.5">
                     <span class="badge {{ $tx->type === 'topup' ? 'badge-green' : ($tx->type === 'adjustment' ? 'badge-blue' : 'badge-gray') }}">{{ $tx->type }}</span>

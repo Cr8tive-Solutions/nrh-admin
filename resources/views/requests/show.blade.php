@@ -21,7 +21,7 @@
                 <div>
                     <div class="text-gray-500 text-xs font-medium uppercase">Customer</div>
                     <div class="mt-1 font-medium">
-                        <a href="{{ route('customers.show', $request->customer) }}" class="text-indigo-600 hover:text-indigo-800">
+                        <a href="{{ route('customers.show', $request->customer) }}" class="text-emerald-700 hover:text-emerald-900">
                             {{ $request->customer->name ?? '—' }}
                         </a>
                     </div>
@@ -78,13 +78,13 @@
                         <form method="POST" action="{{ route('requests.candidates.status', [$request, $candidate->id]) }}">
                             @csrf @method('PATCH')
                             <select name="status" onchange="this.form.submit()"
-                                    class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                    class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-600">
                                 @foreach(['new', 'in_progress', 'flagged', 'complete'] as $s)
                                 <option value="{{ $s }}" {{ $candidate->status === $s ? 'selected' : '' }}>{{ str_replace('_', ' ', ucfirst($s)) }}</option>
                                 @endforeach
                             </select>
                         </form>
-                        <button @click="open = !open" class="text-xs text-indigo-600 hover:text-indigo-800">
+                        <button @click="open = !open" class="text-xs text-emerald-700 hover:text-emerald-900">
                             Scopes <span x-text="open ? '▲' : '▼'"></span>
                         </button>
                     </div>
@@ -99,7 +99,7 @@
                             {{ $scope->name }}
                             @if($scope->pivot->status)
                             <span class="w-2 h-2 rounded-full inline-block
-                                {{ $scope->pivot->status === 'complete' ? 'bg-green-500' : ($scope->pivot->status === 'flagged' ? 'bg-red-500' : ($scope->pivot->status === 'in_progress' ? 'bg-yellow-500' : 'bg-gray-300')) }}">
+                                {{ $scope->pivot->status === 'complete' ? 'bg-emerald-500' : ($scope->pivot->status === 'flagged' ? 'bg-error' : ($scope->pivot->status === 'in_progress' ? 'bg-gold-500' : 'bg-gray-300')) }}">
                             </span>
                             @endif
                         </span>
@@ -131,12 +131,12 @@
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="radio" name="status" value="{{ $value }}"
                                {{ $request->status === $value ? 'checked' : '' }}
-                               class="accent-indigo-600">
+                               class="accent-emerald-700">
                         <span class="text-sm text-gray-700">{{ $label }}</span>
                     </label>
                     @endforeach
                 </div>
-                <button type="submit" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-md transition-colors">
+                <button type="submit" class="mt-4 w-full nrh-btn nrh-btn-primary">
                     Update Status
                 </button>
             </form>

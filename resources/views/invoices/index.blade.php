@@ -5,7 +5,7 @@
 
 @section('header-actions')
     <a href="{{ route('invoices.create') }}"
-       class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
+       class="nrh-btn nrh-btn-primary">
         + New Invoice
     </a>
 @endsection
@@ -16,14 +16,14 @@
     <form method="GET" action="{{ route('invoices.index') }}" class="flex items-center gap-3 flex-1">
         <input type="text" name="search" value="{{ request('search') }}"
                placeholder="Search invoice no. or customer…"
-               class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-72">
-        <select name="status" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+               class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 w-72">
+        <select name="status" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
             <option value="">All statuses</option>
             <option value="unpaid" {{ request('status') === 'unpaid' ? 'selected' : '' }}>Unpaid</option>
             <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>Paid</option>
             <option value="overdue" {{ request('status') === 'overdue' ? 'selected' : '' }}>Overdue</option>
         </select>
-        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-1.5 rounded-md transition-colors">
+        <button type="submit" class="nrh-btn nrh-btn-primary">
             Filter
         </button>
     </form>
@@ -57,7 +57,7 @@
                 <td class="px-4 py-2.5"><span class="badge {{ $invoice->statusBadgeClass() }}">{{ $invoice->status }}</span></td>
                 <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $invoice->due_at->format('d M Y') }}</td>
                 <td class="px-4 py-2.5 text-right">
-                    <a href="{{ route('invoices.show', $invoice) }}" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">View →</a>
+                    <a href="{{ route('invoices.show', $invoice) }}" class="text-emerald-700 hover:text-emerald-900 text-xs font-medium">View →</a>
                 </td>
             </tr>
             @empty

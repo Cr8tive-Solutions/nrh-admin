@@ -5,7 +5,7 @@
 
 @section('header-actions')
     <a href="{{ route('config.scopes.create') }}"
-       class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
+       class="nrh-btn nrh-btn-primary">
         + New Scope
     </a>
 @endsection
@@ -41,7 +41,7 @@
                         @endif
                     </td>
                     <td class="px-4 py-2.5 text-right w-1/5">
-                        <a href="{{ route('config.scopes.edit', $scope) }}" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Edit</a>
+                        <a href="{{ route('config.scopes.edit', $scope) }}" class="text-emerald-700 hover:text-emerald-900 text-xs font-medium">Edit</a>
                     </td>
                 </tr>
                 @endforeach

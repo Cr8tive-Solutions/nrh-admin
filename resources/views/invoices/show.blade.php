@@ -9,7 +9,7 @@
     @if($invoice->status === 'unpaid' || $invoice->status === 'overdue')
     <form method="POST" action="{{ route('invoices.paid', $invoice) }}">
         @csrf @method('PATCH')
-        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
+        <button type="submit" class="nrh-btn nrh-btn-primary">
             Mark as Paid
         </button>
     </form>

@@ -46,29 +46,29 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
                 <input type="text" name="name" value="{{ old('name') }}" required
-                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Code (3-char) <span class="text-red-500">*</span></label>
                     <input type="text" name="code" value="{{ old('code') }}" maxlength="3" required
                            placeholder="MYS"
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase">
+                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 uppercase">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Flag emoji</label>
                     <input type="text" name="flag" value="{{ old('flag') }}" maxlength="10"
                            placeholder="🇲🇾"
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Region</label>
                 <input type="text" name="region" value="{{ old('region') }}"
                        placeholder="e.g. Southeast Asia"
-                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
             </div>
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2 rounded-md transition-colors">
+            <button type="submit" class="nrh-btn nrh-btn-primary">
                 Add Country
             </button>
         </form>

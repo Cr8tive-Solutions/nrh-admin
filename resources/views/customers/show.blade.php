@@ -6,11 +6,11 @@
 
 @section('header-actions')
     <a href="{{ route('customers.edit', $customer) }}"
-       class="border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium px-4 py-2 rounded-md transition-colors">
+       class="nrh-btn nrh-btn-ghost">
         Edit
     </a>
     <a href="{{ route('pricing.index', ['customer_id' => $customer->id]) }}"
-       class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
+       class="nrh-btn nrh-btn-primary">
         Manage Pricing
     </a>
 @endsection
@@ -23,7 +23,7 @@
 <div class="flex gap-1 border-b border-gray-200 mb-5">
     @foreach(['info' => 'Company Info', 'agreement' => 'Agreement', 'team' => 'Team', 'requests' => 'Requests', 'invoices' => 'Invoices', 'transactions' => 'Transactions'] as $key => $label)
     <button @click="tab = '{{ $key }}'"
-            :class="tab === '{{ $key }}' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+            :class="tab === '{{ $key }}' ? 'border-emerald-700 text-emerald-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
             class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors">
         {{ $label }}
     </button>
@@ -78,7 +78,7 @@
 <div x-show="tab === 'agreement'" x-cloak>
     <div class="mb-4 flex justify-end">
         <a href="{{ route('customers.agreements.create', $customer) }}"
-           class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
+           class="nrh-btn nrh-btn-primary">
             + New Agreement
         </a>
     </div>
@@ -94,7 +94,7 @@
                 @else
                     <span class="badge badge-green">{{ $agreement->days_left }}d remaining</span>
                 @endif
-                <a href="{{ route('customers.agreements.edit', [$customer, $agreement]) }}" class="text-xs text-indigo-600 hover:text-indigo-800">Edit</a>
+                <a href="{{ route('customers.agreements.edit', [$customer, $agreement]) }}" class="text-xs text-emerald-700 hover:text-emerald-900">Edit</a>
             </div>
         </div>
         <div class="grid grid-cols-3 gap-4 text-sm">
@@ -177,7 +177,7 @@
                     <td class="px-4 py-2.5 text-gray-500">{{ $req->candidates->count() }}</td>
                     <td class="px-4 py-2.5"><span class="badge {{ $req->statusBadgeClass() }}">{{ str_replace('_', ' ', $req->status) }}</span></td>
                     <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $req->created_at->format('d M Y') }}</td>
-                    <td class="px-4 py-2.5 text-right"><a href="{{ route('requests.show', $req) }}" class="text-indigo-600 hover:text-indigo-800 text-xs">View →</a></td>
+                    <td class="px-4 py-2.5 text-right"><a href="{{ route('requests.show', $req) }}" class="text-emerald-700 hover:text-emerald-900 text-xs">View →</a></td>
                 </tr>
                 @empty
                 <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No requests.</td></tr>
@@ -191,7 +191,7 @@
 <div x-show="tab === 'invoices'" x-cloak>
     <div class="mb-3 flex justify-end">
         <a href="{{ route('invoices.create', ['customer_id' => $customer->id]) }}"
-           class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
+           class="nrh-btn nrh-btn-primary">
             + New Invoice
         </a>
     </div>
@@ -215,7 +215,7 @@
                     <td class="px-4 py-2.5 font-medium">MYR {{ number_format($invoice->total, 2) }}</td>
                     <td class="px-4 py-2.5"><span class="badge {{ $invoice->statusBadgeClass() }}">{{ $invoice->status }}</span></td>
                     <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $invoice->due_at->format('d M Y') }}</td>
-                    <td class="px-4 py-2.5 text-right"><a href="{{ route('invoices.show', $invoice) }}" class="text-indigo-600 hover:text-indigo-800 text-xs">View →</a></td>
+                    <td class="px-4 py-2.5 text-right"><a href="{{ route('invoices.show', $invoice) }}" class="text-emerald-700 hover:text-emerald-900 text-xs">View →</a></td>
                 </tr>
                 @empty
                 <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No invoices.</td></tr>
@@ -229,7 +229,7 @@
 <div x-show="tab === 'transactions'" x-cloak>
     <div class="mb-3 flex justify-end">
         <a href="{{ route('transactions.create', ['customer_id' => $customer->id]) }}"
-           class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
+           class="nrh-btn nrh-btn-primary">
             + Record Payment
         </a>
     </div>

@@ -10,13 +10,13 @@
 <div class="bg-white rounded-lg border border-gray-200 p-4 mb-5">
     <form method="GET" action="{{ route('pricing.index') }}" class="flex items-center gap-3">
         <label class="text-sm font-medium text-gray-700">Customer:</label>
-        <select name="customer_id" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-80">
+        <select name="customer_id" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 w-80">
             <option value="">— Select customer —</option>
             @foreach($customers as $c)
             <option value="{{ $c->id }}" {{ $customer && $customer->id == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
             @endforeach
         </select>
-        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-1.5 rounded-md transition-colors">
+        <button type="submit" class="nrh-btn nrh-btn-primary">
             Load
         </button>
     </form>
@@ -61,7 +61,7 @@
                                        name="prices[{{ $loop->parent->parent->index * 1000 + $loop->index }}][price]"
                                        value="{{ $scope->custom_price !== null ? number_format($scope->custom_price, 2, '.', '') : '' }}"
                                        placeholder="{{ $scope->price_on_request ? 'Enter price' : number_format($scope->price, 2) }}"
-                                       class="w-32 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                       class="w-32 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-600">
                             </div>
                         </td>
                     </tr>
@@ -74,7 +74,7 @@
     @endforeach
 
     <div class="sticky bottom-0 bg-white border-t border-gray-200 px-0 py-3 flex justify-end">
-        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-8 py-2.5 rounded-md transition-colors">
+        <button type="submit" class="nrh-btn nrh-btn-primary">
             Save All Prices
         </button>
     </div>

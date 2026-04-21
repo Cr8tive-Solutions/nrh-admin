@@ -28,7 +28,7 @@
                 <div class="col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Customer <span class="text-red-500">*</span></label>
                     <select name="customer_id" form="invoice-form" required
-                            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
                         <option value="">Select customer…</option>
                         @foreach($customers as $c)
                         <option value="{{ $c->id }}" {{ old('customer_id', request('customer_id')) == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
@@ -39,17 +39,17 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Period <span class="text-red-500">*</span></label>
                     <input type="text" name="period" form="invoice-form" value="{{ old('period') }}"
                            placeholder="e.g. April 2026" required
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Issue Date <span class="text-red-500">*</span></label>
                     <input type="date" name="issued_at" form="invoice-form" value="{{ old('issued_at', now()->format('Y-m-d')) }}" required
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Due Date <span class="text-red-500">*</span></label>
                     <input type="date" name="due_at" form="invoice-form" value="{{ old('due_at', now()->addDays(30)->format('Y-m-d')) }}" required
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
                 </div>
             </div>
         </div>
@@ -58,7 +58,7 @@
         <div class="bg-white rounded-lg border border-gray-200 p-5">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-sm font-semibold text-gray-900">Line Items</h2>
-                <button type="button" @click="addItem()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                <button type="button" @click="addItem()" class="text-xs text-emerald-700 hover:text-emerald-900 font-medium">
                     + Add Item
                 </button>
             </div>
@@ -82,17 +82,17 @@
                                 <td class="py-2 pr-2">
                                     <input type="text" :name="`items[${index}][description]`" x-model="item.description"
                                            placeholder="Description" required
-                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-600">
                                 </td>
                                 <td class="py-2 pr-2">
                                     <input type="number" :name="`items[${index}][qty]`" x-model.number="item.qty"
                                            min="1" required
-                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-center">
+                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-600 text-center">
                                 </td>
                                 <td class="py-2 pr-2">
                                     <input type="number" :name="`items[${index}][unit_price]`" x-model="item.unit_price"
                                            step="0.01" min="0" placeholder="0.00" required
-                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-right">
+                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-600 text-right">
                                 </td>
                                 <td class="py-2 pr-2 text-right font-mono text-xs" x-text="(item.qty * parseFloat(item.unit_price) || 0).toFixed(2)"></td>
                                 <td class="py-2">
@@ -127,7 +127,7 @@
             </div>
 
             <button type="submit" form="invoice-form"
-                    class="mt-5 w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2.5 rounded-md transition-colors">
+                    class="mt-5 w-full nrh-btn nrh-btn-primary">
                 Create Invoice
             </button>
         </div>

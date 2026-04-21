@@ -5,7 +5,7 @@
 
 @section('header-actions')
     <a href="{{ route('staff.create') }}"
-       class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
+       class="nrh-btn nrh-btn-primary">
         + New Staff
     </a>
 @endsection
@@ -48,7 +48,7 @@
                     <form method="POST" action="{{ route('staff.toggle', $member) }}" class="inline">
                         @csrf @method('PATCH')
                         <button type="submit"
-                                class="text-xs {{ $member->status === 'active' ? 'text-red-500 hover:text-red-700' : 'text-green-600 hover:text-green-800' }} font-medium">
+                                class="text-xs {{ $member->status === 'active' ? 'text-error hover:text-error-dim' : 'text-emerald-700 hover:text-emerald-900' }} font-medium">
                             {{ $member->status === 'active' ? 'Deactivate' : 'Activate' }}
                         </button>
                     </form>
