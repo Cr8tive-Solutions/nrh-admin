@@ -4,7 +4,7 @@
 @section('page-title', 'New Invoice')
 
 @section('header-actions')
-    <a href="{{ route('invoices.index') }}" class="text-sm text-gray-500 hover:text-gray-700">← Cancel</a>
+    <a href="{{ route('invoices.index') }}" class="nrh-btn nrh-btn-ghost" style="font-size:12px;">← Cancel</a>
 @endsection
 
 @section('content')
@@ -15,20 +15,22 @@
     get total()    { return this.subtotal + this.tax; },
     addItem()      { this.items.push({ description: '', qty: 1, unit_price: '' }); },
     removeItem(i)  { if (this.items.length > 1) this.items.splice(i, 1); }
-}">
+}" style="display:grid; grid-template-columns:1fr 280px; gap:20px; align-items:start;">
 
-<div class="grid grid-cols-3 gap-6">
+    {{-- Left column --}}
+    <div style="display:flex; flex-direction:column; gap:16px;">
 
-    <div class="col-span-2 space-y-4">
-
-        {{-- Header --}}
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
-            <h2 class="text-sm font-semibold text-gray-900 mb-4">Invoice Details</h2>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Customer <span class="text-red-500">*</span></label>
-                    <select name="customer_id" form="invoice-form" required
-                            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+        {{-- Invoice details --}}
+        <div class="nrh-card">
+            <div class="nrh-card-head">
+                <h3>Invoice Details</h3>
+            </div>
+            <div style="padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div style="grid-column:span 2;">
+                    <label style="display:block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:var(--ink-500); margin-bottom:6px;">
+                        Customer <span style="color:var(--danger);">*</span>
+                    </label>
+                    <select name="customer_id" form="invoice-form" required class="nrh-input">
                         <option value="">Select customer…</option>
                         @foreach($customers as $c)
                         <option value="{{ $c->id }}" {{ old('customer_id', request('customer_id')) == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
@@ -36,67 +38,82 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Period <span class="text-red-500">*</span></label>
+                    <label style="display:block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:var(--ink-500); margin-bottom:6px;">
+                        Period <span style="color:var(--danger);">*</span>
+                    </label>
                     <input type="text" name="period" form="invoice-form" value="{{ old('period') }}"
-                           placeholder="e.g. April 2026" required
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                           placeholder="e.g. April 2026" required class="nrh-input">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Issue Date <span class="text-red-500">*</span></label>
-                    <input type="date" name="issued_at" form="invoice-form" value="{{ old('issued_at', now()->format('Y-m-d')) }}" required
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                    <label style="display:block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:var(--ink-500); margin-bottom:6px;">
+                        Issue Date <span style="color:var(--danger);">*</span>
+                    </label>
+                    <input type="date" name="issued_at" form="invoice-form"
+                           value="{{ old('issued_at', now()->format('Y-m-d')) }}" required class="nrh-input">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Due Date <span class="text-red-500">*</span></label>
-                    <input type="date" name="due_at" form="invoice-form" value="{{ old('due_at', now()->addDays(30)->format('Y-m-d')) }}" required
-                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                    <label style="display:block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:var(--ink-500); margin-bottom:6px;">
+                        Due Date <span style="color:var(--danger);">*</span>
+                    </label>
+                    <input type="date" name="due_at" form="invoice-form"
+                           value="{{ old('due_at', now()->addDays(30)->format('Y-m-d')) }}" required class="nrh-input">
                 </div>
             </div>
         </div>
 
         {{-- Line items --}}
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-sm font-semibold text-gray-900">Line Items</h2>
-                <button type="button" @click="addItem()" class="text-xs text-emerald-700 hover:text-emerald-900 font-medium">
-                    + Add Item
+        <div class="nrh-card">
+            <div class="nrh-card-head">
+                <h3>Line Items</h3>
+                <button type="button" @click="addItem()"
+                        style="font-size:12px; font-weight:600; color:var(--emerald-700); background:none; border:none; cursor:pointer; padding:4px 8px; border-radius:4px; transition:background 120ms;"
+                        onmouseover="this.style.background='rgba(4,108,78,0.08)'"
+                        onmouseout="this.style.background='none'">
+                    + Add item
                 </button>
             </div>
 
             <form id="invoice-form" method="POST" action="{{ route('invoices.store') }}">
                 @csrf
-
-                <table class="w-full text-sm">
+                <table class="nrh-table">
                     <thead>
-                        <tr class="text-xs text-gray-500 uppercase border-b border-gray-100">
-                            <th class="pb-2 text-left font-medium">Description</th>
-                            <th class="pb-2 text-left font-medium w-20">Qty</th>
-                            <th class="pb-2 text-left font-medium w-28">Unit Price</th>
-                            <th class="pb-2 text-right font-medium w-28">Total</th>
-                            <th class="pb-2 w-8"></th>
+                        <tr>
+                            <th>Description</th>
+                            <th style="width:80px;">Qty</th>
+                            <th style="width:130px;">Unit Price</th>
+                            <th style="width:120px; text-align:right;">Line Total</th>
+                            <th style="width:36px;"></th>
                         </tr>
                     </thead>
                     <tbody>
                         <template x-for="(item, index) in items" :key="index">
-                            <tr class="border-b border-gray-50">
-                                <td class="py-2 pr-2">
-                                    <input type="text" :name="`items[${index}][description]`" x-model="item.description"
-                                           placeholder="Description" required
-                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-600">
+                            <tr>
+                                <td style="padding:10px 20px;">
+                                    <input type="text" :name="`items[${index}][description]`"
+                                           x-model="item.description" placeholder="Description" required
+                                           class="nrh-input" style="padding:7px 10px;">
                                 </td>
-                                <td class="py-2 pr-2">
-                                    <input type="number" :name="`items[${index}][qty]`" x-model.number="item.qty"
-                                           min="1" required
-                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-600 text-center">
+                                <td style="padding:10px 8px 10px 20px;">
+                                    <input type="number" :name="`items[${index}][qty]`"
+                                           x-model.number="item.qty" min="1" required
+                                           class="nrh-input" style="padding:7px 10px; text-align:center;">
                                 </td>
-                                <td class="py-2 pr-2">
-                                    <input type="number" :name="`items[${index}][unit_price]`" x-model="item.unit_price"
-                                           step="0.01" min="0" placeholder="0.00" required
-                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-600 text-right">
+                                <td style="padding:10px 8px;">
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <span style="font-size:11px; color:var(--ink-500); white-space:nowrap;">MYR</span>
+                                        <input type="number" :name="`items[${index}][unit_price]`"
+                                               x-model="item.unit_price" step="0.01" min="0"
+                                               placeholder="0.00" required
+                                               class="nrh-input" style="padding:7px 10px; text-align:right;">
+                                    </div>
                                 </td>
-                                <td class="py-2 pr-2 text-right font-mono text-xs" x-text="(item.qty * parseFloat(item.unit_price) || 0).toFixed(2)"></td>
-                                <td class="py-2">
-                                    <button type="button" @click="removeItem(index)" class="text-gray-300 hover:text-red-500 transition-colors">✕</button>
+                                <td style="padding:10px 20px 10px 8px; text-align:right; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink-700);"
+                                    x-text="'MYR ' + (item.qty * parseFloat(item.unit_price) || 0).toFixed(2)"></td>
+                                <td style="padding:10px 12px 10px 0; text-align:center;">
+                                    <button type="button" @click="removeItem(index)"
+                                            style="width:24px; height:24px; display:grid; place-items:center; border-radius:4px; background:none; border:none; cursor:pointer; color:var(--ink-300); transition:color 120ms, background 120ms; font-size:14px;"
+                                            onmouseover="this.style.color='var(--danger)';this.style.background='rgba(196,69,58,0.08)'"
+                                            onmouseout="this.style.color='var(--ink-300)';this.style.background='none'">✕</button>
                                 </td>
                             </tr>
                         </template>
@@ -108,31 +125,37 @@
     </div>
 
     {{-- Right: Summary --}}
-    <div class="space-y-4">
-        <div class="bg-white rounded-lg border border-gray-200 p-5">
-            <h2 class="text-sm font-semibold text-gray-900 mb-4">Summary</h2>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-gray-500">Subtotal</span>
-                    <span class="font-mono" x-text="'MYR ' + subtotal.toFixed(2)"></span>
+    <div style="position:sticky; top:80px; display:flex; flex-direction:column; gap:12px;">
+        <div class="nrh-card">
+            <div class="nrh-card-head">
+                <h3>Summary</h3>
+            </div>
+            <div style="padding:16px 20px; display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+                    <span style="color:var(--ink-500);">Subtotal</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12px;" x-text="'MYR ' + subtotal.toFixed(2)"></span>
                 </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500">SST (6%)</span>
-                    <span class="font-mono" x-text="'MYR ' + tax.toFixed(2)"></span>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+                    <span style="color:var(--ink-500);">SST (6%)</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:12px;" x-text="'MYR ' + tax.toFixed(2)"></span>
                 </div>
-                <div class="border-t border-gray-200 pt-2 flex justify-between font-semibold">
-                    <span>Total</span>
-                    <span class="font-mono text-base" x-text="'MYR ' + total.toFixed(2)"></span>
+                <div style="border-top:1px solid var(--line); padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:13px; font-weight:600; color:var(--ink-900);">Total</span>
+                    <span style="font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:700; color:var(--emerald-700);" x-text="'MYR ' + total.toFixed(2)"></span>
                 </div>
             </div>
+            <div style="padding:0 16px 16px;">
+                <button type="submit" form="invoice-form" class="nrh-btn nrh-btn-primary" style="width:100%; justify-content:center;">
+                    Create Invoice
+                </button>
+            </div>
+        </div>
 
-            <button type="submit" form="invoice-form"
-                    class="mt-5 w-full nrh-btn nrh-btn-primary">
-                Create Invoice
-            </button>
+        <div style="padding:12px 14px; border-radius:8px; background:rgba(4,108,78,0.05); border:1px solid rgba(4,108,78,0.12); font-size:11px; color:var(--ink-500); line-height:1.6;">
+            Invoice number will be auto-generated.<br>
+            SST at 6% applied to subtotal.
         </div>
     </div>
 
-</div>
 </div>
 @endsection

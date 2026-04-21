@@ -55,7 +55,7 @@
                 <td class="px-4 py-2.5 text-gray-400 text-xs max-w-xs truncate">{{ $tx->notes ?? '—' }}</td>
             </tr>
             @empty
-            <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400">No transactions found.</td></tr>
+            <tr><td colspan="8" style="padding:48px 20px; text-align:center;"><div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:var(--ink-200);"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><span style="font-size:13px; color:var(--ink-400);">No transactions found.</span></div></td></tr>
             @endforelse
         </tbody>
     </table>

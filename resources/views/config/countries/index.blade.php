@@ -32,7 +32,7 @@
                     <td class="px-4 py-2.5 text-gray-500">{{ $country->scope_types_count }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">No countries yet.</td></tr>
+                <tr><td colspan="5" style="padding:48px 20px; text-align:center;"><div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:var(--ink-200);"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><span style="font-size:13px; color:var(--ink-400);">No countries yet.</span></div></td></tr>
                 @endforelse
             </tbody>
         </table>
