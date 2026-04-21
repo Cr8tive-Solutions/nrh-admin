@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'NRH Admin') — NRH Intelligence</title>
+    <link rel="icon" type="image/png" href="/images/nrh-logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
@@ -35,22 +36,7 @@
 
         /* Brand */
         .sb-brand { display: flex; gap: 10px; align-items: center; padding-bottom: 18px; border-bottom: 1px solid rgba(212,175,55,0.14); }
-        .sb-mark {
-            width: 32px; height: 32px;
-            border-radius: 6px;
-            background: linear-gradient(135deg, var(--emerald-700), var(--emerald-600) 60%, var(--emerald-800));
-            box-shadow: inset 0 0 0 1px rgba(212,175,55,0.4);
-            display: grid; place-items: center;
-            flex-shrink: 0;
-            position: relative;
-        }
-        .sb-mark::after {
-            content: "";
-            position: absolute; inset: 6px;
-            border: 1px solid rgba(212,175,55,0.7);
-            border-radius: 3px;
-        }
-        .sb-mark span { font-family: 'Fraunces', serif; font-weight: 600; color: #e4c35f; font-size: 14px; z-index: 1; position: relative; }
+        .sb-logo { width: 40px; height: 40px; flex-shrink: 0; object-fit: contain; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4)); }
         .sb-brand-text { line-height: 1.15; }
         .sb-brand-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; color: #f5ecd1; letter-spacing: 0.01em; }
         .sb-brand-name em { font-style: italic; color: var(--gold-400); }
@@ -242,7 +228,7 @@
 
             {{-- Brand --}}
             <div class="sb-brand">
-                <div class="sb-mark"><span>N</span></div>
+                <img src="/images/nrh-logo.png" alt="NRH" class="sb-logo">
                 <div class="sb-brand-text">
                     <div class="sb-brand-name">NRH <em>Intelligence</em></div>
                     <div class="sb-brand-sub">Admin Portal</div>

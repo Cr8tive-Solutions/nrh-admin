@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In — NRH Admin</title>
+    <link rel="icon" type="image/png" href="/images/nrh-logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -67,28 +68,18 @@
             display: flex; align-items: center; gap: 12px;
             position: relative; z-index: 2;
         }
-        .al-mark {
-            width: 36px; height: 36px;
-            border-radius: 7px;
-            background: linear-gradient(135deg, #046c4e, #059669 60%, #044d39);
-            box-shadow: inset 0 0 0 1px rgba(212,175,55,0.4);
-            display: grid; place-items: center;
-            position: relative; flex-shrink: 0;
-        }
-        .al-mark::after {
-            content: ""; position: absolute; inset: 7px;
-            border: 1px solid rgba(212,175,55,0.7); border-radius: 3px;
-        }
-        .al-mark span { font-family: 'Fraunces', serif; font-weight: 600; color: #e4c35f; font-size: 16px; z-index: 1; position: relative; }
+        .al-logo { width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5)); }
         .al-brand-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; color: #f5ecd1; letter-spacing: 0.01em; }
         .al-brand-name em { font-style: italic; color: #d4af37; }
         .al-brand-sub { font-size: 9px; text-transform: uppercase; letter-spacing: 0.2em; color: rgba(212,175,55,0.6); margin-top: 3px; }
 
-        /* Shield seal (decorative) */
+        /* Seal (decorative) */
         .al-seal {
             position: absolute; right: 52px; top: 44px;
-            width: 100px; height: 100px;
-            z-index: 2; opacity: 0.85;
+            width: 110px; height: 110px;
+            z-index: 2; opacity: 0.18;
+            object-fit: contain;
+            filter: brightness(1.4) saturate(0.3);
         }
 
         /* Hero copy */
@@ -273,20 +264,14 @@
     {{-- ── Left panel ── --}}
     <aside class="auth-left">
         <div class="al-brand">
-            <div class="al-mark"><span>N</span></div>
+            <img src="/images/nrh-logo.png" alt="NRH" class="al-logo">
             <div>
                 <div class="al-brand-name">NRH <em>Intelligence</em></div>
                 <div class="al-brand-sub">Admin Portal</div>
             </div>
         </div>
 
-        <svg class="al-seal" viewBox="0 0 120 120" fill="none">
-            <circle cx="60" cy="60" r="58" stroke="#D4AF37" stroke-width="1" opacity="0.55"/>
-            <circle cx="60" cy="60" r="48" stroke="#D4AF37" stroke-width="0.5" opacity="0.4"/>
-            <path d="M60 22 L84 34 V58 Q84 80 60 94 Q36 80 36 58 V34 Z" stroke="#D4AF37" stroke-width="1.2" fill="none"/>
-            <path d="M50 60 l7 7 l14 -16" stroke="#D4AF37" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <text x="60" y="111" fill="#D4AF37" font-family="Fraunces, serif" font-size="6" text-anchor="middle" letter-spacing="2">EST · MMXIX</text>
-        </svg>
+        <img src="/images/nrh-logo.png" alt="" class="al-seal">
 
         <div class="al-hero">
             <div class="al-eyebrow">Staff-only access</div>
