@@ -1,7 +1,82 @@
 <?php
 
+use App\Http\Controllers\AgreementController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Config\CountryController;
+use App\Http\Controllers\Config\ScopeTypeController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\RequestQueueController;
+use App\Http\Controllers\ScopePricingController;
+use App\Http\Controllers\StaffController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+// ─── Auth ────────────────────────────────────────────────────────────────────
+Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
+Route::post('/login', [LoginController::class, 'login']);
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// ─── Protected admin routes ───────────────────────────────────────────────────
+Route::middleware('admin.auth')->group(function () {
+
+    Route::get('/', fn () => redirect()->route('dashboard'));
+
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Request Queue
+    Route::get('/requests', [RequestQueueController::class, 'index'])->name('requests.index');
+    Route::get('/requests/{screeningRequest}', [RequestQueueController::class, 'show'])->name('requests.show');
+    Route::patch('/requests/{screeningRequest}/status', [RequestQueueController::class, 'updateStatus'])->name('requests.status');
+    Route::patch('/requests/{screeningRequest}/candidates/{candidateId}/status', [RequestQueueController::class, 'updateCandidateStatus'])->name('requests.candidates.status');
+
+    // Customers
+    Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
+    Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
+    Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
+    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+    Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
+    Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+
+    // Agreements (nested under customer)
+    Route::get('/customers/{customer}/agreements/create', [AgreementController::class, 'create'])->name('customers.agreements.create');
+    Route::post('/customers/{customer}/agreements', [AgreementController::class, 'store'])->name('customers.agreements.store');
+    Route::get('/customers/{customer}/agreements/{agreement}/edit', [AgreementController::class, 'edit'])->name('customers.agreements.edit');
+    Route::put('/customers/{customer}/agreements/{agreement}', [AgreementController::class, 'update'])->name('customers.agreements.update');
+
+    // Scope Pricing
+    Route::get('/pricing', [ScopePricingController::class, 'index'])->name('pricing.index');
+    Route::post('/pricing/{customer}', [ScopePricingController::class, 'upsert'])->name('pricing.upsert');
+
+    // Invoices
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+    Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::patch('/invoices/{invoice}/paid', [InvoiceController::class, 'markPaid'])->name('invoices.paid');
+
+    // Transactions
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
+    Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
+
+    // Staff (super_admin only — enforced in controller)
+    Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
+    Route::get('/staff/create', [StaffController::class, 'create'])->name('staff.create');
+    Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
+    Route::patch('/staff/{admin}/toggle', [StaffController::class, 'toggleStatus'])->name('staff.toggle');
+
+    // Config — Scope Types
+    Route::get('/config/scopes', [ScopeTypeController::class, 'index'])->name('config.scopes.index');
+    Route::get('/config/scopes/create', [ScopeTypeController::class, 'create'])->name('config.scopes.create');
+    Route::post('/config/scopes', [ScopeTypeController::class, 'store'])->name('config.scopes.store');
+    Route::get('/config/scopes/{scope}/edit', [ScopeTypeController::class, 'edit'])->name('config.scopes.edit');
+    Route::put('/config/scopes/{scope}', [ScopeTypeController::class, 'update'])->name('config.scopes.update');
+
+    // Config — Countries
+    Route::get('/config/countries', [CountryController::class, 'index'])->name('config.countries.index');
+    Route::post('/config/countries', [CountryController::class, 'store'])->name('config.countries.store');
+    Route::put('/config/countries/{country}', [CountryController::class, 'update'])->name('config.countries.update');
 });

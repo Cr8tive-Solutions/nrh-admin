@@ -6,6 +6,41 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Badge utilities */
+@utility badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1rem;
+}
+
+@utility badge-blue {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+@utility badge-yellow {
+    background-color: #fef9c3;
+    color: #a16207;
+}
+
+@utility badge-red {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+@utility badge-green {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+@utility badge-gray {
+    background-color: #f3f4f6;
+    color: #374151;
 }
