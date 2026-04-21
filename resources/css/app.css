@@ -6,7 +6,72 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    /* Fonts */
+    --font-sans:    'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
+    /* NRH Design System — Warm Archival Palette */
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low:    #f2eee0;
+    --color-surface-container:        #f0ede2;
+    --color-surface-container-high:   #ebe6d8;
+    --color-surface-container-highest:#e5e0d1;
+    --color-surface:                  #f5f1e6;
+    --color-surface-bright:           #fdfaf2;
+    --color-surface-dim:              #e8e4d8;
+    --color-surface-variant:          #e5e0d1;
+    --color-background:               #f5f1e6;
+
+    --color-primary:            #1b543c;
+    --color-primary-dim:        #143f2d;
+    --color-primary-container:  #1b543c;
+    --color-on-primary:         #ffffff;
+    --color-on-primary-container: #ffffff;
+    --color-inverse-primary:    #f5f1e6;
+
+    --color-secondary:           #526074;
+    --color-secondary-container: #e1eadd;
+    --color-on-secondary:        #f8f8ff;
+    --color-on-secondary-container: #455367;
+
+    --color-tertiary:            #605c78;
+    --color-tertiary-container:  #e3dbfd;
+    --color-on-tertiary:         #fcf7ff;
+    --color-on-tertiary-container: #514d68;
+
+    --color-error:               #9f403d;
+    --color-error-dim:           #4e0309;
+    --color-error-container:     #fe8983;
+    --color-on-error:            #fff7f6;
+    --color-on-error-container:  #752121;
+
+    --color-outline:             #78827c;
+    --color-outline-variant:     #c9c4b5;
+
+    --color-on-surface:          #0a1f16;
+    --color-on-surface-variant:  #4a5a54;
+    --color-on-background:       #0a1f16;
+
+    --color-inverse-surface:     #0a1f16;
+    --color-inverse-on-surface:  #8e9eb7;
+
+    /* Uniform border radius */
+    --radius:    0.5rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: #f5f1e6; }
+::-webkit-scrollbar-thumb { background: #c9c4b5; border-radius: 10px; }
+
+/* Material Symbols size tweak */
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-size: 20px;
+    line-height: 1;
+    user-select: none;
 }
 
 /* Badge utilities */
@@ -15,32 +80,14 @@
     align-items: center;
     padding: 0.125rem 0.5rem;
     border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    line-height: 1rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
 }
-
-@utility badge-blue {
-    background-color: #dbeafe;
-    color: #1d4ed8;
-}
-
-@utility badge-yellow {
-    background-color: #fef9c3;
-    color: #a16207;
-}
-
-@utility badge-red {
-    background-color: #fee2e2;
-    color: #b91c1c;
-}
-
-@utility badge-green {
-    background-color: #dcfce7;
-    color: #15803d;
-}
-
-@utility badge-gray {
-    background-color: #f3f4f6;
-    color: #374151;
-}
+@utility badge-blue   { background-color: var(--color-secondary-container); color: var(--color-primary); }
+@utility badge-yellow { background-color: var(--color-tertiary-container);  color: var(--color-on-tertiary-container); }
+@utility badge-red    { background-color: var(--color-error-container);     color: var(--color-error); }
+@utility badge-green  { background-color: var(--color-secondary-container); color: var(--color-primary); }
+@utility badge-gray   { background-color: var(--color-surface-container-highest); color: var(--color-on-surface-variant); }
