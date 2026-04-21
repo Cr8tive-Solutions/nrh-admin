@@ -3,297 +3,291 @@
 @section('title', 'Dashboard')
 @section('page-title', 'Dashboard')
 
+@section('header-actions')
+<a href="{{ route('requests.index') }}" class="nrh-btn nrh-btn-ghost" style="font-size: 12px; padding: 6px 12px;">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 12h13M11 18h10"/></svg>
+    All requests
+</a>
+@endsection
+
 @section('content')
 
-{{-- ── HERO METRICS: Bento Grid ───────────────────────────────────────────── --}}
-<section class="grid grid-cols-12 gap-5 mb-8">
-
-    {{-- Total Cleared --}}
-    <div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
-        <div class="flex justify-between items-start mb-4">
-            <div class="p-2 bg-secondary-container rounded-lg">
-                <span class="material-symbols-outlined text-primary" style="font-variation-settings:'FILL' 1;">analytics</span>
-            </div>
-            <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Total Cleared</span>
-        </div>
-        <div class="space-y-1">
-            <h3 class="text-4xl font-extrabold font-display text-on-surface tracking-tighter">{{ number_format($stats['total_cleared']) }}</h3>
-            <p class="text-xs text-primary flex items-center gap-1 font-semibold">
-                <span class="material-symbols-outlined" style="font-size:14px; font-variation-settings:'FILL' 1;">trending_up</span>
-                Screening requests completed
-            </p>
-        </div>
-    </div>
-
-    {{-- Active / Pending --}}
-    <div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
-        <div class="flex justify-between items-start mb-4">
-            <div class="p-2 bg-surface-container-highest rounded-lg">
-                <span class="material-symbols-outlined text-primary">hourglass_empty</span>
-            </div>
-            <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">In Progress</span>
-        </div>
-        <div class="space-y-1">
-            <h3 class="text-4xl font-extrabold font-display text-on-surface tracking-tighter">{{ str_pad($stats['active_requests'], 2, '0', STR_PAD_LEFT) }}</h3>
-            <p class="text-xs text-primary flex items-center gap-1 font-semibold {{ $stats['active_requests'] > 0 ? 'animate-pulse' : '' }}">
-                <span class="material-symbols-outlined" style="font-size:14px;">schedule</span>
-                Active across {{ $stats['total_customers'] }} customers
-            </p>
-        </div>
-    </div>
-
-    {{-- Action Required --}}
-    <div class="col-span-12 md:col-span-4 p-6 rounded-xl shadow-sm border border-error/10
-                {{ $stats['flagged_cases'] > 0 ? 'bg-error-container/10' : 'bg-surface-container-lowest border-outline-variant/10' }}">
-        <div class="flex justify-between items-start mb-4">
-            <div class="p-2 bg-error-container rounded-lg">
-                <span class="material-symbols-outlined text-error" style="font-variation-settings:'FILL' 1;">flag</span>
-            </div>
-            <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Action Required</span>
-        </div>
-        <div class="space-y-1">
-            <h3 class="text-4xl font-extrabold font-display tracking-tighter {{ $stats['flagged_cases'] > 0 ? 'text-error' : 'text-on-surface' }}">
-                {{ str_pad($stats['flagged_cases'], 2, '0', STR_PAD_LEFT) }}
-            </h3>
+{{-- Page head --}}
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding-bottom: 4px;">
+    <div>
+        <h1 style="font-family: 'Fraunces', serif; font-weight: 500; font-size: 30px; letter-spacing: -0.01em; margin: 0; line-height: 1.05; color: var(--ink-900);">
+            Good day, <em style="font-style: italic; color: var(--emerald-700);">{{ session('admin_name') }}.</em>
+        </h1>
+        <div style="margin-top: 6px; color: var(--ink-500); font-size: 13px;">
             @if($stats['flagged_cases'] > 0)
-            <p class="text-xs text-error flex items-center gap-1 font-semibold">
-                <span class="material-symbols-outlined" style="font-size:14px;">warning</span>
-                <a href="{{ route('requests.index', ['status' => 'flagged']) }}" class="underline">Critical flags identified</a>
-            </p>
-            @else
-            <p class="text-xs text-primary flex items-center gap-1 font-semibold">
-                <span class="material-symbols-outlined" style="font-size:14px;">check_circle</span>
-                All clear — no flags
-            </p>
+                <span style="color: var(--danger); font-weight: 600;">{{ $stats['flagged_cases'] }} {{ $stats['flagged_cases'] === 1 ? 'case requires' : 'cases require' }} your attention</span> &middot;
             @endif
+            {{ $stats['active_requests'] }} active &middot; {{ $stats['total_customers'] }} customers &middot; {{ now()->format('d M Y') }}
         </div>
     </div>
-
-</section>
-
-{{-- ── CHART + SYSTEM STATUS ───────────────────────────────────────────────── --}}
-<section class="grid grid-cols-12 gap-6 mb-8">
-
-    {{-- Screening Volume Chart --}}
-    <div class="col-span-12 lg:col-span-8 bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10">
-        <div class="flex justify-between items-end mb-8">
-            <div>
-                <h2 class="text-2xl font-extrabold font-display tracking-tight text-on-surface">Screening Volume</h2>
-                <p class="text-sm text-on-surface-variant mt-0.5">Request flow across the past 7 days.</p>
-            </div>
-            <div class="flex items-center gap-3 text-xs text-on-surface-variant">
-                <span class="flex items-center gap-1.5">
-                    <span class="inline-block w-3 h-3 rounded-sm bg-primary/80"></span>
-                    Peak day
-                </span>
-                <span class="flex items-center gap-1.5">
-                    <span class="inline-block w-3 h-3 rounded-sm bg-surface-container-highest"></span>
-                    Other days
-                </span>
-            </div>
-        </div>
-
-        @php
-            $maxCount = max($weeklyVolume->pluck('count')->max(), 1);
-            $maxHeight = 224; // px — matches design h-56
-        @endphp
-
-        <div class="relative h-64 flex items-end justify-between gap-3 px-2 border-b border-surface-container-high">
-            @php $peakIdx = $weeklyVolume->search(fn($d) => $d['count'] === $maxCount); @endphp
-            @foreach($weeklyVolume as $idx => $day)
-            @php
-                $barH = $day['count'] > 0 ? max(8, (int) round(($day['count'] / $maxCount) * $maxHeight)) : 8;
-                $isPeak = $idx === $peakIdx && $day['count'] > 0;
-            @endphp
-            <div class="flex-1 flex flex-col items-center group">
-                <div class="w-full rounded-t-lg transition-all relative cursor-default"
-                     style="height: {{ $barH }}px; background-color: {{ $isPeak ? 'var(--color-primary)' : 'var(--color-surface-container-highest)' }};"
-                     x-data
-                     @mouseenter="$el.style.opacity='0.8'"
-                     @mouseleave="$el.style.opacity='1'">
-                    {{-- Tooltip --}}
-                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity
-                                bg-inverse-surface text-white text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap z-10">
-                        {{ $day['count'] }} requests
-                    </div>
-                </div>
-                <span class="text-[10px] font-bold mt-3 {{ $isPeak ? 'text-on-surface' : 'text-on-surface-variant' }} uppercase tracking-wider">
-                    {{ strtoupper(substr($day['label'], 0, 3)) }}
-                </span>
-            </div>
-            @endforeach
-        </div>
-
-        <div class="flex justify-between mt-4 text-xs text-on-surface-variant">
-            <span>Total this week: <strong class="text-on-surface">{{ number_format($weeklyVolume->sum('count')) }}</strong></span>
-            @if($stats['unpaid_invoices'] > 0)
-            <span class="text-error font-semibold flex items-center gap-1">
-                <span class="material-symbols-outlined" style="font-size:14px;">receipt</span>
-                {{ $stats['unpaid_invoices'] }} unpaid invoice{{ $stats['unpaid_invoices'] > 1 ? 's' : '' }}
-            </span>
-            @endif
-        </div>
-    </div>
-
-    {{-- System / Activity Rail --}}
-    <div class="col-span-12 lg:col-span-4 bg-surface-container-low p-8 rounded-xl relative overflow-hidden border border-outline-variant/20">
-        <h2 class="text-xl font-extrabold font-display mb-6 relative z-10 text-on-surface">Recent Activity</h2>
-
-        <div class="space-y-5 relative z-10">
-            @forelse($recentRequests->take(4) as $req)
-            @php
-                $isFlag = $req->status === 'flagged';
-                $isNew  = $req->status === 'new';
-            @endphp
-            <div class="flex gap-4">
-                <div class="relative flex-shrink-0">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center relative z-10 shadow-sm
-                                {{ $isFlag ? 'bg-error' : 'bg-primary' }}">
-                        <span class="material-symbols-outlined text-white" style="font-size:14px;">
-                            {{ $isFlag ? 'flag' : ($isNew ? 'fiber_new' : 'task_alt') }}
-                        </span>
-                    </div>
-                    @if(!$loop->last)
-                    <div class="absolute top-8 left-1/2 -translate-x-1/2 w-px h-full bg-outline-variant/40"></div>
-                    @endif
-                </div>
-                <div class="flex-1 pb-4">
-                    <p class="text-sm font-bold text-on-surface leading-tight">
-                        <a href="{{ route('requests.show', $req) }}" class="hover:text-primary transition-colors">
-                            {{ $req->customer->name ?? 'Unknown' }}
-                        </a>
-                    </p>
-                    <p class="text-[11px] text-on-surface-variant font-mono">{{ $req->reference }}</p>
-                    <p class="text-[10px] text-on-surface-variant/70 mt-0.5">{{ $req->updated_at->diffForHumans() }}</p>
-                </div>
-            </div>
-            @empty
-            <p class="text-sm text-on-surface-variant">No recent activity.</p>
-            @endforelse
-        </div>
-
-        {{-- Ambient glow --}}
-        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/5 blur-[60px] rounded-full pointer-events-none"></div>
-    </div>
-
-</section>
-
-{{-- ── ACTION REQUIRED TABLE ───────────────────────────────────────────────── --}}
-@if($flaggedRequests->count())
-<section class="space-y-4">
-    <div class="flex justify-between items-center">
-        <h2 class="text-2xl font-extrabold font-display tracking-tight text-on-surface">Action Required</h2>
-        <a href="{{ route('requests.index', ['status' => 'flagged']) }}"
-           class="text-sm font-bold text-primary flex items-center gap-1.5 hover:underline">
-            View All <span class="material-symbols-outlined" style="font-size:16px;">arrow_forward</span>
+    <div style="display: flex; gap: 8px;">
+        <a href="{{ route('requests.index') }}" class="nrh-btn nrh-btn-ghost">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+            Export
+        </a>
+        <a href="{{ route('customers.create') }}" class="nrh-btn nrh-btn-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+            New customer
         </a>
     </div>
+</div>
 
-    <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
-        {{-- Table header --}}
-        <div class="grid grid-cols-12 px-6 py-3.5 bg-surface-container-high/40">
-            <div class="col-span-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Customer / Reference</div>
-            <div class="col-span-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Ref ID</div>
-            <div class="col-span-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Flagged</div>
-            <div class="col-span-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Candidates</div>
-            <div class="col-span-2 text-right text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Action</div>
+{{-- ── Stat strip ── --}}
+<div style="display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--line); border-radius: 12px; background: var(--card); overflow: hidden; box-shadow: var(--shadow-sm);">
+
+    <div style="padding: 18px 20px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-500); display: flex; align-items: center; gap: 6px;">
+            <span style="width: 6px; height: 6px; border-radius: 1px; background: var(--emerald-600); display: inline-block;"></span>Active requests
         </div>
+        <div style="font-family: 'Fraunces', serif; font-size: 32px; font-weight: 500; letter-spacing: -0.02em; line-height: 1;">{{ $stats['active_requests'] }}</div>
+        <div style="font-size: 11px; color: var(--ink-500); font-family: 'JetBrains Mono', monospace;">In progress</div>
+    </div>
 
-        <div class="divide-y divide-surface-container-high/50">
-            @foreach($flaggedRequests as $req)
-            @php
-                $initial = strtoupper(substr($req->customer->name ?? 'X', 0, 2));
-                $isEven  = $loop->even;
-            @endphp
-            <div class="grid grid-cols-12 px-6 py-5 transition-colors
-                        {{ $isEven ? 'bg-surface-container-low/40 hover:bg-surface-container-high' : 'bg-surface-container-lowest hover:bg-surface-container-low' }}">
-                {{-- Customer --}}
-                <div class="col-span-4 flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center font-display font-bold text-primary text-sm flex-shrink-0">
-                        {{ $initial }}
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold text-on-surface leading-tight">{{ $req->customer->name ?? '—' }}</p>
-                        <p class="text-[11px] text-on-surface-variant">{{ $req->type ?? 'Screening Request' }}</p>
-                    </div>
-                </div>
-                {{-- Ref --}}
-                <div class="col-span-2 flex items-center font-mono text-sm font-medium text-on-surface">
-                    {{ $req->reference }}
-                </div>
-                {{-- Date --}}
-                <div class="col-span-2 flex items-center text-sm text-on-surface-variant">
-                    {{ $req->updated_at->format('d M Y') }}
-                </div>
-                {{-- Candidates --}}
-                <div class="col-span-2 flex items-center">
-                    <span class="px-2.5 py-1 rounded bg-error-container text-error text-[10px] font-extrabold uppercase tracking-tight">
-                        {{ $req->candidates->count() }} {{ Str::plural('candidate', $req->candidates->count()) }}
-                    </span>
-                </div>
-                {{-- Action --}}
-                <div class="col-span-2 flex items-center justify-end gap-2">
-                    <a href="{{ route('requests.show', $req) }}"
-                       class="px-4 py-1.5 bg-primary text-on-primary text-xs font-bold rounded-lg shadow-sm hover:scale-105 transition-transform active:scale-95">
-                        Review
-                    </a>
-                </div>
-            </div>
-            @endforeach
+    <div style="padding: 18px 20px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-500); display: flex; align-items: center; gap: 6px;">
+            <span style="width: 6px; height: 6px; border-radius: 1px; background: var(--danger); display: inline-block;"></span>Flagged
+        </div>
+        <div style="font-family: 'Fraunces', serif; font-size: 32px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; color: {{ $stats['flagged_cases'] > 0 ? 'var(--danger)' : 'var(--ink-900)' }};">{{ $stats['flagged_cases'] }}</div>
+        <div style="font-size: 11px; color: var(--ink-500); font-family: 'JetBrains Mono', monospace;">
+            @if($stats['flagged_cases'] > 0)
+                <a href="{{ route('requests.index', ['status' => 'flagged']) }}" style="color: var(--danger); font-weight: 600; text-decoration: none;">Review now →</a>
+            @else
+                All clear
+            @endif
         </div>
     </div>
-</section>
+
+    <div style="padding: 18px 20px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-500); display: flex; align-items: center; gap: 6px;">
+            <span style="width: 6px; height: 6px; border-radius: 1px; background: var(--emerald-600); display: inline-block;"></span>Completed
+        </div>
+        <div style="font-family: 'Fraunces', serif; font-size: 32px; font-weight: 500; letter-spacing: -0.02em; line-height: 1;">{{ $stats['total_cleared'] }}</div>
+        <div style="font-size: 11px; color: var(--ink-500); font-family: 'JetBrains Mono', monospace;">All time</div>
+    </div>
+
+    <div style="padding: 18px 20px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-500); display: flex; align-items: center; gap: 6px;">
+            <span style="width: 6px; height: 6px; border-radius: 1px; background: var(--ink-400); display: inline-block;"></span>Customers
+        </div>
+        <div style="font-family: 'Fraunces', serif; font-size: 32px; font-weight: 500; letter-spacing: -0.02em; line-height: 1;">{{ $stats['total_customers'] }}</div>
+        <div style="font-size: 11px; color: var(--ink-500); font-family: 'JetBrains Mono', monospace;">Active accounts</div>
+    </div>
+
+    <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-500); display: flex; align-items: center; gap: 6px;">
+            <span style="width: 6px; height: 6px; border-radius: 1px; background: var(--gold-500); display: inline-block;"></span>Unpaid invoices
+        </div>
+        <div style="font-family: 'Fraunces', serif; font-size: 32px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; color: {{ $stats['unpaid_invoices'] > 0 ? 'var(--gold-700)' : 'var(--ink-900)' }};">{{ $stats['unpaid_invoices'] }}</div>
+        <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace;">
+            @if($stats['unpaid_invoices'] > 0)
+                <a href="{{ route('invoices.index') }}" style="color: var(--gold-700); font-weight: 600; text-decoration: none;">View invoices →</a>
+            @else
+                <span style="color: var(--ink-500);">All settled</span>
+            @endif
+        </div>
+    </div>
+
+</div>
+
+{{-- ── Two-column grid ── --}}
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+
+    {{-- Screening volume chart --}}
+    <div class="nrh-card">
+        <div class="nrh-card-head">
+            <h3>Screening volume</h3>
+            <span style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--ink-400); letter-spacing: 0.1em; text-transform: uppercase;">Last 7 days</span>
+        </div>
+        <div style="padding: 20px 20px 16px;">
+            @php
+                $maxCount = max($weeklyVolume->pluck('count')->max(), 1);
+                $maxH = 140;
+                $peakIdx = $weeklyVolume->search(fn($d) => $d['count'] === $maxCount);
+            @endphp
+
+            <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; height: {{ $maxH + 28 }}px; border-bottom: 1px solid var(--line); padding-bottom: 4px;">
+                @foreach($weeklyVolume as $idx => $day)
+                @php
+                    $barH = $day['count'] > 0 ? max(6, (int) round(($day['count'] / $maxCount) * $maxH)) : 6;
+                    $isPeak = $idx === $peakIdx && $day['count'] > 0;
+                @endphp
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-500);">{{ $day['count'] ?: '' }}</div>
+                    <div style="width: 100%; height: {{ $barH }}px; border-radius: 4px 4px 0 0;
+                                background: {{ $isPeak ? 'var(--emerald-700)' : 'var(--emerald-100)' }};
+                                transition: opacity 120ms ease;"
+                         title="{{ $day['count'] }} requests on {{ $day['label'] }}"></div>
+                </div>
+                @endforeach
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                @foreach($weeklyVolume as $day)
+                <div style="flex: 1; text-align: center; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-500); font-family: 'JetBrains Mono', monospace;">
+                    {{ strtoupper(substr($day['label'], 0, 3)) }}
+                </div>
+                @endforeach
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: 12px; color: var(--ink-500); border-top: 1px solid var(--line); padding-top: 12px;">
+                <span>Total this week: <strong style="color: var(--ink-900);">{{ number_format($weeklyVolume->sum('count')) }}</strong></span>
+                <span>Peak: <strong style="color: var(--emerald-700);">{{ $weeklyVolume->max('count') }}</strong> requests/day</span>
+            </div>
+        </div>
+    </div>
+
+    {{-- Side column --}}
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+
+        {{-- Recent activity --}}
+        <div class="nrh-card">
+            <div class="nrh-card-head">
+                <h3>Activity</h3>
+                <a href="{{ route('requests.index') }}" style="font-size: 11px; color: var(--emerald-700); font-weight: 600; text-decoration: none;">View all</a>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                @forelse($recentRequests->take(5) as $req)
+                @php
+                    $isFlag = $req->status === 'flagged';
+                    $isNew  = $req->status === 'new';
+                    $isDone = $req->status === 'complete';
+                    $iconBg = $isFlag ? '#fbeeec' : ($isDone ? 'var(--emerald-50)' : 'var(--ink-100)');
+                    $iconColor = $isFlag ? 'var(--danger)' : ($isDone ? 'var(--emerald-700)' : 'var(--ink-500)');
+                @endphp
+                <div style="padding: 12px 18px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 24px 1fr; gap: 12px; font-size: 12px; color: var(--ink-700);">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: {{ $iconBg }}; color: {{ $iconColor }}; display: grid; place-items: center; flex-shrink: 0;">
+                        @if($isFlag)
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                        @elseif($isDone)
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>
+                        @else
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                        @endif
+                    </div>
+                    <div>
+                        <div><a href="{{ route('requests.show', $req) }}" style="font-weight: 600; color: var(--ink-900); text-decoration: none;">{{ $req->customer->name ?? 'Unknown' }}</a> &mdash; {{ str_replace('_', ' ', $req->status) }}</div>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-400); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em;">{{ $req->reference }} &middot; {{ $req->updated_at->diffForHumans() }}</div>
+                    </div>
+                </div>
+                @empty
+                <div style="padding: 24px 18px; font-size: 13px; color: var(--ink-500); text-align: center;">No recent activity.</div>
+                @endforelse
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{{-- ── Flagged / Recent requests table ── --}}
+@if($flaggedRequests->count())
+<div class="nrh-card">
+    <div class="nrh-card-head" style="background: #fbeeec;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <h3 style="color: var(--danger);">Action required</h3>
+            <span style="background: var(--danger); color: #fff; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; font-family: 'JetBrains Mono', monospace;">{{ $flaggedRequests->count() }} FLAGGED</span>
+        </div>
+        <a href="{{ route('requests.index', ['status' => 'flagged']) }}" style="font-size: 11px; color: var(--danger); font-weight: 600; text-decoration: none;">View all →</a>
+    </div>
+    <table class="nrh-table">
+        <thead>
+            <tr>
+                <th>Customer</th>
+                <th style="width: 160px;">Reference</th>
+                <th style="width: 120px;">Flagged</th>
+                <th style="width: 100px;">Candidates</th>
+                <th style="width: 100px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($flaggedRequests as $req)
+            <tr onclick="window.location='{{ route('requests.show', $req) }}'">
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 30px; height: 30px; border-radius: 50%; background: #fbeeec; color: var(--danger); display: grid; place-items: center; font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; flex-shrink: 0;">
+                            {{ strtoupper(substr($req->customer->name ?? 'X', 0, 2)) }}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 13px; line-height: 1.2;">{{ $req->customer->name ?? '—' }}</div>
+                            <div style="font-size: 11px; color: var(--ink-500);">{{ $req->type ?? 'Screening' }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-700);">{{ $req->reference }}</td>
+                <td style="font-size: 12px; color: var(--ink-500);">{{ $req->updated_at->format('d M Y') }}</td>
+                <td>
+                    <span class="nrh-pill nrh-pill-flagged">{{ $req->candidates->count() }} {{ Str::plural('candidate', $req->candidates->count()) }}</span>
+                </td>
+                <td>
+                    <a href="{{ route('requests.show', $req) }}" class="nrh-btn nrh-btn-primary" style="font-size: 11px; padding: 5px 12px;">Review</a>
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
 
 @else
-{{-- No flags — show recent requests instead --}}
-<section class="space-y-4">
-    <div class="flex justify-between items-center">
-        <h2 class="text-2xl font-extrabold font-display tracking-tight text-on-surface">Recent Requests</h2>
-        <a href="{{ route('requests.index') }}"
-           class="text-sm font-bold text-primary flex items-center gap-1.5 hover:underline">
-            View All <span class="material-symbols-outlined" style="font-size:16px;">arrow_forward</span>
-        </a>
-    </div>
 
-    <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
-        <div class="grid grid-cols-12 px-6 py-3.5 bg-surface-container-high/40">
-            <div class="col-span-4 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Customer / Reference</div>
-            <div class="col-span-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Ref ID</div>
-            <div class="col-span-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Submitted</div>
-            <div class="col-span-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Status</div>
-            <div class="col-span-2 text-right text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Action</div>
+<div class="nrh-card">
+    <div class="nrh-card-head">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <h3>Recent requests</h3>
+            <span style="background: var(--emerald-50); color: var(--emerald-800); padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; font-family: 'JetBrains Mono', monospace;">{{ $recentRequests->count() }} RECENT</span>
         </div>
-
-        <div class="divide-y divide-surface-container-high/50">
+        <a href="{{ route('requests.index') }}" style="font-size: 11px; color: var(--emerald-700); font-weight: 600; text-decoration: none;">View all →</a>
+    </div>
+    <table class="nrh-table">
+        <thead>
+            <tr>
+                <th>Customer</th>
+                <th style="width: 160px;">Reference</th>
+                <th style="width: 120px;">Submitted</th>
+                <th style="width: 120px;">Status</th>
+                <th style="width: 80px;"></th>
+            </tr>
+        </thead>
+        <tbody>
             @forelse($recentRequests as $req)
-            @php $initial = strtoupper(substr($req->customer->name ?? 'X', 0, 2)); @endphp
-            <div class="grid grid-cols-12 px-6 py-4 transition-colors
-                        {{ $loop->even ? 'bg-surface-container-low/40 hover:bg-surface-container-high' : 'bg-surface-container-lowest hover:bg-surface-container-low' }}">
-                <div class="col-span-4 flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center font-display font-bold text-primary text-xs flex-shrink-0">{{ $initial }}</div>
-                    <div>
-                        <p class="text-sm font-bold text-on-surface leading-tight">{{ $req->customer->name ?? '—' }}</p>
-                        <p class="text-[11px] text-on-surface-variant">{{ $req->type ?? 'Screening' }}</p>
+            <tr onclick="window.location='{{ route('requests.show', $req) }}'">
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 30px; height: 30px; border-radius: 50%; background: var(--emerald-50); color: var(--emerald-800); display: grid; place-items: center; font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; flex-shrink: 0;">
+                            {{ strtoupper(substr($req->customer->name ?? 'X', 0, 2)) }}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 13px; line-height: 1.2;">{{ $req->customer->name ?? '—' }}</div>
+                            <div style="font-size: 11px; color: var(--ink-500);">{{ $req->type ?? 'Screening' }}</div>
+                        </div>
                     </div>
-                </div>
-                <div class="col-span-2 flex items-center font-mono text-sm font-medium text-on-surface">{{ $req->reference }}</div>
-                <div class="col-span-2 flex items-center text-sm text-on-surface-variant">{{ $req->created_at->format('d M Y') }}</div>
-                <div class="col-span-2 flex items-center">
-                    <span class="badge {{ $req->statusBadgeClass() }}">{{ str_replace('_', ' ', $req->status) }}</span>
-                </div>
-                <div class="col-span-2 flex items-center justify-end">
-                    <a href="{{ route('requests.show', $req) }}"
-                       class="px-4 py-1.5 bg-surface-container-highest text-on-surface text-xs font-bold rounded-lg hover:bg-white transition-all border border-outline-variant/30">
-                        View
-                    </a>
-                </div>
-            </div>
+                </td>
+                <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-700);">{{ $req->reference }}</td>
+                <td style="font-size: 12px; color: var(--ink-500);">{{ $req->created_at->format('d M Y') }}</td>
+                <td>
+                    @php
+                        $sc = match($req->status) {
+                            'new'         => 'nrh-pill-new',
+                            'in_progress' => 'nrh-pill-progress',
+                            'flagged'     => 'nrh-pill-flagged',
+                            'complete'    => 'nrh-pill-complete',
+                            default       => 'nrh-pill-new',
+                        };
+                    @endphp
+                    <span class="nrh-pill {{ $sc }}">{{ str_replace('_', ' ', $req->status) }}</span>
+                </td>
+                <td>
+                    <a href="{{ route('requests.show', $req) }}" class="nrh-btn nrh-btn-ghost" style="font-size: 11px; padding: 5px 12px;">View</a>
+                </td>
+            </tr>
             @empty
-            <div class="px-6 py-12 text-center text-on-surface-variant">No requests yet.</div>
+            <tr><td colspan="5" style="text-align: center; color: var(--ink-500); padding: 32px;">No requests yet.</td></tr>
             @endforelse
-        </div>
-    </div>
-</section>
+        </tbody>
+    </table>
+</div>
+
 @endif
 
 @endsection

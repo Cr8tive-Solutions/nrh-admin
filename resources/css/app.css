@@ -6,67 +6,140 @@
 @source '../**/*.js';
 
 @theme {
-    /* Fonts */
-    --font-sans:    'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    /* ── Fonts ── */
+    --font-sans:    'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-mono:    'JetBrains Mono', ui-monospace, monospace;
 
-    /* NRH Design System — Warm Archival Palette */
+    /* ── Emerald scale ── */
+    --color-emerald-900: #023527;
+    --color-emerald-800: #044d39;
+    --color-emerald-700: #046c4e;
+    --color-emerald-600: #059669;
+    --color-emerald-500: #10b981;
+    --color-emerald-100: #d1fae5;
+    --color-emerald-50:  #ecfdf5;
+
+    /* ── Gold ── */
+    --color-gold-700: #9c7a1e;
+    --color-gold-600: #b8931f;
+    --color-gold-500: #d4af37;
+    --color-gold-400: #e4c35f;
+    --color-gold-100: #f5ecd1;
+
+    /* ── Ink ── */
+    --color-ink-900: #14201b;
+    --color-ink-700: #3b4b44;
+    --color-ink-500: #6b7a74;
+    --color-ink-400: #8a988f;
+    --color-ink-300: #b8c2bb;
+    --color-ink-200: #d9dfd9;
+    --color-ink-100: #ebeee9;
+    --color-ink-50:  #f3f4ee;
+
+    /* ── Paper / Card ── */
+    --color-paper:   #fbfaf5;
+    --color-paper-2: #f5f3ea;
+    --color-nrh-card: #ffffff;
+    --color-line:    #e6e4d8;
+
+    /* ── Semantic aliases (backward-compat with existing views) ── */
+    --color-primary:               #046c4e;
+    --color-primary-dim:           #044d39;
+    --color-primary-container:     #ecfdf5;
+    --color-on-primary:            #ffffff;
+    --color-on-primary-container:  #023527;
+    --color-inverse-primary:       #fbfaf5;
+
+    --color-secondary:             #6b7a74;
+    --color-secondary-container:   #d1fae5;
+    --color-on-secondary:          #ffffff;
+    --color-on-secondary-container:#023527;
+
+    --color-tertiary:              #b8931f;
+    --color-tertiary-container:    #f5ecd1;
+    --color-on-tertiary:           #ffffff;
+    --color-on-tertiary-container: #9c7a1e;
+
+    --color-surface:                  #fbfaf5;
+    --color-surface-bright:           #ffffff;
+    --color-surface-dim:              #f5f3ea;
+    --color-surface-variant:          #e6e4d8;
     --color-surface-container-lowest: #ffffff;
-    --color-surface-container-low:    #f2eee0;
-    --color-surface-container:        #f0ede2;
-    --color-surface-container-high:   #ebe6d8;
-    --color-surface-container-highest:#e5e0d1;
-    --color-surface:                  #f5f1e6;
-    --color-surface-bright:           #fdfaf2;
-    --color-surface-dim:              #e8e4d8;
-    --color-surface-variant:          #e5e0d1;
-    --color-background:               #f5f1e6;
+    --color-surface-container-low:    #f5f3ea;
+    --color-surface-container:        #f0eee5;
+    --color-surface-container-high:   #ebeee9;
+    --color-surface-container-highest:#e6e4d8;
+    --color-background:               #fbfaf5;
 
-    --color-primary:            #1b543c;
-    --color-primary-dim:        #143f2d;
-    --color-primary-container:  #1b543c;
-    --color-on-primary:         #ffffff;
-    --color-on-primary-container: #ffffff;
-    --color-inverse-primary:    #f5f1e6;
+    --color-on-surface:         #14201b;
+    --color-on-surface-variant: #6b7a74;
+    --color-on-background:      #14201b;
+    --color-inverse-surface:    #14201b;
+    --color-inverse-on-surface: #d1fae5;
 
-    --color-secondary:           #526074;
-    --color-secondary-container: #e1eadd;
-    --color-on-secondary:        #f8f8ff;
-    --color-on-secondary-container: #455367;
+    --color-outline:         #8a988f;
+    --color-outline-variant: #d9dfd9;
 
-    --color-tertiary:            #605c78;
-    --color-tertiary-container:  #e3dbfd;
-    --color-on-tertiary:         #fcf7ff;
-    --color-on-tertiary-container: #514d68;
+    --color-error:               #c4453a;
+    --color-error-dim:           #8a1e1b;
+    --color-error-container:     #fbeeec;
+    --color-on-error:            #ffffff;
+    --color-on-error-container:  #9a2f27;
 
-    --color-error:               #9f403d;
-    --color-error-dim:           #4e0309;
-    --color-error-container:     #fe8983;
-    --color-on-error:            #fff7f6;
-    --color-on-error-container:  #752121;
-
-    --color-outline:             #78827c;
-    --color-outline-variant:     #c9c4b5;
-
-    --color-on-surface:          #0a1f16;
-    --color-on-surface-variant:  #4a5a54;
-    --color-on-background:       #0a1f16;
-
-    --color-inverse-surface:     #0a1f16;
-    --color-inverse-on-surface:  #8e9eb7;
-
-    /* Uniform border radius */
-    --radius:    0.5rem;
-    --radius-lg: 0.5rem;
-    --radius-xl: 0.75rem;
+    /* Radii */
+    --radius:    6px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar       { width: 6px; }
-::-webkit-scrollbar-track { background: #f5f1e6; }
-::-webkit-scrollbar-thumb { background: #c9c4b5; border-radius: 10px; }
+/* ── Raw CSS variables for component-level use ── */
+:root {
+    --emerald-900: #023527;
+    --emerald-800: #044d39;
+    --emerald-700: #046c4e;
+    --emerald-600: #059669;
+    --emerald-500: #10b981;
+    --emerald-100: #d1fae5;
+    --emerald-50:  #ecfdf5;
 
-/* Material Symbols size tweak */
+    --gold-700: #9c7a1e;
+    --gold-600: #b8931f;
+    --gold-500: #d4af37;
+    --gold-400: #e4c35f;
+    --gold-100: #f5ecd1;
+
+    --ink-900: #14201b;
+    --ink-700: #3b4b44;
+    --ink-500: #6b7a74;
+    --ink-400: #8a988f;
+    --ink-300: #b8c2bb;
+    --ink-200: #d9dfd9;
+    --ink-100: #ebeee9;
+    --ink-50:  #f3f4ee;
+
+    --paper:   #fbfaf5;
+    --paper-2: #f5f3ea;
+    --card:    #ffffff;
+    --line:    #e6e4d8;
+
+    --danger:  #c4453a;
+    --warn:    #b8931f;
+    --info:    #3a6b8f;
+
+    --shadow-xs: 0 1px 0 rgba(20,32,27,0.04);
+    --shadow-sm: 0 1px 2px rgba(20,32,27,0.06), 0 0 0 1px rgba(20,32,27,0.03);
+    --shadow-md: 0 4px 16px -6px rgba(20,32,27,0.12), 0 0 0 1px rgba(20,32,27,0.04);
+    --shadow-lg: 0 20px 40px -20px rgba(20,32,27,0.25), 0 0 0 1px rgba(20,32,27,0.04);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar       { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ink-200); border-radius: 4px; border: 2px solid var(--paper); }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-300); }
+
+/* ── Material Symbols ── */
 .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     font-size: 20px;
@@ -74,20 +147,131 @@
     user-select: none;
 }
 
-/* Badge utilities */
+/* ── NRH Status pills ── */
+.nrh-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+.nrh-pill-new      { background: var(--ink-100);    color: var(--ink-700); }
+.nrh-pill-progress { background: #e7eff5;           color: var(--info); }
+.nrh-pill-flagged  { background: #fbeeec;           color: var(--danger); }
+.nrh-pill-complete { background: var(--emerald-50); color: var(--emerald-700); }
+.nrh-pill-unpaid   { background: var(--gold-100);   color: var(--gold-700); }
+.nrh-pill-paid     { background: var(--emerald-50); color: var(--emerald-700); }
+.nrh-pill-overdue  { background: #fbeeec;           color: var(--danger); }
+
+/* ── Badge utilities (legacy compat) ── */
 @utility badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.125rem 0.5rem;
+    padding: 2px 8px;
     border-radius: 9999px;
-    font-size: 0.6875rem;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 600;
     line-height: 1.2;
-    letter-spacing: 0.025em;
-    text-transform: uppercase;
+    letter-spacing: 0.02em;
 }
-@utility badge-blue   { background-color: var(--color-secondary-container); color: var(--color-primary); }
-@utility badge-yellow { background-color: var(--color-tertiary-container);  color: var(--color-on-tertiary-container); }
-@utility badge-red    { background-color: var(--color-error-container);     color: var(--color-error); }
-@utility badge-green  { background-color: var(--color-secondary-container); color: var(--color-primary); }
-@utility badge-gray   { background-color: var(--color-surface-container-highest); color: var(--color-on-surface-variant); }
+@utility badge-blue   { background-color: var(--emerald-50);  color: var(--emerald-800); }
+@utility badge-yellow { background-color: var(--gold-100);    color: var(--gold-700); }
+@utility badge-red    { background-color: #fbeeec;            color: var(--danger); }
+@utility badge-green  { background-color: var(--emerald-50);  color: var(--emerald-700); }
+@utility badge-gray   { background-color: var(--ink-100);     color: var(--ink-700); }
+
+/* ── NRH Table ── */
+.nrh-table { width: 100%; border-collapse: collapse; }
+.nrh-table thead th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-500);
+    padding: 10px 20px;
+    background: var(--paper-2);
+    border-bottom: 1px solid var(--line);
+}
+.nrh-table tbody td {
+    padding: 13px 20px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    vertical-align: middle;
+    color: var(--ink-900);
+}
+.nrh-table tbody tr { transition: background 120ms ease; cursor: pointer; }
+.nrh-table tbody tr:hover { background: var(--emerald-50); }
+.nrh-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── NRH Card ── */
+.nrh-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+.nrh-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+}
+.nrh-card-head h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 17px;
+    letter-spacing: -0.005em;
+    margin: 0;
+    color: var(--ink-900);
+}
+
+/* ── NRH Buttons ── */
+.nrh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-family: inherit;
+    transition: background 120ms ease, transform 120ms ease;
+    text-decoration: none;
+}
+.nrh-btn:active { transform: translateY(1px); }
+.nrh-btn-primary {
+    background: var(--emerald-700);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(212,175,55,0.3), 0 1px 0 rgba(4,77,57,0.3);
+}
+.nrh-btn-primary:hover { background: var(--emerald-800); }
+.nrh-btn-ghost {
+    border-color: var(--line);
+    background: var(--card);
+    color: var(--ink-900);
+}
+.nrh-btn-ghost:hover { border-color: var(--emerald-600); color: var(--emerald-700); }
+
+/* ── NRH Input ── */
+.nrh-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink-900);
+    outline: none;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.nrh-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
+.nrh-input::placeholder { color: var(--ink-400); }

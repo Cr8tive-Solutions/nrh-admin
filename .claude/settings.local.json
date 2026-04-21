@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(cp \"/Users/anwarsaad/.claude/projects/-Users-anwarsaad-Herd-nrh-admin/373894c6-08c2-46f4-9180-88ab2e9a61ed/tool-results/webfetch-1776802734801-g5e4r9.bin\" /tmp/design.gz)",
+      "Bash(gunzip -f /tmp/design.gz)",
+      "Read(//private/tmp/**)"
     ]
   }
 }
