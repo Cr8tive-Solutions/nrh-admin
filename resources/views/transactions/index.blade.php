@@ -25,34 +25,34 @@
 </div>
 
 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-    <table class="w-full text-sm">
+    <table class="nrh-table">
         <thead>
-            <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                <th class="px-4 py-3 text-left font-medium">Date</th>
-                <th class="px-4 py-3 text-left font-medium">Customer</th>
-                <th class="px-4 py-3 text-left font-medium">Type</th>
-                <th class="px-4 py-3 text-left font-medium">Amount</th>
-                <th class="px-4 py-3 text-left font-medium">Method</th>
-                <th class="px-4 py-3 text-left font-medium">Reference</th>
-                <th class="px-4 py-3 text-left font-medium">Status</th>
-                <th class="px-4 py-3 text-left font-medium">Notes</th>
+            <tr>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Reference</th>
+                <th>Status</th>
+                <th>Notes</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody>
             @forelse($transactions as $tx)
-            <tr class="hover:bg-gray-50">
-                <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $tx->created_at->format('d M Y') }}</td>
-                <td class="px-4 py-2.5 font-medium text-gray-900">
+            <tr>
+                <td class="text-gray-500 text-xs">{{ $tx->created_at->format('d M Y') }}</td>
+                <td class="font-medium text-gray-900">
                     <a href="{{ route('customers.show', $tx->customer) }}" class="hover:text-emerald-700">{{ $tx->customer->name ?? '—' }}</a>
                 </td>
-                <td class="px-4 py-2.5">
+                <td class="">
                     <span class="badge {{ $tx->type === 'topup' ? 'badge-green' : ($tx->type === 'adjustment' ? 'badge-blue' : 'badge-gray') }}">{{ $tx->type }}</span>
                 </td>
-                <td class="px-4 py-2.5 font-mono font-medium text-xs">MYR {{ number_format($tx->amount, 2) }}</td>
-                <td class="px-4 py-2.5 text-gray-500">{{ $tx->method }}</td>
-                <td class="px-4 py-2.5 font-mono text-xs text-gray-500">{{ $tx->reference ?? '—' }}</td>
-                <td class="px-4 py-2.5"><span class="badge badge-gray">{{ $tx->status }}</span></td>
-                <td class="px-4 py-2.5 text-gray-400 text-xs max-w-xs truncate">{{ $tx->notes ?? '—' }}</td>
+                <td class="font-mono font-medium text-xs">MYR {{ number_format($tx->amount, 2) }}</td>
+                <td class="text-gray-500">{{ $tx->method }}</td>
+                <td class="font-mono text-xs text-gray-500">{{ $tx->reference ?? '—' }}</td>
+                <td class=""><span class="badge badge-gray">{{ $tx->status }}</span></td>
+                <td class="text-gray-400 text-xs max-w-xs truncate">{{ $tx->notes ?? '—' }}</td>
             </tr>
             @empty
             <tr><td colspan="8" style="padding:48px 20px; text-align:center;"><div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:var(--ink-200);"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><span style="font-size:13px; color:var(--ink-400);">No transactions found.</span></div></td></tr>

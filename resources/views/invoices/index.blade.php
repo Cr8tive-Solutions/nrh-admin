@@ -31,32 +31,32 @@
 </div>
 
 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-    <table class="w-full text-sm">
+    <table class="nrh-table">
         <thead>
-            <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                <th class="px-4 py-3 text-left font-medium">Invoice No.</th>
-                <th class="px-4 py-3 text-left font-medium">Customer</th>
-                <th class="px-4 py-3 text-left font-medium">Period</th>
-                <th class="px-4 py-3 text-left font-medium">Subtotal</th>
-                <th class="px-4 py-3 text-left font-medium">Tax (6%)</th>
-                <th class="px-4 py-3 text-left font-medium">Total</th>
-                <th class="px-4 py-3 text-left font-medium">Status</th>
-                <th class="px-4 py-3 text-left font-medium">Due</th>
-                <th class="px-4 py-3"></th>
+            <tr>
+                <th>Invoice No.</th>
+                <th>Customer</th>
+                <th>Period</th>
+                <th>Subtotal</th>
+                <th>Tax (6%)</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Due</th>
+                <th></th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody>
             @forelse($invoices as $invoice)
-            <tr class="hover:bg-gray-50">
-                <td class="px-4 py-2.5 font-mono text-xs text-gray-700">{{ $invoice->number }}</td>
-                <td class="px-4 py-2.5 font-medium text-gray-900">{{ $invoice->customer->name ?? '—' }}</td>
-                <td class="px-4 py-2.5 text-gray-500">{{ $invoice->period }}</td>
-                <td class="px-4 py-2.5 font-mono text-xs">{{ number_format($invoice->subtotal, 2) }}</td>
-                <td class="px-4 py-2.5 font-mono text-xs">{{ number_format($invoice->tax, 2) }}</td>
-                <td class="px-4 py-2.5 font-mono text-xs font-medium">MYR {{ number_format($invoice->total, 2) }}</td>
-                <td class="px-4 py-2.5"><span class="badge {{ $invoice->statusBadgeClass() }}">{{ $invoice->status }}</span></td>
-                <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $invoice->due_at->format('d M Y') }}</td>
-                <td class="px-4 py-2.5 text-right">
+            <tr>
+                <td class="font-mono text-xs text-gray-700">{{ $invoice->number }}</td>
+                <td class="font-medium text-gray-900">{{ $invoice->customer->name ?? '—' }}</td>
+                <td class="text-gray-500">{{ $invoice->period }}</td>
+                <td class="font-mono text-xs">{{ number_format($invoice->subtotal, 2) }}</td>
+                <td class="font-mono text-xs">{{ number_format($invoice->tax, 2) }}</td>
+                <td class="font-mono text-xs font-medium">MYR {{ number_format($invoice->total, 2) }}</td>
+                <td class=""><span class="badge {{ $invoice->statusBadgeClass() }}">{{ $invoice->status }}</span></td>
+                <td class="text-gray-500 text-xs">{{ $invoice->due_at->format('d M Y') }}</td>
+                <td class="text-right">
                     <a href="{{ route('invoices.show', $invoice) }}" class="text-emerald-700 hover:text-emerald-900 text-xs font-medium">View →</a>
                 </td>
             </tr>

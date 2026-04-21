@@ -29,38 +29,38 @@
 </div>
 
 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-    <table class="w-full text-sm">
+    <table class="nrh-table">
         <thead>
-            <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                <th class="px-4 py-3 text-left font-medium">Company</th>
-                <th class="px-4 py-3 text-left font-medium">Reg No.</th>
-                <th class="px-4 py-3 text-left font-medium">Industry</th>
-                <th class="px-4 py-3 text-left font-medium">Contact</th>
-                <th class="px-4 py-3 text-left font-medium">Requests</th>
-                <th class="px-4 py-3 text-left font-medium">Invoices</th>
-                <th class="px-4 py-3"></th>
+            <tr>
+                <th>Company</th>
+                <th>Reg No.</th>
+                <th>Industry</th>
+                <th>Contact</th>
+                <th>Requests</th>
+                <th>Invoices</th>
+                <th></th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody>
             @forelse($customers as $customer)
-            <tr class="hover:bg-gray-50">
-                <td class="px-4 py-2.5">
+            <tr>
+                <td class="">
                     <div class="font-medium text-gray-900">{{ $customer->name }}</div>
                     @if($customer->country)
                     <div class="text-xs text-gray-400">{{ $customer->country }}</div>
                     @endif
                 </td>
-                <td class="px-4 py-2.5 text-gray-500 font-mono text-xs">{{ $customer->registration_no ?? '—' }}</td>
-                <td class="px-4 py-2.5 text-gray-500">{{ $customer->industry ?? '—' }}</td>
-                <td class="px-4 py-2.5">
+                <td class="text-gray-500 font-mono text-xs">{{ $customer->registration_no ?? '—' }}</td>
+                <td class="text-gray-500">{{ $customer->industry ?? '—' }}</td>
+                <td class="">
                     <div class="text-gray-900">{{ $customer->contact_name ?? '—' }}</div>
                     @if($customer->contact_email)
                     <div class="text-xs text-gray-400">{{ $customer->contact_email }}</div>
                     @endif
                 </td>
-                <td class="px-4 py-2.5 text-gray-500">{{ $customer->screening_requests_count }}</td>
-                <td class="px-4 py-2.5 text-gray-500">{{ $customer->invoices_count }}</td>
-                <td class="px-4 py-2.5 text-right">
+                <td class="text-gray-500">{{ $customer->screening_requests_count }}</td>
+                <td class="text-gray-500">{{ $customer->invoices_count }}</td>
+                <td class="text-right">
                     <a href="{{ route('customers.show', $customer) }}" class="text-emerald-700 hover:text-emerald-900 text-xs font-medium">View →</a>
                 </td>
             </tr>

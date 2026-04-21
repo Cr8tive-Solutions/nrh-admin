@@ -27,20 +27,20 @@
         <div class="px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
             {{ $category ?: 'Uncategorised' }}
         </div>
-        <table class="w-full text-sm">
-            <tbody class="divide-y divide-gray-50">
+        <table class="nrh-table">
+            <tbody>
                 @foreach($scopes as $scope)
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2.5 text-gray-900 w-2/5">{{ $scope->name }}</td>
-                    <td class="px-4 py-2.5 text-gray-500 text-xs w-1/5">{{ $scope->turnaround ?? '—' }}</td>
-                    <td class="px-4 py-2.5 font-mono text-xs w-1/5">
+                <tr>
+                    <td class="text-gray-900 w-2/5">{{ $scope->name }}</td>
+                    <td class="text-gray-500 text-xs w-1/5">{{ $scope->turnaround ?? '—' }}</td>
+                    <td class="font-mono text-xs w-1/5">
                         @if($scope->price_on_request)
                             <span class="badge badge-yellow">Price on request</span>
                         @else
                             MYR {{ number_format($scope->price, 2) }}
                         @endif
                     </td>
-                    <td class="px-4 py-2.5 text-right w-1/5">
+                    <td class="text-right w-1/5">
                         <a href="{{ route('config.scopes.edit', $scope) }}" class="text-emerald-700 hover:text-emerald-900 text-xs font-medium">Edit</a>
                     </td>
                 </tr>

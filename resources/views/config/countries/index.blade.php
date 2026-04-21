@@ -12,24 +12,24 @@
         <div class="px-4 py-3 border-b border-gray-100">
             <h2 class="text-sm font-semibold text-gray-900">Configured Countries</h2>
         </div>
-        <table class="w-full text-sm">
+        <table class="nrh-table">
             <thead>
-                <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                    <th class="px-4 py-3 text-left font-medium">Flag</th>
-                    <th class="px-4 py-3 text-left font-medium">Name</th>
-                    <th class="px-4 py-3 text-left font-medium">Code</th>
-                    <th class="px-4 py-3 text-left font-medium">Region</th>
-                    <th class="px-4 py-3 text-left font-medium">Scopes</th>
+                <tr>
+                    <th>Flag</th>
+                    <th>Name</th>
+                    <th>Code</th>
+                    <th>Region</th>
+                    <th>Scopes</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody>
                 @forelse($countries as $country)
                 <tr x-data="{ editing: false }">
-                    <td class="px-4 py-2.5 text-lg">{{ $country->flag }}</td>
-                    <td class="px-4 py-2.5 font-medium text-gray-900">{{ $country->name }}</td>
-                    <td class="px-4 py-2.5 font-mono text-xs text-gray-500">{{ $country->code }}</td>
-                    <td class="px-4 py-2.5 text-gray-500">{{ $country->region ?? '—' }}</td>
-                    <td class="px-4 py-2.5 text-gray-500">{{ $country->scope_types_count }}</td>
+                    <td class="text-lg">{{ $country->flag }}</td>
+                    <td class="font-medium text-gray-900">{{ $country->name }}</td>
+                    <td class="font-mono text-xs text-gray-500">{{ $country->code }}</td>
+                    <td class="text-gray-500">{{ $country->region ?? '—' }}</td>
+                    <td class="text-gray-500">{{ $country->scope_types_count }}</td>
                 </tr>
                 @empty
                 <tr><td colspan="5" style="padding:48px 20px; text-align:center;"><div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="color:var(--ink-200);"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><span style="font-size:13px; color:var(--ink-400);">No countries yet.</span></div></td></tr>

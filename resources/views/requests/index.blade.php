@@ -33,32 +33,32 @@
 
 {{-- Table --}}
 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-    <table class="w-full text-sm">
+    <table class="nrh-table">
         <thead>
-            <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                <th class="px-4 py-3 text-left font-medium">Reference</th>
-                <th class="px-4 py-3 text-left font-medium">Customer</th>
-                <th class="px-4 py-3 text-left font-medium">Type</th>
-                <th class="px-4 py-3 text-left font-medium">Candidates</th>
-                <th class="px-4 py-3 text-left font-medium">Status</th>
-                <th class="px-4 py-3 text-left font-medium">Submitted</th>
-                <th class="px-4 py-3 text-left font-medium">Updated</th>
-                <th class="px-4 py-3"></th>
+            <tr>
+                <th>Reference</th>
+                <th>Customer</th>
+                <th>Type</th>
+                <th>Candidates</th>
+                <th>Status</th>
+                <th>Submitted</th>
+                <th>Updated</th>
+                <th></th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody>
             @forelse($requests as $req)
-            <tr class="hover:bg-gray-50">
-                <td class="px-4 py-2.5 font-mono text-xs text-gray-700">{{ $req->reference }}</td>
-                <td class="px-4 py-2.5 font-medium text-gray-900">{{ $req->customer->name ?? '—' }}</td>
-                <td class="px-4 py-2.5 text-gray-500">{{ $req->type ?? '—' }}</td>
-                <td class="px-4 py-2.5 text-gray-500">{{ $req->candidates_count ?? '—' }}</td>
-                <td class="px-4 py-2.5">
+            <tr>
+                <td class="font-mono text-xs text-gray-700">{{ $req->reference }}</td>
+                <td class="font-medium text-gray-900">{{ $req->customer->name ?? '—' }}</td>
+                <td class="text-gray-500">{{ $req->type ?? '—' }}</td>
+                <td class="text-gray-500">{{ $req->candidates_count ?? '—' }}</td>
+                <td class="">
                     <span class="badge {{ $req->statusBadgeClass() }}">{{ str_replace('_', ' ', $req->status) }}</span>
                 </td>
-                <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $req->created_at->format('d M Y') }}</td>
-                <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $req->updated_at->diffForHumans() }}</td>
-                <td class="px-4 py-2.5 text-right">
+                <td class="text-gray-500 text-xs">{{ $req->created_at->format('d M Y') }}</td>
+                <td class="text-gray-500 text-xs">{{ $req->updated_at->diffForHumans() }}</td>
+                <td class="text-right">
                     <a href="{{ route('requests.show', $req) }}" class="text-emerald-700 hover:text-emerald-900 text-xs font-medium">View →</a>
                 </td>
             </tr>

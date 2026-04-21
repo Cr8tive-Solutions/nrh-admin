@@ -138,7 +138,7 @@
     --paper:   #0d1810;
     --paper-2: #111f14;
     --card:    #15211a;
-    --line:    rgba(255,255,255,0.07);
+    --line:    rgba(255,255,255,0.09);
 
     --ink-900: #dde8df;
     --ink-700: #a8bfac;
@@ -322,3 +322,81 @@
 
 /* ── Dark mode: select element ── */
 [data-theme="dark"] select { color-scheme: dark; }
+
+/* ── Dark mode: Tailwind utility overrides (all admin views) ── */
+
+/* Backgrounds */
+[data-theme="dark"] .bg-white        { background-color: var(--card) !important; }
+[data-theme="dark"] .bg-gray-50      { background-color: var(--paper-2) !important; }
+[data-theme="dark"] .bg-gray-100     { background-color: var(--ink-100) !important; }
+[data-theme="dark"] .bg-gray-200     { background-color: var(--ink-200) !important; }
+
+/* Borders — wildcard catches every border-gray-* variant */
+[data-theme="dark"] [class*="border-gray-"] {
+    border-color: var(--line) !important;
+}
+[data-theme="dark"] .border-gray-300 { border-color: rgba(255,255,255,0.14) !important; }
+[data-theme="dark"] .border-gray-400 { border-color: rgba(255,255,255,0.2)  !important; }
+
+/* Dividers — wildcard catches every divide-gray-* variant */
+[data-theme="dark"] [class*="divide-gray-"] > * + * {
+    border-color: var(--line) !important;
+}
+
+/* Table row borders — catch thead border-b that Tailwind v4 applies via currentColor */
+[data-theme="dark"] table thead tr,
+[data-theme="dark"] table thead th {
+    border-color: var(--line) !important;
+    background-color: var(--paper-2) !important;
+}
+[data-theme="dark"] table tbody td {
+    border-color: var(--line) !important;
+}
+[data-theme="dark"] table tbody tr + tr td {
+    border-top-color: var(--line) !important;
+}
+
+/* Text */
+[data-theme="dark"] .text-gray-900   { color: var(--ink-900) !important; }
+[data-theme="dark"] .text-gray-800   { color: var(--ink-900) !important; }
+[data-theme="dark"] .text-gray-700   { color: var(--ink-700) !important; }
+[data-theme="dark"] .text-gray-600   { color: var(--ink-500) !important; }
+[data-theme="dark"] .text-gray-500   { color: var(--ink-500) !important; }
+[data-theme="dark"] .text-gray-400   { color: var(--ink-400) !important; }
+[data-theme="dark"] .text-gray-300   { color: var(--ink-300) !important; }
+[data-theme="dark"] .text-gray-200   { color: var(--ink-300) !important; }
+
+/* Hover states */
+[data-theme="dark"] .hover\:bg-gray-50:hover  { background-color: rgba(255,255,255,0.03) !important; }
+[data-theme="dark"] .hover\:bg-gray-100:hover { background-color: rgba(255,255,255,0.05) !important; }
+[data-theme="dark"] .hover\:bg-gray-900:hover { background-color: rgba(255,255,255,0.06) !important; }
+
+/* Form inputs */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+    background-color: var(--card);
+    border-color: rgba(255,255,255,0.14);
+    color: var(--ink-900);
+    color-scheme: dark;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: var(--ink-400); }
+[data-theme="dark"] input:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+    border-color: var(--emerald-600);
+    outline: none;
+}
+
+/* Danger / red text */
+[data-theme="dark"] .text-red-500 { color: var(--danger) !important; }
+[data-theme="dark"] .text-red-700 { color: #c44040 !important; }
+[data-theme="dark"] .bg-red-50    { background-color: rgba(196,69,58,0.12) !important; }
+
+/* Font mono */
+[data-theme="dark"] .font-mono { color: inherit; }

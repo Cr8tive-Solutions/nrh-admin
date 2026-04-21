@@ -13,37 +13,37 @@
 @section('content')
 
 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden max-w-3xl">
-    <table class="w-full text-sm">
+    <table class="nrh-table">
         <thead>
-            <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                <th class="px-4 py-3 text-left font-medium">Name</th>
-                <th class="px-4 py-3 text-left font-medium">Email</th>
-                <th class="px-4 py-3 text-left font-medium">Role</th>
-                <th class="px-4 py-3 text-left font-medium">Status</th>
-                <th class="px-4 py-3 text-left font-medium">Created</th>
-                <th class="px-4 py-3"></th>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th></th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody>
             @forelse($staff as $member)
-            <tr class="hover:bg-gray-50">
-                <td class="px-4 py-2.5 font-medium text-gray-900">
+            <tr>
+                <td class="font-medium text-gray-900">
                     {{ $member->name }}
                     @if($member->id === session('admin_id'))
                     <span class="badge badge-blue ml-1">you</span>
                     @endif
                 </td>
-                <td class="px-4 py-2.5 text-gray-500">{{ $member->email }}</td>
-                <td class="px-4 py-2.5">
+                <td class="text-gray-500">{{ $member->email }}</td>
+                <td class="">
                     <span class="badge {{ $member->role === 'super_admin' ? 'badge-blue' : 'badge-gray' }}">
                         {{ str_replace('_', ' ', $member->role) }}
                     </span>
                 </td>
-                <td class="px-4 py-2.5">
+                <td class="">
                     <span class="badge {{ $member->status === 'active' ? 'badge-green' : 'badge-gray' }}">{{ $member->status }}</span>
                 </td>
-                <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $member->created_at->format('d M Y') }}</td>
-                <td class="px-4 py-2.5 text-right">
+                <td class="text-gray-500 text-xs">{{ $member->created_at->format('d M Y') }}</td>
+                <td class="text-right">
                     @if($member->id !== session('admin_id'))
                     <form method="POST" action="{{ route('staff.toggle', $member) }}" class="inline">
                         @csrf @method('PATCH')

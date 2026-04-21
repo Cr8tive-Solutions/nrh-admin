@@ -51,7 +51,7 @@
 
         {{-- Candidates --}}
         <div class="bg-white rounded-lg border border-gray-200">
-            <div class="px-4 py-3 border-b border-gray-100">
+            <div class="border-b border-gray-100">
                 <h2 class="text-sm font-semibold text-gray-900">Candidates</h2>
             </div>
             @forelse($request->candidates as $candidate)

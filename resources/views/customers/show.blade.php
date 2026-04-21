@@ -24,7 +24,7 @@
     @foreach(['info' => 'Company Info', 'agreement' => 'Agreement', 'team' => 'Team', 'requests' => 'Requests', 'invoices' => 'Invoices', 'transactions' => 'Transactions'] as $key => $label)
     <button @click="tab = '{{ $key }}'"
             :class="tab === '{{ $key }}' ? 'border-emerald-700 text-emerald-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
-            class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors">
+            class="text-sm font-medium border-b-2 -mb-px transition-colors">
         {{ $label }}
     </button>
     @endforeach
@@ -128,22 +128,22 @@
 {{-- Team --}}
 <div x-show="tab === 'team'" x-cloak>
     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden max-w-2xl">
-        <table class="w-full text-sm">
+        <table class="nrh-table">
             <thead>
-                <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                    <th class="px-4 py-3 text-left font-medium">Name</th>
-                    <th class="px-4 py-3 text-left font-medium">Email</th>
-                    <th class="px-4 py-3 text-left font-medium">Role</th>
-                    <th class="px-4 py-3 text-left font-medium">Status</th>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody>
                 @forelse($customer->customerUsers as $user)
                 <tr>
-                    <td class="px-4 py-2.5 font-medium text-gray-900">{{ $user->name }}</td>
-                    <td class="px-4 py-2.5 text-gray-500">{{ $user->email }}</td>
-                    <td class="px-4 py-2.5 text-gray-500">{{ $user->role }}</td>
-                    <td class="px-4 py-2.5">
+                    <td class="font-medium text-gray-900">{{ $user->name }}</td>
+                    <td class="text-gray-500">{{ $user->email }}</td>
+                    <td class="text-gray-500">{{ $user->role }}</td>
+                    <td class="">
                         <span class="badge {{ $user->status === 'active' ? 'badge-green' : 'badge-gray' }}">{{ $user->status }}</span>
                     </td>
                 </tr>
@@ -158,26 +158,26 @@
 {{-- Requests --}}
 <div x-show="tab === 'requests'" x-cloak>
     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <table class="w-full text-sm">
+        <table class="nrh-table">
             <thead>
-                <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                    <th class="px-4 py-3 text-left font-medium">Reference</th>
-                    <th class="px-4 py-3 text-left font-medium">Type</th>
-                    <th class="px-4 py-3 text-left font-medium">Candidates</th>
-                    <th class="px-4 py-3 text-left font-medium">Status</th>
-                    <th class="px-4 py-3 text-left font-medium">Submitted</th>
-                    <th class="px-4 py-3"></th>
+                <tr>
+                    <th>Reference</th>
+                    <th>Type</th>
+                    <th>Candidates</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th></th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody>
                 @forelse($recentRequests as $req)
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2.5 font-mono text-xs">{{ $req->reference }}</td>
-                    <td class="px-4 py-2.5 text-gray-500">{{ $req->type ?? '—' }}</td>
-                    <td class="px-4 py-2.5 text-gray-500">{{ $req->candidates->count() }}</td>
-                    <td class="px-4 py-2.5"><span class="badge {{ $req->statusBadgeClass() }}">{{ str_replace('_', ' ', $req->status) }}</span></td>
-                    <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $req->created_at->format('d M Y') }}</td>
-                    <td class="px-4 py-2.5 text-right"><a href="{{ route('requests.show', $req) }}" class="text-emerald-700 hover:text-emerald-900 text-xs">View →</a></td>
+                <tr>
+                    <td class="font-mono text-xs">{{ $req->reference }}</td>
+                    <td class="text-gray-500">{{ $req->type ?? '—' }}</td>
+                    <td class="text-gray-500">{{ $req->candidates->count() }}</td>
+                    <td class=""><span class="badge {{ $req->statusBadgeClass() }}">{{ str_replace('_', ' ', $req->status) }}</span></td>
+                    <td class="text-gray-500 text-xs">{{ $req->created_at->format('d M Y') }}</td>
+                    <td class="text-right"><a href="{{ route('requests.show', $req) }}" class="text-emerald-700 hover:text-emerald-900 text-xs">View →</a></td>
                 </tr>
                 @empty
                 <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No requests.</td></tr>
@@ -196,26 +196,26 @@
         </a>
     </div>
     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <table class="w-full text-sm">
+        <table class="nrh-table">
             <thead>
-                <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                    <th class="px-4 py-3 text-left font-medium">Number</th>
-                    <th class="px-4 py-3 text-left font-medium">Period</th>
-                    <th class="px-4 py-3 text-left font-medium">Total</th>
-                    <th class="px-4 py-3 text-left font-medium">Status</th>
-                    <th class="px-4 py-3 text-left font-medium">Due</th>
-                    <th class="px-4 py-3"></th>
+                <tr>
+                    <th>Number</th>
+                    <th>Period</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Due</th>
+                    <th></th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody>
                 @forelse($customer->invoices as $invoice)
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2.5 font-mono text-xs">{{ $invoice->number }}</td>
-                    <td class="px-4 py-2.5 text-gray-500">{{ $invoice->period }}</td>
-                    <td class="px-4 py-2.5 font-medium">MYR {{ number_format($invoice->total, 2) }}</td>
-                    <td class="px-4 py-2.5"><span class="badge {{ $invoice->statusBadgeClass() }}">{{ $invoice->status }}</span></td>
-                    <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $invoice->due_at->format('d M Y') }}</td>
-                    <td class="px-4 py-2.5 text-right"><a href="{{ route('invoices.show', $invoice) }}" class="text-emerald-700 hover:text-emerald-900 text-xs">View →</a></td>
+                <tr>
+                    <td class="font-mono text-xs">{{ $invoice->number }}</td>
+                    <td class="text-gray-500">{{ $invoice->period }}</td>
+                    <td class="font-medium">MYR {{ number_format($invoice->total, 2) }}</td>
+                    <td class=""><span class="badge {{ $invoice->statusBadgeClass() }}">{{ $invoice->status }}</span></td>
+                    <td class="text-gray-500 text-xs">{{ $invoice->due_at->format('d M Y') }}</td>
+                    <td class="text-right"><a href="{{ route('invoices.show', $invoice) }}" class="text-emerald-700 hover:text-emerald-900 text-xs">View →</a></td>
                 </tr>
                 @empty
                 <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No invoices.</td></tr>
@@ -234,26 +234,26 @@
         </a>
     </div>
     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <table class="w-full text-sm">
+        <table class="nrh-table">
             <thead>
-                <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                    <th class="px-4 py-3 text-left font-medium">Date</th>
-                    <th class="px-4 py-3 text-left font-medium">Type</th>
-                    <th class="px-4 py-3 text-left font-medium">Amount</th>
-                    <th class="px-4 py-3 text-left font-medium">Method</th>
-                    <th class="px-4 py-3 text-left font-medium">Reference</th>
-                    <th class="px-4 py-3 text-left font-medium">Status</th>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Reference</th>
+                    <th>Status</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody>
                 @forelse($customer->transactions as $tx)
                 <tr>
-                    <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $tx->created_at->format('d M Y') }}</td>
-                    <td class="px-4 py-2.5 text-gray-700">{{ $tx->type }}</td>
-                    <td class="px-4 py-2.5 font-medium font-mono">MYR {{ number_format($tx->amount, 2) }}</td>
-                    <td class="px-4 py-2.5 text-gray-500">{{ $tx->method }}</td>
-                    <td class="px-4 py-2.5 font-mono text-xs text-gray-500">{{ $tx->reference ?? '—' }}</td>
-                    <td class="px-4 py-2.5"><span class="badge badge-gray">{{ $tx->status }}</span></td>
+                    <td class="text-gray-500 text-xs">{{ $tx->created_at->format('d M Y') }}</td>
+                    <td class="text-gray-700">{{ $tx->type }}</td>
+                    <td class="font-medium font-mono">MYR {{ number_format($tx->amount, 2) }}</td>
+                    <td class="text-gray-500">{{ $tx->method }}</td>
+                    <td class="font-mono text-xs text-gray-500">{{ $tx->reference ?? '—' }}</td>
+                    <td class=""><span class="badge badge-gray">{{ $tx->status }}</span></td>
                 </tr>
                 @empty
                 <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No transactions.</td></tr>

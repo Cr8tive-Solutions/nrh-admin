@@ -56,7 +56,7 @@
                     <th class="py-2 text-right font-medium w-28">Total</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
+            <tbody>
                 @foreach($invoice->items as $item)
                 <tr>
                     <td class="py-2.5 text-gray-900">{{ $item->description }}</td>
