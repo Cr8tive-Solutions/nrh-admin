@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'NRH Admin') — NRH Intelligence</title>
     <link rel="icon" type="image/png" href="/images/nrh-logo.png">
+    <script>(function(){var t=localStorage.getItem('nrh-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}());</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
@@ -209,7 +210,7 @@
         .flash-error {
             display: flex; align-items: center; gap: 10px;
             padding: 12px 16px;
-            background: #fbeeec;
+            background: rgba(196,69,58,0.08);
             border: 1px solid rgba(196,69,58,0.2);
             border-left: 3px solid var(--danger);
             border-radius: 6px;
@@ -218,7 +219,14 @@
         .flash-error ul { list-style: disc inside; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
     </style>
 </head>
-<body x-data>
+<body x-data="{
+    dark: document.documentElement.getAttribute('data-theme') === 'dark',
+    toggleDark() {
+        this.dark = !this.dark;
+        document.documentElement.setAttribute('data-theme', this.dark ? 'dark' : 'light');
+        localStorage.setItem('nrh-theme', this.dark ? 'dark' : 'light');
+    }
+}">
 
 <div class="admin-shell">
 
@@ -348,6 +356,11 @@
 
             <div class="topbar-actions">
                 @yield('header-actions')
+
+                <button class="topbar-icon-btn" @click="toggleDark()" :title="dark ? 'Switch to light mode' : 'Switch to dark mode'">
+                    <svg x-show="!dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    <svg x-show="dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
 
                 <button class="topbar-icon-btn" title="Notifications">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a7 7 0 0 0-7 7v4l-2 3h18l-2-3V9a7 7 0 0 0-7-7z"/><path d="M9 19a3 3 0 0 0 6 0"/></svg>

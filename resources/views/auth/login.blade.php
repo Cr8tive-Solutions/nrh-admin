@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In — NRH Admin</title>
     <link rel="icon" type="image/png" href="/images/nrh-logo.png">
+    <script>(function(){var t=localStorage.getItem('nrh-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}());</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -209,7 +210,7 @@
         }
         .auth-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.12); }
         .auth-input::placeholder { color: var(--ink-400); }
-        .auth-input.has-error { border-color: var(--danger); background: #fbeeec; }
+        .auth-input.has-error { border-color: var(--danger); background: rgba(196,69,58,0.06); }
 
         .field-error { font-size: 11px; color: var(--danger); margin-top: 2px; }
 
@@ -218,7 +219,22 @@
             background: transparent; border: none; color: var(--ink-400); cursor: pointer;
             width: 28px; height: 28px; display: grid; place-items: center; border-radius: 4px;
         }
-        .eye-btn:hover { color: var(--emerald-700); background: var(--emerald-50); }
+        .eye-btn:hover { color: var(--emerald-700); background: rgba(4,108,78,0.08); }
+
+        .theme-toggle {
+            position: absolute; top: 20px; right: 24px;
+            width: 32px; height: 32px;
+            display: grid; place-items: center;
+            border: 1px solid var(--line);
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--ink-500);
+            transition: color 120ms, background 120ms, border-color 120ms;
+            z-index: 10;
+        }
+        .theme-toggle:hover { border-color: var(--emerald-600); color: var(--emerald-700); background: rgba(4,108,78,0.05); }
+        .theme-toggle svg { width: 15px; height: 15px; }
 
         .btn-auth {
             width: 100%;
@@ -257,7 +273,14 @@
         }
     </style>
 </head>
-<body>
+<body x-data="{
+    dark: document.documentElement.getAttribute('data-theme') === 'dark',
+    toggleDark() {
+        this.dark = !this.dark;
+        document.documentElement.setAttribute('data-theme', this.dark ? 'dark' : 'light');
+        localStorage.setItem('nrh-theme', this.dark ? 'dark' : 'light');
+    }
+}">
 
 <div class="auth-shell">
 
@@ -304,6 +327,10 @@
 
     {{-- ── Right panel ── --}}
     <div class="auth-right">
+        <button class="theme-toggle" @click="toggleDark()" :title="dark ? 'Light mode' : 'Dark mode'">
+            <svg x-show="!dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <svg x-show="dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
         <div class="auth-right-top">
             Internal staff access only.
         </div>

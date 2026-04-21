@@ -133,6 +133,31 @@
     --shadow-lg: 0 20px 40px -20px rgba(20,32,27,0.25), 0 0 0 1px rgba(20,32,27,0.04);
 }
 
+/* ── Dark mode overrides ── */
+[data-theme="dark"] {
+    --paper:   #0d1810;
+    --paper-2: #111f14;
+    --card:    #15211a;
+    --line:    rgba(255,255,255,0.07);
+
+    --ink-900: #dde8df;
+    --ink-700: #a8bfac;
+    --ink-500: #6e857a;
+    --ink-400: #546860;
+    --ink-300: #2c4035;
+    --ink-200: #1e2e24;
+    --ink-100: #162018;
+    --ink-50:  #101810;
+
+    --danger: #e06057;
+    --info:   #5a9bbf;
+
+    --shadow-xs: 0 1px 0 rgba(0,0,0,0.2);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04);
+    --shadow-md: 0 4px 16px -6px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    --shadow-lg: 0 20px 40px -20px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar       { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -275,3 +300,25 @@
 }
 .nrh-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
 .nrh-input::placeholder { color: var(--ink-400); }
+
+/* ── Dark mode: pill overrides ── */
+[data-theme="dark"] .nrh-pill-new      { background: rgba(255,255,255,0.06); color: var(--ink-700); }
+[data-theme="dark"] .nrh-pill-progress { background: rgba(58,107,143,0.18);  color: #5aabcf; }
+[data-theme="dark"] .nrh-pill-flagged  { background: rgba(196,69,58,0.18);   color: #e06057; }
+[data-theme="dark"] .nrh-pill-complete { background: rgba(16,185,129,0.12);  color: var(--emerald-500); }
+[data-theme="dark"] .nrh-pill-unpaid   { background: rgba(212,175,55,0.12);  color: var(--gold-400); }
+[data-theme="dark"] .nrh-pill-paid     { background: rgba(16,185,129,0.12);  color: var(--emerald-500); }
+[data-theme="dark"] .nrh-pill-overdue  { background: rgba(196,69,58,0.18);   color: #e06057; }
+
+/* ── Dark mode: badge overrides ── */
+[data-theme="dark"] .badge-blue   { background: rgba(16,185,129,0.12);  color: var(--emerald-500); }
+[data-theme="dark"] .badge-green  { background: rgba(16,185,129,0.12);  color: var(--emerald-500); }
+[data-theme="dark"] .badge-yellow { background: rgba(212,175,55,0.12);  color: var(--gold-400); }
+[data-theme="dark"] .badge-red    { background: rgba(196,69,58,0.18);   color: #e06057; }
+[data-theme="dark"] .badge-gray   { background: rgba(255,255,255,0.06); color: var(--ink-700); }
+
+/* ── Dark mode: table row hover ── */
+[data-theme="dark"] .nrh-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+/* ── Dark mode: select element ── */
+[data-theme="dark"] select { color-scheme: dark; }
