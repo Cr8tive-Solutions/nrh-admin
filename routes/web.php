@@ -48,7 +48,9 @@ Route::middleware('admin.auth')->group(function () {
 
     // Scope Pricing
     Route::get('/pricing', [ScopePricingController::class, 'index'])->name('pricing.index');
+    Route::get('/pricing/{customer}/scopes', [ScopePricingController::class, 'scopesJson'])->name('pricing.scopes-json');
     Route::post('/pricing/{customer}', [ScopePricingController::class, 'upsert'])->name('pricing.upsert');
+    Route::patch('/pricing/{customer}/scope/{scopeType}', [ScopePricingController::class, 'updateOne'])->name('pricing.update-one');
 
     // Invoices
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
