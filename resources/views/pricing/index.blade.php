@@ -44,6 +44,8 @@
     .pricing-selector-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); white-space: nowrap; }
     .pricing-selector { border: 1px solid var(--line); background: var(--card); color: var(--ink-900); border-radius: 6px; padding: 7px 12px; font-size: 13px; outline: none; min-width: 260px; transition: border-color 120ms; font-family: inherit; }
     .pricing-selector:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
+    .pricing-filter-input { border: 1px solid var(--line); background: var(--card); color: var(--ink-900); border-radius: 6px; padding: 7px 12px; font-size: 13px; outline: none; min-width: 180px; transition: border-color 120ms; font-family: inherit; }
+    .pricing-filter-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
     .pricing-empty { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 56px 20px; text-align: center; }
 </style>
 
@@ -54,6 +56,8 @@
     countries: [],
     prices: {},
     states: {},
+    countryFilter: '',
+    scopeSearch: '',
 
     init() {
         const params = new URLSearchParams(window.location.search);
@@ -72,6 +76,7 @@
         this.customerId = e.target.value;
         this.customerName = e.target.options[e.target.selectedIndex].text;
         this.countries = []; this.prices = {}; this.states = {};
+        this.countryFilter = ''; this.scopeSearch = '';
         if (this.customerId) this.loadScopes(this.customerId);
     },
 
@@ -94,6 +99,22 @@
 
     get customCount() {
         return Object.values(this.states).filter(s => s.original !== '' && s.original !== null).length;
+    },
+
+    get filteredCountries() {
+        const search = this.scopeSearch.toLowerCase().trim();
+        return this.countries
+            .filter(c => !this.countryFilter || c.name === this.countryFilter)
+            .map(c => ({
+                ...c,
+                categories: c.categories
+                    .map(cat => ({
+                        ...cat,
+                        scopes: search ? cat.scopes.filter(s => s.name.toLowerCase().includes(search)) : cat.scopes
+                    }))
+                    .filter(cat => cat.scopes.length > 0)
+            }))
+            .filter(c => c.categories.length > 0);
     },
 
     async savePrice(scope) {
@@ -122,7 +143,7 @@
     }
 }">
 
-    {{-- ── Selector bar ── --}}
+    {{-- ── Customer selector bar ── --}}
     <div class="pricing-selector-bar">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--ink-400); flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="pricing-selector-label">Customer</span>
@@ -147,8 +168,33 @@
         </div>
     </div>
 
+    {{-- ── Filter bar (shown once data is loaded) ── --}}
+    <div x-show="countries.length > 0 && !loading" x-transition class="pricing-selector-bar" style="margin-top:-10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-400); flex-shrink:0;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span class="pricing-selector-label">Filter</span>
+
+        <select x-model="countryFilter" class="pricing-filter-input">
+            <option value="">All Countries</option>
+            <template x-for="c in countries" :key="c.name">
+                <option :value="c.name" x-text="(c.flag ? c.flag + ' ' : '') + c.name"></option>
+            </template>
+        </select>
+
+        <input type="search"
+               x-model.debounce.200ms="scopeSearch"
+               placeholder="Filter scopes…"
+               class="pricing-filter-input">
+
+        <button x-show="countryFilter !== '' || scopeSearch !== ''"
+                x-transition
+                @click="countryFilter = ''; scopeSearch = ''"
+                style="font-size:11px; color:var(--ink-400); background:none; border:none; cursor:pointer; padding:0 4px;">
+            Clear filters
+        </button>
+    </div>
+
     {{-- ── Country cards (rendered via Alpine x-for) ── --}}
-    <template x-for="country in countries" :key="country.name">
+    <template x-for="country in filteredCountries" :key="country.name">
         <div class="pricing-card" style="margin-bottom:12px;">
             <div class="pricing-country-head">
                 <span style="font-size:18px;" x-text="country.flag"></span>
@@ -166,11 +212,11 @@
 
                             <span class="pricing-default">
                                 <span x-show="scope.price_on_request">Price on request</span>
-                                <span x-show="!scope.price_on_request" x-text="'Default: MYR ' + scope.default_price"></span>
+                                <span x-show="!scope.price_on_request" x-text="'Default: ' + country.currency + ' ' + scope.default_price"></span>
                             </span>
 
                             <div class="pricing-input-wrap">
-                                <span class="pricing-prefix">MYR</span>
+                                <span class="pricing-prefix" x-text="country.currency"></span>
                                 <input type="number" step="0.01" min="0"
                                        :value="prices[scope.id]"
                                        @input="prices[scope.id] = $event.target.value"
@@ -208,6 +254,13 @@
             </template>
         </div>
     </template>
+
+    {{-- ── No results after filtering ── --}}
+    <div x-show="!loading && customerId && countries.length > 0 && filteredCountries.length === 0" x-transition class="pricing-empty">
+        <p style="font-size:14px; color:var(--ink-500); margin:0 0 4px;">No scopes match your filters</p>
+        <p style="font-size:12px; color:var(--ink-400); margin:0 0 12px;">Try adjusting the country or scope filter above.</p>
+        <button @click="countryFilter = ''; scopeSearch = ''" style="font-size:12px; color:var(--emerald-700); background:none; border:none; cursor:pointer; font-weight:600;">Clear filters</button>
+    </div>
 
     {{-- ── Skeleton loader ── --}}
     <template x-if="loading">
