@@ -10,7 +10,9 @@ class CountryController extends Controller
 {
     public function index()
     {
-        $countries = Country::withCount('scopeTypes')->orderBy('name')->get();
+        $countries = Country::withCount('scopeTypes')
+            ->orderByRaw("CASE WHEN name = 'Malaysia' THEN 0 ELSE 1 END, name")
+            ->get();
         return view('config.countries.index', compact('countries'));
     }
 
