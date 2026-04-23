@@ -26,12 +26,20 @@
     }
     .pricing-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
     .pricing-input.is-changed { border-color: var(--emerald-500); background: rgba(16,185,129,0.04); }
-    .pricing-save-btn {
-        font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 5px;
+    .pricing-save-all-bar {
+        position: sticky; bottom: 0; z-index: 10;
+        background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+        padding: 14px 18px; margin-top: 12px;
+        display: flex; align-items: center; gap: 12px;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.07);
+    }
+    .pricing-save-all-btn {
+        font-size: 13px; font-weight: 600; padding: 8px 20px; border-radius: 7px;
         background: var(--emerald-700); color: #fff; border: none; cursor: pointer;
         transition: background 120ms; white-space: nowrap;
     }
-    .pricing-save-btn:hover { background: var(--emerald-800); }
+    .pricing-save-all-btn:hover { background: var(--emerald-800); }
+    .pricing-save-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .pricing-feedback { font-size: 11px; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
     .pricing-feedback.saving { color: var(--ink-400); }
     .pricing-feedback.saved  { color: var(--emerald-600); font-weight: 600; }
@@ -54,6 +62,9 @@
     countries: [],
     prices: {},
     states: {},
+    bulkSaving: false,
+    bulkSaved: false,
+    bulkError: false,
 
     init() {
         const params = new URLSearchParams(window.location.search);
@@ -72,6 +83,7 @@
         this.customerId = e.target.value;
         this.customerName = e.target.options[e.target.selectedIndex].text;
         this.countries = []; this.prices = {}; this.states = {};
+        this.bulkSaving = false; this.bulkSaved = false; this.bulkError = false;
         if (this.customerId) this.loadScopes(this.customerId);
     },
 
@@ -92,32 +104,45 @@
         return this.states[id] && String(this.prices[id]) !== String(this.states[id].original);
     },
 
+    get changedScopes() {
+        return Object.keys(this.prices).filter(id => this.isChanged(id));
+    },
+
     get customCount() {
         return Object.values(this.states).filter(s => s.original !== '' && s.original !== null).length;
     },
 
-    async savePrice(scope) {
-        const price = this.prices[scope.id];
-        if (price === '' || price === null || price === undefined) return;
-        this.states[scope.id] = { ...this.states[scope.id], saving: true, error: false };
+    async saveAll() {
+        const changed = this.changedScopes;
+        if (!changed.length) return;
+        this.bulkSaving = true; this.bulkSaved = false; this.bulkError = false;
+
+        const allScopes = [];
+        this.countries.forEach(c => c.categories.forEach(cat => cat.scopes.forEach(s => allScopes.push(s))));
+
         try {
-            const res = await fetch(scope.save_url, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ price }),
-            });
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            this.prices[scope.id] = data.price;
-            this.states[scope.id] = { original: data.price, saving: false, saved: true, error: false };
-            setTimeout(() => { this.states[scope.id] = { ...this.states[scope.id], saved: false }; }, 2000);
+            await Promise.all(changed.map(async id => {
+                const scope = allScopes.find(s => String(s.id) === String(id));
+                if (!scope) return;
+                const res = await fetch(scope.save_url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ price: this.prices[id] }),
+                });
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                this.prices[id] = data.price;
+                this.states[id] = { original: data.price, saving: false, saved: false, error: false };
+            }));
+            this.bulkSaving = false; this.bulkSaved = true;
+            setTimeout(() => { this.bulkSaved = false; }, 2500);
         } catch {
-            this.states[scope.id] = { ...this.states[scope.id], saving: false, error: true };
-            setTimeout(() => { this.states[scope.id] = { ...this.states[scope.id], error: false }; }, 3000);
+            this.bulkSaving = false; this.bulkError = true;
+            setTimeout(() => { this.bulkError = false; }, 3500);
         }
     }
 }">
@@ -174,32 +199,16 @@
                                 <input type="number" step="0.01" min="0"
                                        :value="prices[scope.id]"
                                        @input="prices[scope.id] = $event.target.value"
-                                       @keydown.enter.prevent="savePrice(scope)"
                                        :placeholder="scope.price_on_request ? 'Enter price' : scope.default_price"
                                        class="pricing-input"
                                        :class="{ 'is-changed': isChanged(scope.id) }">
 
-                                <button type="button"
-                                        x-show="isChanged(scope.id) && !states[scope.id]?.saving"
-                                        x-transition
-                                        @click="savePrice(scope)"
-                                        class="pricing-save-btn">
-                                    Save
-                                </button>
-
-                                <span x-show="states[scope.id]?.saving" class="pricing-feedback saving">
-                                    <svg style="width:11px;height:11px;" class="animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="12"/></svg>
-                                    Saving…
+                                <span x-show="isChanged(scope.id)" x-transition
+                                      style="font-size:10px; font-weight:600; color:var(--emerald-600); white-space:nowrap;">
+                                    Unsaved
                                 </span>
 
-                                <span x-show="states[scope.id]?.saved" x-transition class="pricing-feedback saved">
-                                    <svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                                    Saved
-                                </span>
-
-                                <span x-show="states[scope.id]?.error" x-transition class="pricing-feedback error">Failed — try again</span>
-
-                                <span x-show="!isChanged(scope.id) && states[scope.id]?.original && !states[scope.id]?.saved"
+                                <span x-show="!isChanged(scope.id) && states[scope.id]?.original"
                                       class="pricing-badge">Custom</span>
                             </div>
                         </div>
@@ -208,6 +217,38 @@
             </template>
         </div>
     </template>
+
+    {{-- ── Save All bar ── --}}
+    <div x-show="countries.length > 0 && !loading" x-transition class="pricing-save-all-bar">
+        <button type="button"
+                @click="saveAll"
+                :disabled="bulkSaving || changedScopes.length === 0"
+                class="pricing-save-all-btn">
+            <span x-show="!bulkSaving">
+                Save All
+                <span x-show="changedScopes.length > 0"
+                      x-text="'(' + changedScopes.length + ' change' + (changedScopes.length === 1 ? '' : 's') + ')'"></span>
+            </span>
+            <span x-show="bulkSaving" style="display:flex;align-items:center;gap:6px;">
+                <svg class="animate-spin" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="12"/></svg>
+                Saving…
+            </span>
+        </button>
+
+        <span x-show="bulkSaved" x-transition class="pricing-feedback saved">
+            <svg style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            All changes saved
+        </span>
+
+        <span x-show="bulkError" x-transition class="pricing-feedback error">
+            Some prices failed to save — please try again
+        </span>
+
+        <span x-show="!bulkSaving && !bulkSaved && !bulkError && changedScopes.length === 0"
+              style="font-size:12px; color:var(--ink-400);">
+            No unsaved changes
+        </span>
+    </div>
 
     {{-- ── Skeleton loader ── --}}
     <template x-if="loading">
