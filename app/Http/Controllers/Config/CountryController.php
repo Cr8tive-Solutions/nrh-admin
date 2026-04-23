@@ -10,18 +10,23 @@ class CountryController extends Controller
 {
     public function index()
     {
-        $countries = Country::withCount('scopeTypes')->orderBy('name')->get();
+        $countries = Country::withCount('scopeTypes')
+            ->orderByRaw("CASE WHEN name = 'Malaysia' THEN 0 ELSE 1 END, name")
+            ->get();
         return view('config.countries.index', compact('countries'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'   => 'required|string|max:100',
-            'code'   => 'required|string|size:3|unique:countries,code',
-            'flag'   => 'nullable|string|max:10',
-            'region' => 'nullable|string|max:100',
+            'name'     => 'required|string|max:100',
+            'code'     => 'required|string|size:3|unique:countries,code',
+            'currency' => 'required|string|size:3',
+            'flag'     => 'nullable|string|max:10',
+            'region'   => 'nullable|string|max:100',
         ]);
+
+        $data['currency'] = strtoupper($data['currency']);
 
         Country::create($data);
 
@@ -31,11 +36,14 @@ class CountryController extends Controller
     public function update(Request $request, Country $country)
     {
         $data = $request->validate([
-            'name'   => 'required|string|max:100',
-            'code'   => 'required|string|size:3|unique:countries,code,' . $country->id,
-            'flag'   => 'nullable|string|max:10',
-            'region' => 'nullable|string|max:100',
+            'name'     => 'required|string|max:100',
+            'code'     => 'required|string|size:3|unique:countries,code,' . $country->id,
+            'currency' => 'required|string|size:3',
+            'flag'     => 'nullable|string|max:10',
+            'region'   => 'nullable|string|max:100',
         ]);
+
+        $data['currency'] = strtoupper($data['currency']);
 
         $country->update($data);
 

@@ -26,20 +26,12 @@
     }
     .pricing-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
     .pricing-input.is-changed { border-color: var(--emerald-500); background: rgba(16,185,129,0.04); }
-    .pricing-save-all-bar {
-        position: sticky; bottom: 0; z-index: 10;
-        background: var(--card); border: 1px solid var(--line); border-radius: 10px;
-        padding: 14px 18px; margin-top: 12px;
-        display: flex; align-items: center; gap: 12px;
-        box-shadow: 0 -4px 16px rgba(0,0,0,0.07);
-    }
-    .pricing-save-all-btn {
-        font-size: 13px; font-weight: 600; padding: 8px 20px; border-radius: 7px;
+    .pricing-save-btn {
+        font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 5px;
         background: var(--emerald-700); color: #fff; border: none; cursor: pointer;
         transition: background 120ms; white-space: nowrap;
     }
-    .pricing-save-all-btn:hover { background: var(--emerald-800); }
-    .pricing-save-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pricing-save-btn:hover { background: var(--emerald-800); }
     .pricing-feedback { font-size: 11px; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
     .pricing-feedback.saving { color: var(--ink-400); }
     .pricing-feedback.saved  { color: var(--emerald-600); font-weight: 600; }
@@ -52,6 +44,8 @@
     .pricing-selector-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); white-space: nowrap; }
     .pricing-selector { border: 1px solid var(--line); background: var(--card); color: var(--ink-900); border-radius: 6px; padding: 7px 12px; font-size: 13px; outline: none; min-width: 260px; transition: border-color 120ms; font-family: inherit; }
     .pricing-selector:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
+    .pricing-filter-input { border: 1px solid var(--line); background: var(--card); color: var(--ink-900); border-radius: 6px; padding: 7px 12px; font-size: 13px; outline: none; min-width: 180px; transition: border-color 120ms; font-family: inherit; }
+    .pricing-filter-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
     .pricing-empty { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 56px 20px; text-align: center; }
 </style>
 
@@ -62,9 +56,8 @@
     countries: [],
     prices: {},
     states: {},
-    bulkSaving: false,
-    bulkSaved: false,
-    bulkError: false,
+    countryFilter: '',
+    scopeSearch: '',
 
     init() {
         const params = new URLSearchParams(window.location.search);
@@ -83,7 +76,7 @@
         this.customerId = e.target.value;
         this.customerName = e.target.options[e.target.selectedIndex].text;
         this.countries = []; this.prices = {}; this.states = {};
-        this.bulkSaving = false; this.bulkSaved = false; this.bulkError = false;
+        this.countryFilter = ''; this.scopeSearch = '';
         if (this.customerId) this.loadScopes(this.customerId);
     },
 
@@ -104,50 +97,53 @@
         return this.states[id] && String(this.prices[id]) !== String(this.states[id].original);
     },
 
-    get changedScopes() {
-        return Object.keys(this.prices).filter(id => this.isChanged(id));
-    },
-
     get customCount() {
         return Object.values(this.states).filter(s => s.original !== '' && s.original !== null).length;
     },
 
-    async saveAll() {
-        const changed = this.changedScopes;
-        if (!changed.length) return;
-        this.bulkSaving = true; this.bulkSaved = false; this.bulkError = false;
+    get filteredCountries() {
+        const search = this.scopeSearch.toLowerCase().trim();
+        return this.countries
+            .filter(c => !this.countryFilter || c.name === this.countryFilter)
+            .map(c => ({
+                ...c,
+                categories: c.categories
+                    .map(cat => ({
+                        ...cat,
+                        scopes: search ? cat.scopes.filter(s => s.name.toLowerCase().includes(search)) : cat.scopes
+                    }))
+                    .filter(cat => cat.scopes.length > 0)
+            }))
+            .filter(c => c.categories.length > 0);
+    },
 
-        const allScopes = [];
-        this.countries.forEach(c => c.categories.forEach(cat => cat.scopes.forEach(s => allScopes.push(s))));
-
+    async savePrice(scope) {
+        const price = this.prices[scope.id];
+        if (price === '' || price === null || price === undefined) return;
+        this.states[scope.id] = { ...this.states[scope.id], saving: true, error: false };
         try {
-            await Promise.all(changed.map(async id => {
-                const scope = allScopes.find(s => String(s.id) === String(id));
-                if (!scope) return;
-                const res = await fetch(scope.save_url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ price: this.prices[id] }),
-                });
-                if (!res.ok) throw new Error();
-                const data = await res.json();
-                this.prices[id] = data.price;
-                this.states[id] = { original: data.price, saving: false, saved: false, error: false };
-            }));
-            this.bulkSaving = false; this.bulkSaved = true;
-            setTimeout(() => { this.bulkSaved = false; }, 2500);
+            const res = await fetch(scope.save_url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ price }),
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            this.prices[scope.id] = data.price;
+            this.states[scope.id] = { original: data.price, saving: false, saved: true, error: false };
+            setTimeout(() => { this.states[scope.id] = { ...this.states[scope.id], saved: false }; }, 2000);
         } catch {
-            this.bulkSaving = false; this.bulkError = true;
-            setTimeout(() => { this.bulkError = false; }, 3500);
+            this.states[scope.id] = { ...this.states[scope.id], saving: false, error: true };
+            setTimeout(() => { this.states[scope.id] = { ...this.states[scope.id], error: false }; }, 3000);
         }
     }
 }">
 
-    {{-- ── Selector bar ── --}}
+    {{-- ── Customer selector bar ── --}}
     <div class="pricing-selector-bar">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--ink-400); flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="pricing-selector-label">Customer</span>
@@ -172,8 +168,33 @@
         </div>
     </div>
 
+    {{-- ── Filter bar (shown once data is loaded) ── --}}
+    <div x-show="countries.length > 0 && !loading" x-transition class="pricing-selector-bar" style="margin-top:-10px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-400); flex-shrink:0;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span class="pricing-selector-label">Filter</span>
+
+        <select x-model="countryFilter" class="pricing-filter-input">
+            <option value="">All Countries</option>
+            <template x-for="c in countries" :key="c.name">
+                <option :value="c.name" x-text="(c.flag ? c.flag + ' ' : '') + c.name"></option>
+            </template>
+        </select>
+
+        <input type="search"
+               x-model.debounce.200ms="scopeSearch"
+               placeholder="Filter scopes…"
+               class="pricing-filter-input">
+
+        <button x-show="countryFilter !== '' || scopeSearch !== ''"
+                x-transition
+                @click="countryFilter = ''; scopeSearch = ''"
+                style="font-size:11px; color:var(--ink-400); background:none; border:none; cursor:pointer; padding:0 4px;">
+            Clear filters
+        </button>
+    </div>
+
     {{-- ── Country cards (rendered via Alpine x-for) ── --}}
-    <template x-for="country in countries" :key="country.name">
+    <template x-for="country in filteredCountries" :key="country.name">
         <div class="pricing-card" style="margin-bottom:12px;">
             <div class="pricing-country-head">
                 <span style="font-size:18px;" x-text="country.flag"></span>
@@ -191,24 +212,40 @@
 
                             <span class="pricing-default">
                                 <span x-show="scope.price_on_request">Price on request</span>
-                                <span x-show="!scope.price_on_request" x-text="'Default: MYR ' + scope.default_price"></span>
+                                <span x-show="!scope.price_on_request" x-text="'Default: ' + country.currency + ' ' + scope.default_price"></span>
                             </span>
 
                             <div class="pricing-input-wrap">
-                                <span class="pricing-prefix">MYR</span>
+                                <span class="pricing-prefix" x-text="country.currency"></span>
                                 <input type="number" step="0.01" min="0"
                                        :value="prices[scope.id]"
                                        @input="prices[scope.id] = $event.target.value"
+                                       @keydown.enter.prevent="savePrice(scope)"
                                        :placeholder="scope.price_on_request ? 'Enter price' : scope.default_price"
                                        class="pricing-input"
                                        :class="{ 'is-changed': isChanged(scope.id) }">
 
-                                <span x-show="isChanged(scope.id)" x-transition
-                                      style="font-size:10px; font-weight:600; color:var(--emerald-600); white-space:nowrap;">
-                                    Unsaved
+                                <button type="button"
+                                        x-show="isChanged(scope.id) && !states[scope.id]?.saving"
+                                        x-transition
+                                        @click="savePrice(scope)"
+                                        class="pricing-save-btn">
+                                    Save
+                                </button>
+
+                                <span x-show="states[scope.id]?.saving" class="pricing-feedback saving">
+                                    <svg style="width:11px;height:11px;" class="animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="12"/></svg>
+                                    Saving…
                                 </span>
 
-                                <span x-show="!isChanged(scope.id) && states[scope.id]?.original"
+                                <span x-show="states[scope.id]?.saved" x-transition class="pricing-feedback saved">
+                                    <svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                    Saved
+                                </span>
+
+                                <span x-show="states[scope.id]?.error" x-transition class="pricing-feedback error">Failed — try again</span>
+
+                                <span x-show="!isChanged(scope.id) && states[scope.id]?.original && !states[scope.id]?.saved"
                                       class="pricing-badge">Custom</span>
                             </div>
                         </div>
@@ -218,36 +255,11 @@
         </div>
     </template>
 
-    {{-- ── Save All bar ── --}}
-    <div x-show="countries.length > 0 && !loading" x-transition class="pricing-save-all-bar">
-        <button type="button"
-                @click="saveAll"
-                :disabled="bulkSaving || changedScopes.length === 0"
-                class="pricing-save-all-btn">
-            <span x-show="!bulkSaving">
-                Save All
-                <span x-show="changedScopes.length > 0"
-                      x-text="'(' + changedScopes.length + ' change' + (changedScopes.length === 1 ? '' : 's') + ')'"></span>
-            </span>
-            <span x-show="bulkSaving" style="display:flex;align-items:center;gap:6px;">
-                <svg class="animate-spin" style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="12"/></svg>
-                Saving…
-            </span>
-        </button>
-
-        <span x-show="bulkSaved" x-transition class="pricing-feedback saved">
-            <svg style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-            All changes saved
-        </span>
-
-        <span x-show="bulkError" x-transition class="pricing-feedback error">
-            Some prices failed to save — please try again
-        </span>
-
-        <span x-show="!bulkSaving && !bulkSaved && !bulkError && changedScopes.length === 0"
-              style="font-size:12px; color:var(--ink-400);">
-            No unsaved changes
-        </span>
+    {{-- ── No results after filtering ── --}}
+    <div x-show="!loading && customerId && countries.length > 0 && filteredCountries.length === 0" x-transition class="pricing-empty">
+        <p style="font-size:14px; color:var(--ink-500); margin:0 0 4px;">No scopes match your filters</p>
+        <p style="font-size:12px; color:var(--ink-400); margin:0 0 12px;">Try adjusting the country or scope filter above.</p>
+        <button @click="countryFilter = ''; scopeSearch = ''" style="font-size:12px; color:var(--emerald-700); background:none; border:none; cursor:pointer; font-weight:600;">Clear filters</button>
     </div>
 
     {{-- ── Skeleton loader ── --}}

@@ -21,9 +21,9 @@ class ScopePricingController extends Controller
             $existingPrices = CustomerScopePrice::where('customer_id', $customer->id)
                 ->pluck('price', 'scope_type_id');
 
-            $scopesByCountry = Country::with(['scopeTypes' => fn ($q) => $q->orderBy('category')->orderBy('name')])
+            $scopesByCountry = Country::with(['scopeTypes' => fn ($q) => $q->orderBy('id')])
                 ->whereHas('scopeTypes')
-                ->orderBy('name')
+                ->orderByRaw("CASE WHEN name = 'Malaysia' THEN 0 ELSE 1 END, name")
                 ->get()
                 ->map(function ($country) use ($existingPrices) {
                     $country->scopeTypes->each(function ($scope) use ($existingPrices) {
@@ -41,9 +41,9 @@ class ScopePricingController extends Controller
         $existingPrices = CustomerScopePrice::where('customer_id', $customer->id)
             ->pluck('price', 'scope_type_id');
 
-        $countries = Country::with(['scopeTypes' => fn ($q) => $q->orderBy('category')->orderBy('name')])
+        $countries = Country::with(['scopeTypes' => fn ($q) => $q->orderBy('id')])
             ->whereHas('scopeTypes')
-            ->orderBy('name')
+            ->orderByRaw("CASE WHEN name = 'Malaysia' THEN 0 ELSE 1 END, name")
             ->get()
             ->map(function ($country) use ($existingPrices, $customer) {
                 $categories = $country->scopeTypes
@@ -66,6 +66,7 @@ class ScopePricingController extends Controller
                 return [
                     'name'        => $country->name,
                     'flag'        => $country->flag,
+                    'currency'    => $country->currency,
                     'scope_count' => $country->scopeTypes->count(),
                     'categories'  => $categories,
                 ];

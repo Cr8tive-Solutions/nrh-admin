@@ -11,8 +11,8 @@ class ScopeTypeController extends Controller
 {
     public function index()
     {
-        $scopesByCountry = Country::with(['scopeTypes' => fn ($q) => $q->orderBy('category')->orderBy('name')])
-            ->orderBy('name')
+        $scopesByCountry = Country::with(['scopeTypes' => fn ($q) => $q->orderBy('id')])
+            ->orderByRaw("CASE WHEN name = 'Malaysia' THEN 0 ELSE 1 END, name")
             ->get();
 
         return view('config.scopes.index', compact('scopesByCountry'));

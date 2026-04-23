@@ -8,13 +8,19 @@
 @endsection
 
 @section('content')
-<div class="bg-white rounded-lg border border-gray-200 p-6 max-w-lg">
+<div class="bg-white rounded-lg border border-gray-200 p-6 max-w-lg"
+     x-data="{
+         currencyMap: {{ json_encode($countries->pluck('currency', 'id')) }},
+         selectedCurrency: '{{ old('country_id') ? ($countries->firstWhere('id', old('country_id'))?->currency ?? '') : '' }}',
+         onCountryChange(id) { this.selectedCurrency = this.currencyMap[id] ?? ''; }
+     }">
     <form method="POST" action="{{ route('config.scopes.store') }}" class="space-y-4">
         @csrf
 
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Country <span class="text-red-500">*</span></label>
             <select name="country_id" required
+                    @change="onCountryChange($event.target.value)"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
                 <option value="">Select country…</option>
                 @foreach($countries as $country)
@@ -47,7 +53,9 @@
 
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Price (MYR) <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Price<span x-show="selectedCurrency"> (<span x-text="selectedCurrency"></span>)</span> <span class="text-red-500">*</span>
+                </label>
                 <input type="number" name="price" value="{{ old('price', '0.00') }}" step="0.01" min="0" required
                        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
             </div>
