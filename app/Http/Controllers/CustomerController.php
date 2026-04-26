@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Country;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 
@@ -35,7 +36,8 @@ class CustomerController extends Controller
 
     public function edit(Customer $customer)
     {
-        return view('customers.edit', compact('customer'));
+        $countries = Country::orderBy('name')->get();
+        return view('customers.edit', compact('customer', 'countries'));
     }
 
     public function update(Request $request, Customer $customer)
@@ -58,7 +60,8 @@ class CustomerController extends Controller
 
     public function create()
     {
-        return view('customers.create');
+        $countries = Country::orderBy('name')->get();
+        return view('customers.create', compact('countries'));
     }
 
     public function store(Request $request)
