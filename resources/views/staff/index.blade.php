@@ -44,6 +44,7 @@
                 </td>
                 <td class="text-gray-500 text-xs">{{ $member->created_at->format('d M Y') }}</td>
                 <td class="text-right">
+                    <a href="{{ route('staff.permissions', $member) }}" class="text-xs text-emerald-700 hover:text-emerald-900 font-medium mr-3">Permissions</a>
                     @if($member->id !== session('admin_id'))
                     <form method="POST" action="{{ route('staff.toggle', $member) }}" class="inline">
                         @csrf @method('PATCH')

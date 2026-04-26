@@ -3,27 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Models\Admin;
+use App\Models\Permission;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StaffController extends Controller
 {
     public function index()
     {
-        $this->requireSuperAdmin();
         $staff = Admin::orderBy('name')->get();
         return view('staff.index', compact('staff'));
     }
 
     public function create()
     {
-        $this->requireSuperAdmin();
         return view('staff.create');
     }
 
     public function store(Request $request)
     {
-        $this->requireSuperAdmin();
-
         $data = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:admins,email',
@@ -38,8 +36,6 @@ class StaffController extends Controller
 
     public function toggleStatus(Admin $admin)
     {
-        $this->requireSuperAdmin();
-
         if ($admin->id === session('admin_id')) {
             return back()->with('error', 'You cannot deactivate your own account.');
         }
@@ -49,10 +45,49 @@ class StaffController extends Controller
         return back()->with('success', 'Status updated.');
     }
 
-    private function requireSuperAdmin(): void
+    public function permissions(Admin $admin)
     {
-        if (session('admin_role') !== 'super_admin') {
-            abort(403, 'Super admin access required.');
-        }
+        $permissions = Permission::orderBy('sort')->get()->groupBy('group');
+
+        $rolePermIds = DB::table('admin_role_permissions')
+            ->where('role', $admin->role)
+            ->pluck('admin_permission_id')
+            ->all();
+
+        $overrides = DB::table('admin_user_permissions')
+            ->where('admin_id', $admin->id)
+            ->pluck('granted', 'admin_permission_id')
+            ->all();
+
+        return view('staff.permissions', compact('admin', 'permissions', 'rolePermIds', 'overrides'));
+    }
+
+    public function updatePermissions(Request $request, Admin $admin)
+    {
+        $data = $request->validate([
+            'override'   => 'array',
+            'override.*' => 'in:inherit,grant,revoke',
+        ]);
+
+        $submitted = $data['override'] ?? [];
+
+        DB::transaction(function () use ($admin, $submitted) {
+            DB::table('admin_user_permissions')->where('admin_id', $admin->id)->delete();
+
+            foreach ($submitted as $permissionId => $state) {
+                if ($state === 'inherit') {
+                    continue;
+                }
+                DB::table('admin_user_permissions')->insert([
+                    'admin_id'            => $admin->id,
+                    'admin_permission_id' => (int) $permissionId,
+                    'granted'             => $state === 'grant',
+                    'created_at'          => now(),
+                    'updated_at'          => now(),
+                ]);
+            }
+        });
+
+        return redirect()->route('staff.permissions', $admin)->with('success', 'User permissions updated.');
     }
 }

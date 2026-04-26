@@ -290,29 +290,45 @@
                     Transactions
                 </a>
 
+                @if(admin_can('config.scopes') || admin_can('config.countries'))
                 <div class="sb-section-label">Configuration</div>
+                @endif
 
+                @allowed('config.scopes')
                 <a href="{{ route('config.scopes.index') }}"
                    class="sb-link {{ request()->routeIs('config.scopes.*') ? 'active' : '' }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
                     Scope Types
                 </a>
+                @endallowed
 
+                @allowed('config.countries')
                 <a href="{{ route('config.countries.index') }}"
                    class="sb-link {{ request()->routeIs('config.countries.*') ? 'active' : '' }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                     Countries
                 </a>
+                @endallowed
 
-                @if(session('admin_role') === 'super_admin')
+                @if(admin_can('staff.manage') || admin_can('permissions.manage'))
                 <div class="sb-section-label">Admin</div>
+                @endif
 
+                @allowed('staff.manage')
                 <a href="{{ route('staff.index') }}"
                    class="sb-link {{ request()->routeIs('staff.*') ? 'active' : '' }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                     Staff Accounts
                 </a>
-                @endif
+                @endallowed
+
+                @allowed('permissions.manage')
+                <a href="{{ route('permissions.index') }}"
+                   class="sb-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                    Roles &amp; Permissions
+                </a>
+                @endallowed
 
             </nav>
 

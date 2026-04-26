@@ -30,10 +30,12 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
             Export
         </a>
+        @allowed('customer.manage')
         <a href="{{ route('customers.create') }}" class="nrh-btn nrh-btn-primary">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
             New customer
         </a>
+        @endallowed
     </div>
 </div>
 
@@ -141,6 +143,34 @@
 
     {{-- Side column --}}
     <div style="display: flex; flex-direction: column; gap: 20px;">
+
+        {{-- Expiring agreements --}}
+        @if($expiringAgreements->count())
+        <div class="nrh-card">
+            <div class="nrh-card-head" style="{{ $expiringAgreements->contains(fn($a) => $a->isExpiringSoonCritical()) ? 'background: #fbeeec;' : '' }}">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <h3 style="{{ $expiringAgreements->contains(fn($a) => $a->isExpiringSoonCritical()) ? 'color: var(--danger);' : '' }}">Expiring agreements</h3>
+                    <span style="background: {{ $expiringAgreements->contains(fn($a) => $a->isExpiringSoonCritical()) ? 'var(--danger)' : 'var(--gold-500)' }}; color: #fff; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; font-family: 'JetBrains Mono', monospace;">{{ $expiringAgreements->count() }}</span>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                @foreach($expiringAgreements as $agreement)
+                @php
+                    $critical = $agreement->isExpiringSoonCritical();
+                    $dot = $critical ? 'var(--danger)' : 'var(--gold-500)';
+                @endphp
+                <a href="{{ route('customers.show', $agreement->customer) }}" style="padding: 12px 18px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 8px 1fr auto; gap: 12px; align-items: center; font-size: 12px; color: var(--ink-700); text-decoration: none;">
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ $dot }};"></span>
+                    <div>
+                        <div style="font-weight: 600; color: var(--ink-900);">{{ $agreement->customer->name ?? '—' }}</div>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-400); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em;">{{ $agreement->type }} &middot; {{ $agreement->expiry_date->format('d M Y') }}</div>
+                    </div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: {{ $critical ? 'var(--danger)' : 'var(--gold-700)' }};">{{ $agreement->days_left }}d</span>
+                </a>
+                @endforeach
+            </div>
+        </div>
+        @endif
 
         {{-- Recent activity --}}
         <div class="nrh-card">

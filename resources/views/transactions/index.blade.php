@@ -4,10 +4,12 @@
 @section('page-title', 'Transactions')
 
 @section('header-actions')
+    @allowed('transaction.manage')
     <a href="{{ route('transactions.create') }}"
        class="nrh-btn nrh-btn-primary">
         + Record Payment
     </a>
+    @endallowed
 @endsection
 
 @section('content')

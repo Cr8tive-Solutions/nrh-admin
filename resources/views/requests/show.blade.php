@@ -74,6 +74,7 @@
                         @endif
                     </div>
                     <div class="flex items-center gap-2 ml-4">
+                        @allowed('request.update')
                         {{-- Update candidate status --}}
                         <form method="POST" action="{{ route('requests.candidates.status', [$request, $candidate->id]) }}">
                             @csrf @method('PATCH')
@@ -84,6 +85,7 @@
                                 @endforeach
                             </select>
                         </form>
+                        @endallowed
                         <button @click="open = !open" class="text-xs text-emerald-700 hover:text-emerald-900">
                             Scopes <span x-text="open ? '▲' : '▼'"></span>
                         </button>
@@ -124,6 +126,7 @@
             <div class="mb-3">
                 <span class="badge {{ $request->statusBadgeClass() }} text-sm">{{ str_replace('_', ' ', $request->status) }}</span>
             </div>
+            @allowed('request.update')
             <form method="POST" action="{{ route('requests.status', $request) }}">
                 @csrf @method('PATCH')
                 <div class="space-y-2">
@@ -140,6 +143,9 @@
                     Update Status
                 </button>
             </form>
+            @else
+            <p class="text-xs text-gray-400 italic">Read-only — you don't have permission to update request status.</p>
+            @endallowed
         </div>
 
         @if($request->meta)

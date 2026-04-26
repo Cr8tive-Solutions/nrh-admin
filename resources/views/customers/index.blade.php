@@ -4,10 +4,12 @@
 @section('page-title', 'Customers')
 
 @section('header-actions')
+    @allowed('customer.manage')
     <a href="{{ route('customers.create') }}"
        class="nrh-btn nrh-btn-primary">
         + New Customer
     </a>
+    @endallowed
 @endsection
 
 @section('content')

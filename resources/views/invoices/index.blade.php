@@ -4,10 +4,12 @@
 @section('page-title', 'Invoices')
 
 @section('header-actions')
+    @allowed('invoice.manage')
     <a href="{{ route('invoices.create') }}"
        class="nrh-btn nrh-btn-primary">
         + New Invoice
     </a>
+    @endallowed
 @endsection
 
 @section('content')

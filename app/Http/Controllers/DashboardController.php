@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agreement;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\ScreeningRequest;
@@ -17,6 +18,13 @@ class DashboardController extends Controller
             'total_customers' => Customer::count(),
             'unpaid_invoices' => Invoice::where('status', 'unpaid')->count(),
         ];
+
+        $expiringAgreements = Agreement::with('customer')
+            ->whereDate('expiry_date', '<=', now()->addDays(60))
+            ->whereDate('expiry_date', '>=', now())
+            ->orderBy('expiry_date')
+            ->take(8)
+            ->get();
 
         $flaggedRequests = ScreeningRequest::with(['customer', 'candidates'])
             ->where('status', 'flagged')
@@ -46,6 +54,6 @@ class DashboardController extends Controller
             ]);
         }
 
-        return view('dashboard.index', compact('stats', 'flaggedRequests', 'recentRequests', 'weeklyVolume'));
+        return view('dashboard.index', compact('stats', 'flaggedRequests', 'recentRequests', 'weeklyVolume', 'expiringAgreements'));
     }
 }

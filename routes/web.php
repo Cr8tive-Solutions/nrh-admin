@@ -7,6 +7,7 @@ use App\Http\Controllers\Config\ScopeTypeController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\RequestQueueController;
 use App\Http\Controllers\ScopePricingController;
 use App\Http\Controllers\StaffController;
@@ -23,62 +24,91 @@ Route::middleware('admin.auth')->group(function () {
 
     Route::get('/', fn () => redirect()->route('dashboard'));
 
-    // Dashboard
+    // Dashboard — any authenticated admin
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Request Queue
+    // ── Read-only routes (any admin role, including viewer) ──────────────────
     Route::get('/requests', [RequestQueueController::class, 'index'])->name('requests.index');
     Route::get('/requests/{screeningRequest}', [RequestQueueController::class, 'show'])->name('requests.show');
-    Route::patch('/requests/{screeningRequest}/status', [RequestQueueController::class, 'updateStatus'])->name('requests.status');
-    Route::patch('/requests/{screeningRequest}/candidates/{candidateId}/status', [RequestQueueController::class, 'updateCandidateStatus'])->name('requests.candidates.status');
 
-    // Customers
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
-    Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
-    Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
-    Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
-    Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
 
-    // Agreements (nested under customer)
-    Route::get('/customers/{customer}/agreements/create', [AgreementController::class, 'create'])->name('customers.agreements.create');
-    Route::post('/customers/{customer}/agreements', [AgreementController::class, 'store'])->name('customers.agreements.store');
-    Route::get('/customers/{customer}/agreements/{agreement}/edit', [AgreementController::class, 'edit'])->name('customers.agreements.edit');
-    Route::put('/customers/{customer}/agreements/{agreement}', [AgreementController::class, 'update'])->name('customers.agreements.update');
-
-    // Scope Pricing
     Route::get('/pricing', [ScopePricingController::class, 'index'])->name('pricing.index');
     Route::get('/pricing/{customer}/scopes', [ScopePricingController::class, 'scopesJson'])->name('pricing.scopes-json');
-    Route::post('/pricing/{customer}', [ScopePricingController::class, 'upsert'])->name('pricing.upsert');
-    Route::patch('/pricing/{customer}/scope/{scopeType}', [ScopePricingController::class, 'updateOne'])->name('pricing.update-one');
 
-    // Invoices
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
-    Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
-    Route::patch('/invoices/{invoice}/paid', [InvoiceController::class, 'markPaid'])->name('invoices.paid');
 
-    // Transactions
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
-    Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
-    Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
 
-    // Staff (super_admin only — enforced in controller)
-    Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
-    Route::get('/staff/create', [StaffController::class, 'create'])->name('staff.create');
-    Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
-    Route::patch('/staff/{admin}/toggle', [StaffController::class, 'toggleStatus'])->name('staff.toggle');
+    // ── request.update ───────────────────────────────────────────────────────
+    Route::middleware('admin.can:request.update')->group(function () {
+        Route::patch('/requests/{screeningRequest}/status', [RequestQueueController::class, 'updateStatus'])->name('requests.status');
+        Route::patch('/requests/{screeningRequest}/candidates/{candidateId}/status', [RequestQueueController::class, 'updateCandidateStatus'])->name('requests.candidates.status');
+    });
 
-    // Config — Scope Types
-    Route::get('/config/scopes', [ScopeTypeController::class, 'index'])->name('config.scopes.index');
-    Route::get('/config/scopes/create', [ScopeTypeController::class, 'create'])->name('config.scopes.create');
-    Route::post('/config/scopes', [ScopeTypeController::class, 'store'])->name('config.scopes.store');
-    Route::get('/config/scopes/{scope}/edit', [ScopeTypeController::class, 'edit'])->name('config.scopes.edit');
-    Route::put('/config/scopes/{scope}', [ScopeTypeController::class, 'update'])->name('config.scopes.update');
+    // ── customer.manage ──────────────────────────────────────────────────────
+    Route::middleware('admin.can:customer.manage')->group(function () {
+        Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
+        Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
+        Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
+        Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
 
-    // Config — Countries
-    Route::get('/config/countries', [CountryController::class, 'index'])->name('config.countries.index');
-    Route::post('/config/countries', [CountryController::class, 'store'])->name('config.countries.store');
-    Route::put('/config/countries/{country}', [CountryController::class, 'update'])->name('config.countries.update');
+        Route::get('/customers/{customer}/agreements/create', [AgreementController::class, 'create'])->name('customers.agreements.create');
+        Route::post('/customers/{customer}/agreements', [AgreementController::class, 'store'])->name('customers.agreements.store');
+        Route::get('/customers/{customer}/agreements/{agreement}/edit', [AgreementController::class, 'edit'])->name('customers.agreements.edit');
+        Route::put('/customers/{customer}/agreements/{agreement}', [AgreementController::class, 'update'])->name('customers.agreements.update');
+    });
+
+    // ── pricing.manage ───────────────────────────────────────────────────────
+    Route::middleware('admin.can:pricing.manage')->group(function () {
+        Route::post('/pricing/{customer}', [ScopePricingController::class, 'upsert'])->name('pricing.upsert');
+        Route::patch('/pricing/{customer}/scope/{scopeType}', [ScopePricingController::class, 'updateOne'])->name('pricing.update-one');
+    });
+
+    // ── invoice.manage ───────────────────────────────────────────────────────
+    Route::middleware('admin.can:invoice.manage')->group(function () {
+        Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+        Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+        Route::patch('/invoices/{invoice}/paid', [InvoiceController::class, 'markPaid'])->name('invoices.paid');
+    });
+
+    // ── transaction.manage ───────────────────────────────────────────────────
+    Route::middleware('admin.can:transaction.manage')->group(function () {
+        Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
+        Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
+    });
+
+    // ── config.scopes ────────────────────────────────────────────────────────
+    Route::middleware('admin.can:config.scopes')->group(function () {
+        Route::get('/config/scopes', [ScopeTypeController::class, 'index'])->name('config.scopes.index');
+        Route::get('/config/scopes/create', [ScopeTypeController::class, 'create'])->name('config.scopes.create');
+        Route::post('/config/scopes', [ScopeTypeController::class, 'store'])->name('config.scopes.store');
+        Route::get('/config/scopes/{scope}/edit', [ScopeTypeController::class, 'edit'])->name('config.scopes.edit');
+        Route::put('/config/scopes/{scope}', [ScopeTypeController::class, 'update'])->name('config.scopes.update');
+    });
+
+    // ── config.countries ─────────────────────────────────────────────────────
+    Route::middleware('admin.can:config.countries')->group(function () {
+        Route::get('/config/countries', [CountryController::class, 'index'])->name('config.countries.index');
+        Route::post('/config/countries', [CountryController::class, 'store'])->name('config.countries.store');
+        Route::put('/config/countries/{country}', [CountryController::class, 'update'])->name('config.countries.update');
+    });
+
+    // ── staff.manage ─────────────────────────────────────────────────────────
+    Route::middleware('admin.can:staff.manage')->group(function () {
+        Route::get('/staff', [StaffController::class, 'index'])->name('staff.index');
+        Route::get('/staff/create', [StaffController::class, 'create'])->name('staff.create');
+        Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
+        Route::patch('/staff/{admin}/toggle', [StaffController::class, 'toggleStatus'])->name('staff.toggle');
+        Route::get('/staff/{admin}/permissions', [StaffController::class, 'permissions'])->name('staff.permissions');
+        Route::put('/staff/{admin}/permissions', [StaffController::class, 'updatePermissions'])->name('staff.permissions.update');
+    });
+
+    // ── permissions.manage (role matrix) ─────────────────────────────────────
+    Route::middleware('admin.can:permissions.manage')->group(function () {
+        Route::get('/permissions', [PermissionsController::class, 'index'])->name('permissions.index');
+        Route::put('/permissions', [PermissionsController::class, 'update'])->name('permissions.update');
+    });
 });

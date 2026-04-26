@@ -5,14 +5,18 @@
 @section('page-subtitle', $customer->registration_no ?? '')
 
 @section('header-actions')
+    @allowed('customer.manage')
     <a href="{{ route('customers.edit', $customer) }}"
        class="nrh-btn nrh-btn-ghost">
         Edit
     </a>
+    @endallowed
+    @allowed('pricing.manage')
     <a href="{{ route('pricing.index', ['customer_id' => $customer->id]) }}"
        class="nrh-btn nrh-btn-primary">
         Manage Pricing
     </a>
+    @endallowed
 @endsection
 
 @section('content')
@@ -76,12 +80,14 @@
 
 {{-- Agreement --}}
 <div x-show="tab === 'agreement'" x-cloak>
+    @allowed('customer.manage')
     <div class="mb-4 flex justify-end">
         <a href="{{ route('customers.agreements.create', $customer) }}"
            class="nrh-btn nrh-btn-primary">
             + New Agreement
         </a>
     </div>
+    @endallowed
     @forelse($customer->agreements as $agreement)
     <div class="bg-white rounded-lg border border-gray-200 p-5 max-w-2xl mb-3">
         <div class="flex items-start justify-between mb-3">
@@ -94,7 +100,9 @@
                 @else
                     <span class="badge badge-green">{{ $agreement->days_left }}d remaining</span>
                 @endif
+                @allowed('customer.manage')
                 <a href="{{ route('customers.agreements.edit', [$customer, $agreement]) }}" class="text-xs text-emerald-700 hover:text-emerald-900">Edit</a>
+                @endallowed
             </div>
         </div>
         <div class="grid grid-cols-3 gap-4 text-sm">
@@ -189,12 +197,14 @@
 
 {{-- Invoices --}}
 <div x-show="tab === 'invoices'" x-cloak>
+    @allowed('invoice.manage')
     <div class="mb-3 flex justify-end">
         <a href="{{ route('invoices.create', ['customer_id' => $customer->id]) }}"
            class="nrh-btn nrh-btn-primary">
             + New Invoice
         </a>
     </div>
+    @endallowed
     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <table class="nrh-table">
             <thead>
@@ -227,12 +237,14 @@
 
 {{-- Transactions --}}
 <div x-show="tab === 'transactions'" x-cloak>
+    @allowed('transaction.manage')
     <div class="mb-3 flex justify-end">
         <a href="{{ route('transactions.create', ['customer_id' => $customer->id]) }}"
            class="nrh-btn nrh-btn-primary">
             + Record Payment
         </a>
     </div>
+    @endallowed
     <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <table class="nrh-table">
             <thead>

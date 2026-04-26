@@ -49,7 +49,17 @@
     .pricing-empty { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 56px 20px; text-align: center; }
 </style>
 
+@php $canEdit = admin_can('pricing.manage'); @endphp
+
+@unless($canEdit)
+<div class="bg-amber-50 border border-amber-200 text-amber-800 text-xs px-4 py-2.5 rounded-lg mb-3 flex items-center gap-2">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+    Read-only — you don't have permission to edit pricing.
+</div>
+@endunless
+
 <div x-data="{
+    canEdit: {{ $canEdit ? 'true' : 'false' }},
     customerId: '',
     customerName: '',
     loading: false,
@@ -220,13 +230,14 @@
                                 <input type="number" step="0.01" min="0"
                                        :value="prices[scope.id]"
                                        @input="prices[scope.id] = $event.target.value"
-                                       @keydown.enter.prevent="savePrice(scope)"
+                                       @keydown.enter.prevent="canEdit && savePrice(scope)"
+                                       :readonly="!canEdit"
                                        :placeholder="scope.price_on_request ? 'Enter price' : scope.default_price"
                                        class="pricing-input"
                                        :class="{ 'is-changed': isChanged(scope.id) }">
 
                                 <button type="button"
-                                        x-show="isChanged(scope.id) && !states[scope.id]?.saving"
+                                        x-show="canEdit && isChanged(scope.id) && !states[scope.id]?.saving"
                                         x-transition
                                         @click="savePrice(scope)"
                                         class="pricing-save-btn">

@@ -34,9 +34,12 @@ class Invoice extends Model
     public static function generateNumber(): string
     {
         $year = now()->year;
-        $last = self::where('number', 'like', "INV-{$year}-%")->orderByDesc('number')->first();
-        $seq = $last ? ((int) substr($last->number, -3)) + 1 : 1;
-        return "INV-{$year}-" . str_pad($seq, 3, '0', STR_PAD_LEFT);
+        // Order by numeric tail so mixed-width sequences (e.g. legacy 3-digit + new 4-digit) sort correctly.
+        $last = self::where('number', 'like', "INV-{$year}-%")
+            ->orderByRaw('LENGTH(number) DESC, number DESC')
+            ->first();
+        $seq = $last ? ((int) substr(strrchr($last->number, '-'), 1)) + 1 : 1;
+        return "INV-{$year}-" . str_pad($seq, 4, '0', STR_PAD_LEFT);
     }
 
     public function statusBadgeClass(): string
