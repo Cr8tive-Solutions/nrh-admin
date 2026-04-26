@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'client_portal' => [
+        // Base URL of the customer-facing nrh-intelligence app.
+        // Invitation links are built as {url}/invitation/{token}
+        'url' => env('CLIENT_PORTAL_URL', 'https://app.nrhintelligence.com'),
+    ],
+
 ];

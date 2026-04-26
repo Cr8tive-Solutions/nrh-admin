@@ -7,6 +7,8 @@ use App\Models\Agreement;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomerScopePrice;
+use App\Models\CustomerUser;
+use App\Models\CustomerUserInvitation;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Permission;
@@ -35,6 +37,8 @@ class AppServiceProvider extends ServiceProvider
         // Audit-log every create/update/delete on these models.
         $audited = [
             Customer::class,
+            CustomerUser::class,
+            CustomerUserInvitation::class,
             Agreement::class,
             Invoice::class,
             InvoiceItem::class,

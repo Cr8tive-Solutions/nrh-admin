@@ -425,6 +425,17 @@
         </div>
         @endif
 
+        @if(session('warning'))
+        <div class="mx-7 mt-5" x-data="{ show: true }" x-show="show"
+             style="background:#fefce8; border:1px solid #fde68a; color:#854d0e; padding:10px 14px; border-radius:8px; display:flex; align-items:center; gap:10px; font-size:13px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+            <span>{{ session('warning') }}</span>
+            <button @click="show = false" style="margin-left:auto; background:none; border:none; cursor:pointer; color:inherit; opacity:0.6; line-height:1;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        @endif
+
         @if($errors->any())
         <div class="flash-error mx-7 mt-5">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>

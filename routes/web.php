@@ -70,6 +70,10 @@ Route::middleware('admin.auth')->group(function () {
         Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->whereNumber('customer')->name('customers.edit');
         Route::put('/customers/{customer}', [CustomerController::class, 'update'])->whereNumber('customer')->name('customers.update');
 
+        Route::post('/customers/{customer}/users/{user}/resend-invitation', [CustomerController::class, 'resendInvitation'])
+            ->whereNumber('customer')->whereNumber('user')
+            ->name('customers.users.resend-invitation');
+
         Route::get('/customers/{customer}/agreements/create', [AgreementController::class, 'create'])->name('customers.agreements.create');
         Route::post('/customers/{customer}/agreements', [AgreementController::class, 'store'])->name('customers.agreements.store');
         Route::get('/customers/{customer}/agreements/{agreement}/edit', [AgreementController::class, 'edit'])->name('customers.agreements.edit');

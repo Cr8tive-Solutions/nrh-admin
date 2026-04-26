@@ -5,6 +5,8 @@
 @php
     $c = $customer ?? null;
     $val = fn ($field) => old($field, $c?->{$field});
+    $isCreate = $c === null;
+    $sendInvitationDefault = old('send_invitation', $isCreate ? '1' : null);
 @endphp
 
 <style>
@@ -332,6 +334,24 @@
                                class="cf-input has-icon">
                     </div>
                 </div>
+
+                @if($isCreate)
+                <div class="col-2" x-show="contact_email" x-cloak style="margin-top:4px;">
+                    <label style="display:flex; align-items:flex-start; gap:10px; padding:14px 16px; border:1px solid var(--line); border-radius:8px; background:var(--paper-2); cursor:pointer;"
+                           :style="$el.querySelector('input[type=checkbox]').checked ? 'border-color: var(--emerald-600); background: rgba(5,150,105,0.04);' : ''">
+                        <input type="checkbox" name="send_invitation" value="1"
+                               {{ $sendInvitationDefault ? 'checked' : '' }}
+                               class="accent-emerald-700" style="margin-top:2px; flex-shrink:0;">
+                        <div style="flex:1;">
+                            <div style="font-size:13px; font-weight:600; color:var(--ink-900);">Send portal invitation to <span x-text="contact_email" style="color:var(--emerald-700); font-family: 'JetBrains Mono', monospace; font-size:12px;"></span></div>
+                            <div style="font-size:11px; color:var(--ink-500); margin-top:4px; line-height:1.5;">
+                                Creates a primary login account on the client portal and emails an invitation link valid for 14 days.
+                                The recipient sets their own password.
+                            </div>
+                        </div>
+                    </label>
+                </div>
+                @endif
             </div>
         </div>
 
