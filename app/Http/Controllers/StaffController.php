@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Admin;
+use App\Models\AdminAuditLog;
 use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +46,37 @@ class StaffController extends Controller
         return back()->with('success', 'Status updated.');
     }
 
+    /**
+     * Reset another admin's 2FA — used when they've lost both their device
+     * and their recovery codes. Super admin only, audit-logged.
+     */
+    public function resetTwoFactor(Admin $admin)
+    {
+        $current = current_admin();
+
+        if (! $current || ! $current->isSuperAdmin()) {
+            abort(403, 'Only super admins can reset two-factor authentication.');
+        }
+
+        if ($admin->id === $current->id) {
+            return back()->with('error', 'Use the Account Security page to manage your own 2FA.');
+        }
+
+        $hadEnabled = $admin->hasEnabledTwoFactor();
+
+        $admin->two_factor_secret = null;
+        $admin->two_factor_recovery_codes = null;
+        $admin->two_factor_confirmed_at = null;
+        $admin->save();
+
+        AdminAuditLog::record('two_factor.reset_by_admin', $admin, [
+            'target_email'    => $admin->email,
+            'had_2fa_enabled' => $hadEnabled,
+        ]);
+
+        return back()->with('success', "Two-factor authentication reset for {$admin->name}. They can now sign in with just their password and re-enroll.");
+    }
+
     public function permissions(Admin $admin)
     {
         $permissions = Permission::orderBy('sort')->get()->groupBy('group');
@@ -71,6 +103,11 @@ class StaffController extends Controller
 
         $submitted = $data['override'] ?? [];
 
+        $before = DB::table('admin_user_permissions')
+            ->where('admin_id', $admin->id)
+            ->pluck('granted', 'admin_permission_id')
+            ->all();
+
         DB::transaction(function () use ($admin, $submitted) {
             DB::table('admin_user_permissions')->where('admin_id', $admin->id)->delete();
 
@@ -87,6 +124,18 @@ class StaffController extends Controller
                 ]);
             }
         });
+
+        $after = [];
+        foreach ($submitted as $permissionId => $state) {
+            if ($state !== 'inherit') {
+                $after[(int) $permissionId] = $state === 'grant';
+            }
+        }
+
+        AdminAuditLog::record('permissions.user_overrides_updated', $admin, [
+            'before' => $before,
+            'after'  => $after,
+        ]);
 
         return redirect()->route('staff.permissions', $admin)->with('success', 'User permissions updated.');
     }

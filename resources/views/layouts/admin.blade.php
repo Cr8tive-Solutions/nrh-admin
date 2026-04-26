@@ -320,6 +320,12 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                     Staff Accounts
                 </a>
+
+                <a href="{{ route('audit.index') }}"
+                   class="sb-link {{ request()->routeIs('audit.*') ? 'active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13l2 2 4-4"/></svg>
+                    Audit Log
+                </a>
                 @endallowed
 
                 @allowed('permissions.manage')
@@ -388,13 +394,13 @@
 
                 <div class="topbar-divider"></div>
 
-                <div class="topbar-user">
+                <a href="{{ route('account.security') }}" class="topbar-user" style="text-decoration: none; color: inherit;" title="Account &amp; Security">
                     <div class="topbar-avatar">{{ strtoupper(substr(session('admin_name', 'A'), 0, 2)) }}</div>
                     <div class="topbar-user-meta">
                         <span class="topbar-user-name">{{ session('admin_name') }}</span>
                         <span class="topbar-user-role">{{ ucfirst(str_replace('_', ' ', session('admin_role'))) }}</span>
                     </div>
-                </div>
+                </a>
             </div>
         </header>
 

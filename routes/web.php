@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\Account\SecurityController;
 use App\Http\Controllers\AgreementController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\Config\CountryController;
 use App\Http\Controllers\Config\ScopeTypeController;
 use App\Http\Controllers\CustomerController;
@@ -19,6 +22,10 @@ Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+// 2FA challenge — accessible only when password verified, before full login completes.
+Route::get('/two-factor-challenge', [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
+Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'verify'])->name('two-factor.verify');
+
 // ─── Protected admin routes ───────────────────────────────────────────────────
 Route::middleware('admin.auth')->group(function () {
 
@@ -27,18 +34,26 @@ Route::middleware('admin.auth')->group(function () {
     // Dashboard — any authenticated admin
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Account / security — every admin manages their own 2FA
+    Route::get('/account/security', [SecurityController::class, 'show'])->name('account.security');
+    Route::post('/account/security/two-factor', [SecurityController::class, 'enable'])->name('account.two-factor.enable');
+    Route::post('/account/security/two-factor/confirm', [SecurityController::class, 'confirm'])->name('account.two-factor.confirm');
+    Route::delete('/account/security/two-factor/setup', [SecurityController::class, 'cancelSetup'])->name('account.two-factor.cancel');
+    Route::delete('/account/security/two-factor', [SecurityController::class, 'disable'])->name('account.two-factor.disable');
+    Route::post('/account/security/two-factor/recovery-codes', [SecurityController::class, 'regenerateRecoveryCodes'])->name('account.two-factor.regenerate-codes');
+
     // ── Read-only routes (any admin role, including viewer) ──────────────────
     Route::get('/requests', [RequestQueueController::class, 'index'])->name('requests.index');
     Route::get('/requests/{screeningRequest}', [RequestQueueController::class, 'show'])->name('requests.show');
 
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
-    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->whereNumber('customer')->name('customers.show');
 
     Route::get('/pricing', [ScopePricingController::class, 'index'])->name('pricing.index');
     Route::get('/pricing/{customer}/scopes', [ScopePricingController::class, 'scopesJson'])->name('pricing.scopes-json');
 
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->whereNumber('invoice')->name('invoices.show');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 
@@ -52,8 +67,8 @@ Route::middleware('admin.auth')->group(function () {
     Route::middleware('admin.can:customer.manage')->group(function () {
         Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
         Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
-        Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
-        Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
+        Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->whereNumber('customer')->name('customers.edit');
+        Route::put('/customers/{customer}', [CustomerController::class, 'update'])->whereNumber('customer')->name('customers.update');
 
         Route::get('/customers/{customer}/agreements/create', [AgreementController::class, 'create'])->name('customers.agreements.create');
         Route::post('/customers/{customer}/agreements', [AgreementController::class, 'store'])->name('customers.agreements.store');
@@ -71,7 +86,7 @@ Route::middleware('admin.auth')->group(function () {
     Route::middleware('admin.can:invoice.manage')->group(function () {
         Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
         Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
-        Route::patch('/invoices/{invoice}/paid', [InvoiceController::class, 'markPaid'])->name('invoices.paid');
+        Route::patch('/invoices/{invoice}/paid', [InvoiceController::class, 'markPaid'])->whereNumber('invoice')->name('invoices.paid');
     });
 
     // ── transaction.manage ───────────────────────────────────────────────────
@@ -104,11 +119,17 @@ Route::middleware('admin.auth')->group(function () {
         Route::patch('/staff/{admin}/toggle', [StaffController::class, 'toggleStatus'])->name('staff.toggle');
         Route::get('/staff/{admin}/permissions', [StaffController::class, 'permissions'])->name('staff.permissions');
         Route::put('/staff/{admin}/permissions', [StaffController::class, 'updatePermissions'])->name('staff.permissions.update');
+        Route::patch('/staff/{admin}/reset-2fa', [StaffController::class, 'resetTwoFactor'])->name('staff.reset-2fa');
     });
 
     // ── permissions.manage (role matrix) ─────────────────────────────────────
     Route::middleware('admin.can:permissions.manage')->group(function () {
         Route::get('/permissions', [PermissionsController::class, 'index'])->name('permissions.index');
         Route::put('/permissions', [PermissionsController::class, 'update'])->name('permissions.update');
+    });
+
+    // ── audit log (super admin only via staff.manage; sensitive trail) ───────
+    Route::middleware('admin.can:staff.manage')->group(function () {
+        Route::get('/audit', [AuditLogController::class, 'index'])->name('audit.index');
     });
 });

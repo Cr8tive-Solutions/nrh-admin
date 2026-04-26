@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminAuditLog;
 use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,13 @@ class PermissionsController extends Controller
         $allRoles = Permission::roles();
         $submitted = $data['matrix'] ?? [];
 
+        // Snapshot before for diffing
+        $before = DB::table('admin_role_permissions')
+            ->get(['role', 'admin_permission_id'])
+            ->groupBy('role')
+            ->map(fn ($rows) => $rows->pluck('admin_permission_id')->sort()->values()->all())
+            ->toArray();
+
         DB::transaction(function () use ($allRoles, $submitted) {
             foreach ($allRoles as $role) {
                 if ($role === 'super_admin') {
@@ -53,6 +61,15 @@ class PermissionsController extends Controller
                 }
             }
         });
+
+        $after = collect($allRoles)
+            ->mapWithKeys(fn ($role) => [$role => collect($submitted[$role] ?? [])->map(fn ($v) => (int) $v)->sort()->values()->all()])
+            ->toArray();
+
+        AdminAuditLog::record('permissions.role_matrix_updated', null, [
+            'before' => $before,
+            'after'  => $after,
+        ]);
 
         return redirect()->route('permissions.index')->with('success', 'Role permissions updated.');
     }
