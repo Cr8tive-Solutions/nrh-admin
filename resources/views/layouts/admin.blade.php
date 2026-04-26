@@ -339,14 +339,21 @@
             </nav>
 
             {{-- Footer --}}
+            @php $me = current_admin(); $myAvatar = $me?->avatarUrl(); @endphp
             <div class="sb-footer">
-                <div class="sb-user">
-                    <div class="sb-avatar">{{ strtoupper(substr(session('admin_name', 'A'), 0, 2)) }}</div>
+                <a href="{{ route('account.profile') }}" class="sb-user" style="text-decoration: none; color: inherit;">
+                    <div class="sb-avatar" style="overflow: hidden;">
+                        @if($myAvatar)
+                            <img src="{{ $myAvatar }}" alt="" style="width:100%; height:100%; object-fit:cover;">
+                        @else
+                            {{ strtoupper(substr(session('admin_name', 'A'), 0, 2)) }}
+                        @endif
+                    </div>
                     <div class="sb-user-meta">
                         <span class="sb-user-name">{{ session('admin_name') }}</span>
                         <span class="sb-user-role">{{ str_replace('_', ' ', session('admin_role')) }}</span>
                     </div>
-                </div>
+                </a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="sb-signout">
@@ -394,8 +401,14 @@
 
                 <div class="topbar-divider"></div>
 
-                <a href="{{ route('account.security') }}" class="topbar-user" style="text-decoration: none; color: inherit;" title="Account &amp; Security">
-                    <div class="topbar-avatar">{{ strtoupper(substr(session('admin_name', 'A'), 0, 2)) }}</div>
+                <a href="{{ route('account.profile') }}" class="topbar-user" style="text-decoration: none; color: inherit;" title="My Profile">
+                    <div class="topbar-avatar" style="overflow: hidden;">
+                        @if($myAvatar)
+                            <img src="{{ $myAvatar }}" alt="" style="width:100%; height:100%; object-fit:cover;">
+                        @else
+                            {{ strtoupper(substr(session('admin_name', 'A'), 0, 2)) }}
+                        @endif
+                    </div>
                     <div class="topbar-user-meta">
                         <span class="topbar-user-name">{{ session('admin_name') }}</span>
                         <span class="topbar-user-role">{{ ucfirst(str_replace('_', ' ', session('admin_role'))) }}</span>

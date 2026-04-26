@@ -34,7 +34,12 @@ Route::middleware('admin.auth')->group(function () {
     // Dashboard — any authenticated admin
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Account / security — every admin manages their own 2FA
+    // Account / profile + security — every admin manages their own
+    Route::get('/account', fn () => redirect()->route('account.profile'));
+    Route::get('/account/profile', [\App\Http\Controllers\Account\ProfileController::class, 'show'])->name('account.profile');
+    Route::put('/account/profile', [\App\Http\Controllers\Account\ProfileController::class, 'update'])->name('account.profile.update');
+    Route::delete('/account/profile/avatar', [\App\Http\Controllers\Account\ProfileController::class, 'removeAvatar'])->name('account.profile.avatar.remove');
+
     Route::get('/account/security', [SecurityController::class, 'show'])->name('account.security');
     Route::post('/account/security/two-factor', [SecurityController::class, 'enable'])->name('account.two-factor.enable');
     Route::post('/account/security/two-factor/confirm', [SecurityController::class, 'confirm'])->name('account.two-factor.confirm');

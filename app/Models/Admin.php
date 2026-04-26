@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Admin extends Model
@@ -52,6 +53,26 @@ class Admin extends Model
     public function isSuperAdmin(): bool
     {
         return $this->role === 'super_admin';
+    }
+
+    /**
+     * Public URL of the uploaded avatar, or null if none.
+     * Avatars are stored on the 'public' disk under avatars/{filename}.
+     */
+    public function avatarUrl(): ?string
+    {
+        if (! $this->avatar) {
+            return null;
+        }
+        return Storage::disk('public')->url($this->avatar);
+    }
+
+    public function initials(): string
+    {
+        $parts = preg_split('/\s+/', trim($this->name ?? ''));
+        $first = $parts[0][0] ?? '';
+        $last = isset($parts[1]) ? $parts[1][0] : '';
+        return strtoupper($first.$last) ?: 'A';
     }
 
     public function verifyPassword(string $password): bool

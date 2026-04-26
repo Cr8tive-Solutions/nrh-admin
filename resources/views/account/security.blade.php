@@ -6,6 +6,8 @@
 
 @section('content')
 
+@include('account._nav')
+
 <div class="max-w-2xl">
 
     {{-- ── Recovery codes one-shot display ── --}}
