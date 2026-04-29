@@ -45,18 +45,37 @@
     .pricing-filter-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
     .pricing-empty { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 56px 20px; text-align: center; }
 
-    /* Sticky bulk action bar */
+    /* Bottom padding so floating bar never overlaps the last row */
+    .pricing-page-end { height: 80px; }
+
+    /* Floating bulk action bar — fixed to viewport, centered within the
+       content area (220px sidebar offset). Always visible without scrolling. */
     .pricing-bulkbar {
-        position: sticky; bottom: 14px; z-index: 20;
-        margin-top: 18px;
+        position: fixed;
+        bottom: 24px;
+        left: calc(50% + 110px);
+        transform: translateX(-50%);
+        z-index: 40;
+        max-width: calc(100vw - 268px);
+        width: max-content;
+        min-width: 360px;
         background: var(--card);
         border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 12px 18px;
-        display: flex; align-items: center; gap: 14px;
-        box-shadow: 0 14px 28px -14px rgba(0,0,0,0.18), 0 0 0 1px rgba(212,175,55,0.18);
+        border-radius: 10px;
+        padding: 10px 14px 10px 18px;
+        display: flex; align-items: center; gap: 12px;
+        box-shadow:
+            0 18px 36px -14px rgba(0,0,0,0.28),
+            0 6px 14px -6px rgba(4,77,57,0.18),
+            0 0 0 1px rgba(212,175,55,0.22);
+        backdrop-filter: blur(8px);
+        transition: opacity 200ms ease, transform 200ms ease;
     }
-    .pricing-bulkbar.idle { opacity: 0.6; }
+    .pricing-bulkbar.idle { opacity: 0.55; }
+    .pricing-bulkbar.idle:hover { opacity: 1; }
+    @media (max-width: 720px) {
+        .pricing-bulkbar { left: 50%; max-width: calc(100vw - 28px); min-width: 0; }
+    }
     .pricing-bulk-text { font-size: 13px; color: var(--ink-700); flex: 1; }
     .pricing-bulk-text b { color: var(--ink-900); font-weight: 600; }
     .pricing-bulk-feedback {
@@ -355,7 +374,10 @@
         <p style="font-size:12px; color:var(--ink-400); margin:0;">Select a customer above to manage their scope pricing.</p>
     </div>
 
-    {{-- ── Sticky bulk action bar ── --}}
+    {{-- Spacer so the floating bar never sits on top of the last row --}}
+    <div x-show="canEdit && customerId && countries.length > 0" class="pricing-page-end"></div>
+
+    {{-- ── Floating bulk action bar ── --}}
     <div x-show="canEdit && customerId && countries.length > 0" x-cloak x-transition
          class="pricing-bulkbar"
          :class="{ 'idle': dirtyCount === 0 && saveStatus !== 'saved' }">
