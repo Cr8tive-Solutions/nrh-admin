@@ -31,7 +31,19 @@ class RequestQueueController extends Controller
     public function show(ScreeningRequest $screeningRequest)
     {
         $screeningRequest->load(['customer', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes']);
-        return view('requests.show', ['request' => $screeningRequest]);
+
+        $candidateStats = [
+            'total'       => $screeningRequest->candidates->count(),
+            'new'         => $screeningRequest->candidates->where('status', 'new')->count(),
+            'in_progress' => $screeningRequest->candidates->where('status', 'in_progress')->count(),
+            'flagged'     => $screeningRequest->candidates->where('status', 'flagged')->count(),
+            'complete'    => $screeningRequest->candidates->where('status', 'complete')->count(),
+        ];
+
+        return view('requests.show', [
+            'request'        => $screeningRequest,
+            'candidateStats' => $candidateStats,
+        ]);
     }
 
     public function updateStatus(Request $request, ScreeningRequest $screeningRequest)

@@ -10,10 +10,46 @@ use Illuminate\Support\Facades\DB;
 
 class StaffController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $staff = Admin::orderBy('name')->get();
-        return view('staff.index', compact('staff'));
+        $query = Admin::orderBy('name');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('name', 'ilike', "%{$s}%")
+                  ->orWhere('email', 'ilike', "%{$s}%");
+            });
+        }
+
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('twofa')) {
+            if ($request->twofa === 'on') {
+                $query->whereNotNull('two_factor_confirmed_at');
+            } elseif ($request->twofa === 'off') {
+                $query->whereNull('two_factor_confirmed_at');
+            }
+        }
+
+        $staff = $query->get();
+
+        $allStaff = Admin::all(['role', 'status', 'two_factor_confirmed_at']);
+        $stats = [
+            'total'          => $allStaff->count(),
+            'active'         => $allStaff->where('status', 'active')->count(),
+            'inactive'       => $allStaff->where('status', 'inactive')->count(),
+            'with_2fa'       => $allStaff->whereNotNull('two_factor_confirmed_at')->count(),
+            'by_role'        => $allStaff->groupBy('role')->map->count()->all(),
+        ];
+
+        return view('staff.index', compact('staff', 'stats'));
     }
 
     public function create()

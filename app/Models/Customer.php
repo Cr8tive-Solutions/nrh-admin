@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Customer extends Model
 {
@@ -24,6 +25,16 @@ class Customer extends Model
     public function customerUsers(): HasMany
     {
         return $this->hasMany(CustomerUser::class);
+    }
+
+    /**
+     * The first customer_user created for this customer — typically the
+     * primary contact provisioned at customer creation time. Used on the
+     * customer list to surface invitation status at a glance.
+     */
+    public function primaryUser(): HasOne
+    {
+        return $this->hasOne(CustomerUser::class)->oldestOfMany();
     }
 
     public function screeningRequests(): HasMany

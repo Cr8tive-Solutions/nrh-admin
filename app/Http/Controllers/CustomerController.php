@@ -18,7 +18,9 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Customer::withCount(['screeningRequests', 'invoices'])->orderBy('name');
+        $query = Customer::withCount(['screeningRequests', 'invoices'])
+            ->with('primaryUser.latestInvitation')
+            ->orderBy('name');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -26,6 +28,19 @@ class CustomerController extends Controller
                 $q->where('name', 'ilike', "%{$search}%")
                   ->orWhere('registration_no', 'ilike', "%{$search}%")
                   ->orWhere('contact_email', 'ilike', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('invitation')) {
+            $filter = $request->invitation;
+            $query->whereHas('primaryUser.latestInvitation', function ($q) use ($filter) {
+                if ($filter === 'pending') {
+                    $q->whereNull('accepted_at')->where('expires_at', '>', now());
+                } elseif ($filter === 'expired') {
+                    $q->whereNull('accepted_at')->where('expires_at', '<=', now());
+                } elseif ($filter === 'accepted') {
+                    $q->whereNotNull('accepted_at');
+                }
             });
         }
 
@@ -148,6 +163,42 @@ class CustomerController extends Controller
         }
 
         return redirect()->route('customers.show', $customer)->with($flash);
+    }
+
+    /**
+     * First-time provision flow: customer exists but has no user yet.
+     * Uses the customer's contact_name + contact_email to create the primary user,
+     * then issues the first invitation.
+     */
+    public function provisionPrimaryUser(Customer $customer)
+    {
+        if ($customer->customerUsers()->exists()) {
+            return back()->with('warning', 'This customer already has a primary user. Use Resend instead.');
+        }
+
+        if (empty($customer->contact_email) || empty($customer->contact_name)) {
+            return back()->with('error', 'Cannot provision a primary user: customer is missing contact name or email. Edit the customer first.');
+        }
+
+        if (CustomerUser::where('email', $customer->contact_email)->exists()) {
+            return back()->with('error', "A client portal user with email {$customer->contact_email} already exists under another customer; no new account created.");
+        }
+
+        $user = CustomerUser::create([
+            'customer_id' => $customer->id,
+            'name'        => $customer->contact_name,
+            'email'       => $customer->contact_email,
+            'password'    => Str::random(32),
+            'role'        => 'admin',
+            'status'      => 'inactive',
+        ]);
+
+        $invitation = $this->createInvitation($user);
+
+        return back()->with([
+            'success'        => "Primary user created and invitation sent to {$user->email}.",
+            'invitation_url' => $invitation->url(),
+        ]);
     }
 
     /**

@@ -517,7 +517,25 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
             </div>
             <div class="ch-empty-title">No team members</div>
-            <div class="ch-empty-sub">Users sign themselves up via the client portal.</div>
+            <div class="ch-empty-sub">
+                @if($customer->contact_email)
+                    Provision the primary user from the contact details on file and send them an invitation.
+                @else
+                    Add a contact email on the company profile to enable invitations, or wait for users to self-register on the client portal.
+                @endif
+            </div>
+            @if($customer->contact_email)
+                @allowed('customer.manage')
+                <form method="POST" action="{{ route('customers.provision-primary-user', $customer) }}" style="margin-top: 16px;"
+                      onsubmit="return confirm('Create a primary login account for {{ $customer->contact_name }} ({{ $customer->contact_email }}) and send a portal invitation?');">
+                    @csrf
+                    <button type="submit" class="nrh-btn nrh-btn-primary">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="margin-right:4px;"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                        Provision &amp; send invitation
+                    </button>
+                </form>
+                @endallowed
+            @endif
         </div>
         @else
         <table class="nrh-table">

@@ -79,6 +79,10 @@ Route::middleware('admin.auth')->group(function () {
             ->whereNumber('customer')->whereNumber('user')
             ->name('customers.users.resend-invitation');
 
+        Route::post('/customers/{customer}/provision-primary-user', [CustomerController::class, 'provisionPrimaryUser'])
+            ->whereNumber('customer')
+            ->name('customers.provision-primary-user');
+
         Route::get('/customers/{customer}/agreements/create', [AgreementController::class, 'create'])->name('customers.agreements.create');
         Route::post('/customers/{customer}/agreements', [AgreementController::class, 'store'])->name('customers.agreements.store');
         Route::get('/customers/{customer}/agreements/{agreement}/edit', [AgreementController::class, 'edit'])->name('customers.agreements.edit');
