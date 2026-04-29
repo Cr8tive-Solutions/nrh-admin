@@ -13,7 +13,8 @@
     .pricing-row { display: grid; grid-template-columns: 2fr 1fr 1.4fr; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); transition: background 100ms; }
     .pricing-row:last-child { border-bottom: none; }
     .pricing-row:hover { background: rgba(4,108,78,0.03); }
-    .pricing-name { font-size: 13px; color: var(--ink-900); }
+    .pricing-row.is-dirty { background: rgba(16,185,129,0.04); }
+    .pricing-name { font-size: 13px; color: var(--ink-900); display: flex; align-items: center; gap: 8px; }
     .pricing-default { font-size: 11px; color: var(--ink-400); font-style: italic; }
     .pricing-input-wrap { display: flex; align-items: center; gap: 8px; }
     .pricing-prefix { font-size: 11px; color: var(--ink-500); font-family: 'JetBrains Mono', monospace; }
@@ -26,16 +27,12 @@
     }
     .pricing-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
     .pricing-input.is-changed { border-color: var(--emerald-500); background: rgba(16,185,129,0.04); }
-    .pricing-save-btn {
-        font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 5px;
-        background: var(--emerald-700); color: #fff; border: none; cursor: pointer;
-        transition: background 120ms; white-space: nowrap;
+    .pricing-dirty-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: var(--emerald-600);
+        box-shadow: 0 0 0 3px rgba(5,150,105,0.18);
+        flex-shrink: 0;
     }
-    .pricing-save-btn:hover { background: var(--emerald-800); }
-    .pricing-feedback { font-size: 11px; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-    .pricing-feedback.saving { color: var(--ink-400); }
-    .pricing-feedback.saved  { color: var(--emerald-600); font-weight: 600; }
-    .pricing-feedback.error  { color: var(--danger); }
     .pricing-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: rgba(4,108,78,0.08); color: var(--emerald-700); white-space: nowrap; }
     .pricing-skeleton-row { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--line); }
     .skeleton-block { border-radius: 4px; background: var(--ink-100); animation: pulse 1.4s ease-in-out infinite; }
@@ -47,6 +44,27 @@
     .pricing-filter-input { border: 1px solid var(--line); background: var(--card); color: var(--ink-900); border-radius: 6px; padding: 7px 12px; font-size: 13px; outline: none; min-width: 180px; transition: border-color 120ms; font-family: inherit; }
     .pricing-filter-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
     .pricing-empty { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 56px 20px; text-align: center; }
+
+    /* Sticky bulk action bar */
+    .pricing-bulkbar {
+        position: sticky; bottom: 14px; z-index: 20;
+        margin-top: 18px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 18px;
+        display: flex; align-items: center; gap: 14px;
+        box-shadow: 0 14px 28px -14px rgba(0,0,0,0.18), 0 0 0 1px rgba(212,175,55,0.18);
+    }
+    .pricing-bulkbar.idle { opacity: 0.6; }
+    .pricing-bulk-text { font-size: 13px; color: var(--ink-700); flex: 1; }
+    .pricing-bulk-text b { color: var(--ink-900); font-weight: 600; }
+    .pricing-bulk-feedback {
+        font-size: 12px; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 6px;
+    }
+    .pricing-bulk-feedback.saved { color: var(--emerald-700); }
+    .pricing-bulk-feedback.error { color: var(--danger); }
 </style>
 
 @php $canEdit = admin_can('pricing.manage'); @endphp
@@ -68,6 +86,9 @@
     states: {},
     countryFilter: '',
     scopeSearch: '',
+    saving: false,
+    saveStatus: '',
+    saveMessage: '',
 
     init() {
         const params = new URLSearchParams(window.location.search);
@@ -80,9 +101,21 @@
                 this.loadScopes(cid);
             });
         }
+
+        // Warn before unload if there are unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (this.dirtyCount > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
     },
 
     onCustomerChange(e) {
+        if (this.dirtyCount > 0 && !confirm('You have unsaved price changes. Switch customer and discard them?')) {
+            e.target.value = this.customerId;
+            return;
+        }
         this.customerId = e.target.value;
         this.customerName = e.target.options[e.target.selectedIndex].text;
         this.countries = []; this.prices = {}; this.states = {};
@@ -98,13 +131,24 @@
             this.countries = data.countries;
             data.countries.forEach(c => c.categories.forEach(cat => cat.scopes.forEach(scope => {
                 this.prices[scope.id] = scope.custom_price ?? '';
-                this.states[scope.id] = { original: scope.custom_price ?? '', saving: false, saved: false, error: false };
+                this.states[scope.id] = { original: scope.custom_price ?? '' };
             })));
         } finally { this.loading = false; }
     },
 
     isChanged(id) {
-        return this.states[id] && String(this.prices[id]) !== String(this.states[id].original);
+        if (!this.states[id]) return false;
+        const v = this.prices[id];
+        // empty string in either direction is treated as no-change unless original was non-empty
+        return String(v ?? '') !== String(this.states[id].original ?? '');
+    },
+
+    get dirtyIds() {
+        return Object.keys(this.prices).filter(id => this.isChanged(id));
+    },
+
+    get dirtyCount() {
+        return this.dirtyIds.length;
     },
 
     get customCount() {
@@ -127,28 +171,63 @@
             .filter(c => c.categories.length > 0);
     },
 
-    async savePrice(scope) {
-        const price = this.prices[scope.id];
-        if (price === '' || price === null || price === undefined) return;
-        this.states[scope.id] = { ...this.states[scope.id], saving: true, error: false };
+    discardChanges() {
+        if (this.dirtyCount === 0) return;
+        if (!confirm(`Discard ${this.dirtyCount} unsaved ${this.dirtyCount === 1 ? 'change' : 'changes'}?`)) return;
+        this.dirtyIds.forEach(id => {
+            this.prices[id] = this.states[id].original;
+        });
+    },
+
+    async saveAll() {
+        const ids = this.dirtyIds;
+        if (ids.length === 0 || this.saving) return;
+
+        // Build payload — skip empty values (treat empty as 'no custom price')
+        const payload = ids
+            .filter(id => this.prices[id] !== '' && this.prices[id] !== null && this.prices[id] !== undefined)
+            .map(id => ({ scope_type_id: Number(id), price: this.prices[id] }));
+
+        if (payload.length === 0) {
+            this.saveStatus = 'error';
+            this.saveMessage = 'No valid prices to save (empty fields are skipped).';
+            setTimeout(() => { this.saveStatus = ''; }, 3000);
+            return;
+        }
+
+        this.saving = true;
+        this.saveStatus = '';
         try {
-            const res = await fetch(scope.save_url, {
-                method: 'PATCH',
+            const res = await fetch(`/pricing/${this.customerId}`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ price }),
+                body: JSON.stringify({ prices: payload }),
             });
-            if (!res.ok) throw new Error();
+            if (!res.ok) {
+                const errBody = await res.json().catch(() => ({}));
+                throw new Error(errBody.message || 'Save failed');
+            }
             const data = await res.json();
-            this.prices[scope.id] = data.price;
-            this.states[scope.id] = { original: data.price, saving: false, saved: true, error: false };
-            setTimeout(() => { this.states[scope.id] = { ...this.states[scope.id], saved: false }; }, 2000);
-        } catch {
-            this.states[scope.id] = { ...this.states[scope.id], saving: false, error: true };
-            setTimeout(() => { this.states[scope.id] = { ...this.states[scope.id], error: false }; }, 3000);
+            // Mark each saved scope's original to the persisted value
+            Object.entries(data.saved || {}).forEach(([scopeId, savedPrice]) => {
+                if (this.states[scopeId]) {
+                    this.states[scopeId].original = savedPrice;
+                    this.prices[scopeId] = savedPrice;
+                }
+            });
+            this.saveStatus = 'saved';
+            this.saveMessage = data.message || 'Pricing saved.';
+            setTimeout(() => { this.saveStatus = ''; }, 3000);
+        } catch (e) {
+            this.saveStatus = 'error';
+            this.saveMessage = e.message || 'Failed to save. Try again.';
+            setTimeout(() => { this.saveStatus = ''; }, 4000);
+        } finally {
+            this.saving = false;
         }
     }
 }">
@@ -217,8 +296,11 @@
                     <div class="pricing-cat-head" x-text="cat.name"></div>
 
                     <template x-for="scope in cat.scopes" :key="scope.id">
-                        <div class="pricing-row">
-                            <span class="pricing-name" x-text="scope.name"></span>
+                        <div class="pricing-row" :class="{ 'is-dirty': isChanged(scope.id) }">
+                            <span class="pricing-name">
+                                <span x-show="isChanged(scope.id)" class="pricing-dirty-dot" title="Unsaved change"></span>
+                                <span x-text="scope.name"></span>
+                            </span>
 
                             <span class="pricing-default">
                                 <span x-show="scope.price_on_request">Price on request</span>
@@ -230,33 +312,13 @@
                                 <input type="number" step="0.01" min="0"
                                        :value="prices[scope.id]"
                                        @input="prices[scope.id] = $event.target.value"
-                                       @keydown.enter.prevent="canEdit && savePrice(scope)"
+                                       @keydown.enter.prevent="canEdit && saveAll()"
                                        :readonly="!canEdit"
                                        :placeholder="scope.price_on_request ? 'Enter price' : scope.default_price"
                                        class="pricing-input"
                                        :class="{ 'is-changed': isChanged(scope.id) }">
 
-                                <button type="button"
-                                        x-show="canEdit && isChanged(scope.id) && !states[scope.id]?.saving"
-                                        x-transition
-                                        @click="savePrice(scope)"
-                                        class="pricing-save-btn">
-                                    Save
-                                </button>
-
-                                <span x-show="states[scope.id]?.saving" class="pricing-feedback saving">
-                                    <svg style="width:11px;height:11px;" class="animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="12"/></svg>
-                                    Saving…
-                                </span>
-
-                                <span x-show="states[scope.id]?.saved" x-transition class="pricing-feedback saved">
-                                    <svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                                    Saved
-                                </span>
-
-                                <span x-show="states[scope.id]?.error" x-transition class="pricing-feedback error">Failed — try again</span>
-
-                                <span x-show="!isChanged(scope.id) && states[scope.id]?.original && !states[scope.id]?.saved"
+                                <span x-show="!isChanged(scope.id) && states[scope.id]?.original"
                                       class="pricing-badge">Custom</span>
                             </div>
                         </div>
@@ -291,6 +353,60 @@
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="color:var(--ink-200); margin:0 auto 10px; display:block;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
         <p style="font-size:14px; color:var(--ink-500); margin:0 0 4px;">No customer selected</p>
         <p style="font-size:12px; color:var(--ink-400); margin:0;">Select a customer above to manage their scope pricing.</p>
+    </div>
+
+    {{-- ── Sticky bulk action bar ── --}}
+    <div x-show="canEdit && customerId && countries.length > 0" x-cloak x-transition
+         class="pricing-bulkbar"
+         :class="{ 'idle': dirtyCount === 0 && saveStatus !== 'saved' }">
+        <span class="pricing-bulk-text">
+            <template x-if="dirtyCount > 0">
+                <span><b x-text="dirtyCount"></b> unsaved <span x-text="dirtyCount === 1 ? 'change' : 'changes'"></span></span>
+            </template>
+            <template x-if="dirtyCount === 0 && saveStatus !== 'saved' && saveStatus !== 'error'">
+                <span>No unsaved changes.</span>
+            </template>
+            <template x-if="saveStatus === 'saved' && dirtyCount === 0">
+                <span class="pricing-bulk-feedback saved">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                    <span x-text="saveMessage"></span>
+                </span>
+            </template>
+            <template x-if="saveStatus === 'error'">
+                <span class="pricing-bulk-feedback error">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                    <span x-text="saveMessage"></span>
+                </span>
+            </template>
+        </span>
+
+        <button type="button" class="nrh-btn nrh-btn-ghost"
+                x-show="dirtyCount > 0"
+                @click="discardChanges()"
+                :disabled="saving"
+                style="font-size: 12px; padding: 7px 14px;">
+            Discard
+        </button>
+
+        <button type="button" class="nrh-btn nrh-btn-primary"
+                @click="saveAll()"
+                :disabled="dirtyCount === 0 || saving"
+                :class="{ 'opacity-40 cursor-not-allowed': dirtyCount === 0 || saving }"
+                style="font-size: 13px; padding: 9px 18px; min-width: 140px;">
+            <template x-if="!saving">
+                <span style="display: inline-flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Save All
+                    <span x-show="dirtyCount > 0" x-text="`(${dirtyCount})`" style="font-family: 'JetBrains Mono', monospace; opacity: 0.85;"></span>
+                </span>
+            </template>
+            <template x-if="saving">
+                <span style="display: inline-flex; align-items: center; gap: 6px;">
+                    <svg class="animate-spin" style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-dashoffset="12"/></svg>
+                    Saving…
+                </span>
+            </template>
+        </button>
     </div>
 
 </div>

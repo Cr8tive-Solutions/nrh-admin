@@ -78,19 +78,28 @@ class ScopePricingController extends Controller
     public function upsert(Request $request, Customer $customer)
     {
         $data = $request->validate([
-            'prices'                => 'required|array',
+            'prices'                => 'required|array|min:1',
             'prices.*.scope_type_id'=> 'required|exists:scope_types,id',
             'prices.*.price'        => 'required|numeric|min:0',
         ]);
 
+        $saved = [];
         foreach ($data['prices'] as $row) {
             CustomerScopePrice::updateOrCreate(
                 ['customer_id' => $customer->id, 'scope_type_id' => $row['scope_type_id']],
                 ['price' => $row['price']]
             );
+            $saved[(int) $row['scope_type_id']] = number_format($row['price'], 2, '.', '');
         }
 
-        return back()->with('success', 'Pricing updated.');
+        if ($request->wantsJson()) {
+            return response()->json([
+                'saved'   => $saved,
+                'message' => count($saved).' '.\Illuminate\Support\Str::plural('price', count($saved)).' updated.',
+            ]);
+        }
+
+        return back()->with('success', count($saved).' prices updated.');
     }
 
     public function updateOne(Request $request, Customer $customer, ScopeType $scopeType)
