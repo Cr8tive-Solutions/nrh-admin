@@ -37,6 +37,7 @@ class RequestCandidate extends Model
     public function scopeTypes(): BelongsToMany
     {
         return $this->belongsToMany(ScopeType::class, 'candidate_scope_type', 'request_candidate_id', 'scope_type_id')
-            ->withPivot('status');
+            ->using(CandidateScopeType::class)
+            ->withPivot('status', 'assigned_at', 'started_at', 'completed_at');
     }
 }

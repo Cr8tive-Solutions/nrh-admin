@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ScopeType extends Model
 {
     protected $fillable = [
-        'country_id', 'name', 'category', 'turnaround',
+        'country_id', 'name', 'category', 'turnaround', 'turnaround_hours',
         'price', 'price_on_request', 'description',
     ];
 
     protected $casts = [
         'price'            => 'decimal:2',
         'price_on_request' => 'boolean',
+        'turnaround_hours' => 'integer',
     ];
 
     public function country(): BelongsTo

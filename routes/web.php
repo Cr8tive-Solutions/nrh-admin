@@ -66,6 +66,7 @@ Route::middleware('admin.auth')->group(function () {
     Route::middleware('admin.can:request.update')->group(function () {
         Route::patch('/requests/{screeningRequest}/status', [RequestQueueController::class, 'updateStatus'])->name('requests.status');
         Route::patch('/requests/{screeningRequest}/candidates/{candidateId}/status', [RequestQueueController::class, 'updateCandidateStatus'])->name('requests.candidates.status');
+        Route::patch('/requests/{screeningRequest}/candidates/{candidateId}/scopes/{scopeTypeId}/status', [RequestQueueController::class, 'updateScopeStatus'])->name('requests.scope.status');
     });
 
     // ── customer.manage ──────────────────────────────────────────────────────
@@ -115,6 +116,11 @@ Route::middleware('admin.auth')->group(function () {
         Route::post('/config/scopes', [ScopeTypeController::class, 'store'])->name('config.scopes.store');
         Route::get('/config/scopes/{scope}/edit', [ScopeTypeController::class, 'edit'])->name('config.scopes.edit');
         Route::put('/config/scopes/{scope}', [ScopeTypeController::class, 'update'])->name('config.scopes.update');
+
+        // Business holidays (affect SLA/TAT calc, gated under same permission for now).
+        Route::get('/config/holidays', [\App\Http\Controllers\Config\BusinessHolidayController::class, 'index'])->name('config.holidays.index');
+        Route::post('/config/holidays', [\App\Http\Controllers\Config\BusinessHolidayController::class, 'store'])->name('config.holidays.store');
+        Route::delete('/config/holidays/{holiday}', [\App\Http\Controllers\Config\BusinessHolidayController::class, 'destroy'])->name('config.holidays.destroy');
     });
 
     // ── config.countries ─────────────────────────────────────────────────────

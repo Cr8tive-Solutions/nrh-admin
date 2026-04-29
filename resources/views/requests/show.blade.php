@@ -205,21 +205,41 @@
         grid-column: 1 / -1;
         padding-top: 14px; margin-top: 12px;
         border-top: 1px dashed var(--line);
-        display: flex; flex-wrap: wrap; gap: 6px;
+        display: flex; flex-direction: column; gap: 4px;
     }
-    .rq-scope-chip {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 4px 10px;
-        border: 1px solid var(--line);
-        background: var(--paper-2);
-        border-radius: 99px;
-        font-size: 11px; color: var(--ink-700);
+    .rq-scope-row {
+        display: grid; grid-template-columns: 12px 1fr auto auto; gap: 12px; align-items: center;
+        padding: 6px 8px; border-radius: 6px;
+        font-size: 12px; color: var(--ink-700);
+        transition: background 100ms;
     }
-    .rq-scope-chip .scope-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-300, var(--ink-400)); }
-    .rq-scope-chip .scope-dot.complete { background: var(--emerald-600); }
-    .rq-scope-chip .scope-dot.flagged { background: var(--danger); box-shadow: 0 0 0 2px rgba(239,68,68,0.15); }
-    .rq-scope-chip .scope-dot.in_progress { background: #f59e0b; }
-    .rq-scope-chip .scope-dot.new { background: var(--ink-300, var(--ink-400)); }
+    .rq-scope-row:hover { background: var(--paper-2); }
+    .rq-scope-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-400); }
+    .rq-scope-dot.complete { background: var(--emerald-600); }
+    .rq-scope-dot.flagged { background: var(--danger); box-shadow: 0 0 0 2px rgba(239,68,68,0.15); }
+    .rq-scope-dot.in_progress { background: #f59e0b; }
+    .rq-scope-dot.new { background: var(--ink-400); }
+
+    .rq-scope-tat {
+        font-family: 'JetBrains Mono', monospace; font-size: 10px;
+        padding: 2px 8px; border-radius: 99px; white-space: nowrap;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .rq-scope-tat.running { background: var(--ink-100); color: var(--ink-500); }
+    .rq-scope-tat.warning { background: #fef3c7; color: #b45309; }
+    .rq-scope-tat.over    { background: #fbeeec; color: var(--danger); font-weight: 600; }
+    .rq-scope-tat.within  { background: var(--emerald-50); color: var(--emerald-700); font-weight: 600; }
+    .rq-scope-tat.no-target { background: transparent; color: var(--ink-400); font-style: italic; }
+
+    .rq-scope-select {
+        font-size: 11px; padding: 3px 7px;
+        border: 1px solid var(--line); background: var(--card);
+        border-radius: 5px; color: var(--ink-700);
+        cursor: pointer; outline: none;
+        font-family: inherit;
+    }
+    .rq-scope-select:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 2px rgba(5,150,105,0.10); }
+    .rq-scope-select.readonly { cursor: default; appearance: none; background: transparent; border-color: transparent; }
 
     /* ── Layout ── */
     .rq-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
@@ -403,11 +423,66 @@
             <div x-show="open" x-cloak class="rq-scopes">
                 @if($candidate->scopeTypes->count())
                     @foreach($candidate->scopeTypes as $scope)
-                    @php $sStatus = $scope->pivot->status ?: 'new'; @endphp
-                    <span class="rq-scope-chip" title="Status: {{ $sStatus }}">
-                        <span class="scope-dot {{ $sStatus }}"></span>
-                        {{ $scope->name }}
-                    </span>
+                    @php
+                        $pivot = $scope->pivot;
+                        $sStatus = $pivot->status ?: 'new';
+                        $target = $scope->turnaround_hours;
+                        $tatHours = $pivot->tatHours();
+                        $isRunning = $pivot->isRunning();
+                        $slaState = $pivot->slaState($target);
+
+                        // Build TAT label
+                        if (! $pivot->assigned_at) {
+                            $tatLabel = '—';
+                            $tatClass = 'no-target';
+                        } elseif ($isRunning) {
+                            $tatLabel = '⏱ '.($tatHours < 1 ? round($tatHours * 60).'m' : $tatHours.'h').' running';
+                            if (! $target) {
+                                $tatClass = 'running';
+                            } elseif ($tatHours > $target) {
+                                $tatClass = 'over';
+                                $tatLabel = '⚠ '.$tatHours.'h · '.round($tatHours - $target, 1).'h over';
+                            } elseif ($tatHours / max(1, $target) > 0.75) {
+                                $tatClass = 'warning';
+                            } else {
+                                $tatClass = 'running';
+                            }
+                        } else {
+                            // Done state
+                            if (! $target) {
+                                $tatClass = 'within';
+                                $tatLabel = '✓ '.$tatHours.'h';
+                            } elseif ($slaState === 'over') {
+                                $tatClass = 'over';
+                                $tatLabel = '⚠ '.$tatHours.'h · '.round($tatHours - $target, 1).'h over SLA';
+                            } else {
+                                $tatClass = 'within';
+                                $tatLabel = '✓ '.$tatHours.'h';
+                            }
+                        }
+                    @endphp
+                    <div class="rq-scope-row">
+                        <span class="rq-scope-dot {{ $sStatus }}" title="Status: {{ str_replace('_', ' ', $sStatus) }}"></span>
+                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {{ $scope->name }}
+                            @if($target)
+                            <span style="color: var(--ink-400); font-size: 10px; font-family: 'JetBrains Mono', monospace; margin-left: 6px;">SLA {{ $target }}h</span>
+                            @endif
+                        </span>
+                        <span class="rq-scope-tat {{ $tatClass }}" title="TAT (business hours)">{{ $tatLabel }}</span>
+                        @allowed('request.update')
+                        <form method="POST" action="{{ route('requests.scope.status', [$request, $candidate->id, $scope->id]) }}" style="margin: 0;">
+                            @csrf @method('PATCH')
+                            <select name="status" onchange="this.form.submit()" class="rq-scope-select">
+                                @foreach(['new', 'in_progress', 'flagged', 'complete'] as $s)
+                                <option value="{{ $s }}" {{ $sStatus === $s ? 'selected' : '' }}>{{ str_replace('_', ' ', ucfirst($s)) }}</option>
+                                @endforeach
+                            </select>
+                        </form>
+                        @else
+                        <span style="font-size: 11px; color: var(--ink-500); padding: 3px 7px;">{{ str_replace('_', ' ', $sStatus) }}</span>
+                        @endallowed
+                    </div>
                     @endforeach
                 @else
                     <p style="font-size: 11px; color: var(--ink-400); font-style: italic;">No scope checks assigned.</p>

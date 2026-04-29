@@ -310,6 +310,14 @@
                 </a>
                 @endallowed
 
+                @allowed('config.scopes')
+                <a href="{{ route('config.holidays.index') }}"
+                   class="sb-link {{ request()->routeIs('config.holidays.*') ? 'active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    Holidays
+                </a>
+                @endallowed
+
                 @if(admin_can('staff.manage') || admin_can('permissions.manage'))
                 <div class="sb-section-label">Admin</div>
                 @endif

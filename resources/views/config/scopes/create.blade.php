@@ -44,11 +44,21 @@
                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
         </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Turnaround</label>
-            <input type="text" name="turnaround" value="{{ old('turnaround') }}"
-                   placeholder="e.g. 3 business days"
-                   class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Turnaround (display)</label>
+                <input type="text" name="turnaround" value="{{ old('turnaround') }}"
+                       placeholder="e.g. 3 business days"
+                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                <p class="text-xs text-gray-400 mt-1">Free text shown to clients.</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">SLA target (business hours)</label>
+                <input type="number" name="turnaround_hours" value="{{ old('turnaround_hours') }}"
+                       min="1" max="1440" placeholder="24"
+                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 font-mono">
+                <p class="text-xs text-gray-400 mt-1">Used for TAT calculation.</p>
+            </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
