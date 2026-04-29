@@ -50,6 +50,9 @@ Route::middleware('admin.auth')->group(function () {
     // ── Read-only routes (any admin role, including viewer) ──────────────────
     Route::get('/requests', [RequestQueueController::class, 'index'])->name('requests.index');
     Route::get('/requests/{screeningRequest}', [RequestQueueController::class, 'show'])->name('requests.show');
+    Route::get('/requests/{screeningRequest}/report', [\App\Http\Controllers\ReportController::class, 'generate'])
+        ->whereNumber('screeningRequest')
+        ->name('requests.report');
 
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->whereNumber('customer')->name('customers.show');

@@ -13,7 +13,19 @@
       "Bash(perl -i -pe 's|<tr><td colspan=\"6\" class=\"px-4 py-10 text-center text-gray-400\">No staff accounts\\\\.</td></tr>|<tr><td colspan=\"6\" style=\"padding:48px 20px; text-align:center;\"><div style=\"display:flex; flex-direction:column; align-items:center; gap:8px;\"><svg width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.2\" style=\"color:var\\(--ink-200\\);\"><circle cx=\"12\" cy=\"12\" r=\"10\"\\\\/><path d=\"M12 8v4M12 16h.01\"\\\\/><\\\\/svg><span style=\"font-size:13px; color:var\\(--ink-400\\);\">No staff accounts.<\\\\/span><\\\\/div><\\\\/td><\\\\/tr>|' /Users/anwarsaad/Herd/nrh-admin/resources/views/staff/index.blade.php)",
       "Bash(php artisan *)",
       "Bash(composer dump-autoload *)",
-      "Bash(composer require *)"
+      "Bash(composer require *)",
+      "Bash(/usr/bin/mdimport -d2 \"/Users/anwarsaad/Herd/nrh-admin/VPRO REP TEMPLATE 2023.pdf\")",
+      "Bash(brew list *)",
+      "Bash(brew install *)",
+      "Bash(command -v pdftoppm)",
+      "Bash(pdftoppm -v)",
+      "Bash(mkdir -p /tmp/vpro)",
+      "Bash(pdfinfo \"/Users/anwarsaad/Herd/nrh-admin/VPRO REP TEMPLATE 2023.pdf\")",
+      "Bash(pdftoppm -r 110 -png \"/Users/anwarsaad/Herd/nrh-admin/VPRO REP TEMPLATE 2023.pdf\" /tmp/vpro/page)",
+      "Read(//tmp/**)",
+      "Bash(pdftoppm -r 100 -png /tmp/nrh-test-report.pdf /tmp/nrh-test-page)",
+      "Bash(composer show *)",
+      "Bash(pdfinfo /tmp/nrh-test-report.pdf)"
     ]
   }
 }

@@ -6,6 +6,14 @@
 
 @section('header-actions')
     <a href="{{ route('requests.index') }}" class="nrh-btn nrh-btn-ghost">← Back to Queue</a>
+    <a href="{{ route('requests.report', ['screeningRequest' => $request, 'inline' => 1]) }}" target="_blank" class="nrh-btn nrh-btn-ghost">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Preview Report
+    </a>
+    <a href="{{ route('requests.report', $request) }}" class="nrh-btn nrh-btn-primary">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+        Download PDF
+    </a>
 @endsection
 
 @section('content')
