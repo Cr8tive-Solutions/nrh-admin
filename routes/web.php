@@ -70,6 +70,8 @@ Route::middleware('admin.auth')->group(function () {
         Route::patch('/requests/{screeningRequest}/status', [RequestQueueController::class, 'updateStatus'])->name('requests.status');
         Route::patch('/requests/{screeningRequest}/candidates/{candidateId}/status', [RequestQueueController::class, 'updateCandidateStatus'])->name('requests.candidates.status');
         Route::patch('/requests/{screeningRequest}/candidates/{candidateId}/scopes/{scopeTypeId}/status', [RequestQueueController::class, 'updateScopeStatus'])->name('requests.scope.status');
+        Route::patch('/requests/{screeningRequest}/candidates/{candidateId}/scopes/{scopeTypeId}/findings', [RequestQueueController::class, 'updateScopeFindings'])->name('requests.scope.findings');
+        Route::patch('/requests/{screeningRequest}/meta', [RequestQueueController::class, 'updateMeta'])->name('requests.meta');
     });
 
     // ── customer.manage ──────────────────────────────────────────────────────

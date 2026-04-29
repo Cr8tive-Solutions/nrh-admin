@@ -265,9 +265,9 @@
         </td>
     </tr>
     <tr><th class="label">HIRING CATEGORY</th><td class="value">{{ strtoupper($request->type ?? 'V-PRO') }}</td></tr>
-    <tr><th class="label">PURCHASE ORDER NO</th><td class="value">{{ data_get($request->meta, 'po_number', 'Nil') }}</td></tr>
-    <tr><th class="label">RESEARCH ANALYST</th><td class="value">{{ data_get($request->meta, 'analyst', '—') }}</td></tr>
-    <tr><th class="label">EDITOR</th><td class="value">{{ data_get($request->meta, 'editor', '—') }}</td></tr>
+    <tr><th class="label">PURCHASE ORDER NO</th><td class="value">{{ data_get($request->meta, 'po_number') ?: 'Nil' }}</td></tr>
+    <tr><th class="label">RESEARCH ANALYST</th><td class="value">{{ data_get($request->meta, 'analyst') ?: '—' }}</td></tr>
+    <tr><th class="label">EDITOR</th><td class="value">{{ data_get($request->meta, 'editor') ?: '—' }}</td></tr>
 </table>
 
 <div class="sec-head">REPORT EARMARK &amp; LEGEND</div>
@@ -357,6 +357,11 @@
         };
         $tatHours = $scope->pivot->tatHours();
     @endphp
+    @php
+        $findings        = $scope->pivot->findings ?? [];
+        $typedComment    = $findings['comment'] ?? null;
+        $recordFields    = $findings['record']  ?? [];
+    @endphp
     <div class="check-block">
         <div class="sec-head">{{ strtoupper($scope->name) }}@if($scope->category) — {{ strtoupper($scope->category) }}@endif</div>
         <table class="report-table">
@@ -367,7 +372,9 @@
             <tr>
                 <th class="label">COMMENT</th>
                 <td class="value">
-                    @if($finished)
+                    @if($typedComment)
+                        {!! nl2br(e($typedComment)) !!}
+                    @elseif($finished)
                         NRH Intelligence's search for <strong>{{ $scope->name }}</strong> has been
                         @if($pivotStatus === 'complete')
                             <strong>completed</strong> with no adverse findings against the candidate's name and identity number.
@@ -379,6 +386,18 @@
                     @endif
                 </td>
             </tr>
+            @if(!empty($recordFields))
+            <tr><th class="label">RECORD</th><td class="value" style="padding:0;">
+                <table style="width:100%; border-collapse:collapse; margin:0;">
+                    @foreach($recordFields as $rk => $rv)
+                    <tr>
+                        <td style="background:#f7f7f4; border:1px solid #ccc; padding:5px 8px; font-weight:bold; width:35%;">{{ $rk }}</td>
+                        <td style="border:1px solid #ccc; padding:5px 8px;">{{ $rv }}</td>
+                    </tr>
+                    @endforeach
+                </table>
+            </td></tr>
+            @endif
             @if($scope->turnaround_hours)
             <tr>
                 <th class="label">SLA / TAT</th>

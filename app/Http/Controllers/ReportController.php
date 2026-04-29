@@ -24,17 +24,21 @@ class ReportController extends Controller
             ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath))
             : '';
 
+        $meta = $screeningRequest->meta ?? [];
+        $fmtDate = fn ($key) => ! empty($meta[$key])
+            ? \Carbon\Carbon::parse($meta[$key])->format('d F Y')
+            : null;
+
         $data = [
             'request'           => $screeningRequest,
             'reference'         => $screeningRequest->reference,
             'customer'          => $screeningRequest->customer,
             'candidates'        => $screeningRequest->candidates,
             'logoSrc'           => $logoSrc,
-            'completionBasic'   => null,
-            'completionPrelim'  => null,
-            'completionFull'    => $screeningRequest->status === 'complete'
-                ? $screeningRequest->updated_at->format('d F Y')
-                : null,
+            'completionBasic'   => $fmtDate('completion_basic'),
+            'completionPrelim'  => $fmtDate('completion_prelim'),
+            'completionFull'    => $fmtDate('completion_full')
+                ?? ($screeningRequest->status === 'complete' ? $screeningRequest->updated_at->format('d F Y') : null),
         ];
 
         $pdf = Pdf::loadView('reports.screening', $data)

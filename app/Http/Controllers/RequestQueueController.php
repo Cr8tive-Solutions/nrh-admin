@@ -56,7 +56,9 @@ class RequestQueueController extends Controller
 
         $screeningRequest->update(['status' => $data['status']]);
 
-        return back()->with('success', 'Request status updated.');
+        return $this->saveResponse($request, 'Request status updated.', [
+            'status' => $screeningRequest->status,
+        ]);
     }
 
     public function updateCandidateStatus(Request $request, ScreeningRequest $screeningRequest, int $candidateId)
@@ -65,9 +67,13 @@ class RequestQueueController extends Controller
             'status' => 'required|in:new,in_progress,flagged,complete',
         ]);
 
-        $screeningRequest->candidates()->findOrFail($candidateId)->update(['status' => $data['status']]);
+        $candidate = $screeningRequest->candidates()->findOrFail($candidateId);
+        $candidate->update(['status' => $data['status']]);
 
-        return back()->with('success', 'Candidate status updated.');
+        return $this->saveResponse($request, 'Candidate status updated.', [
+            'candidate_id' => $candidate->id,
+            'status'       => $candidate->status,
+        ]);
     }
 
     /**
@@ -133,6 +139,111 @@ class RequestQueueController extends Controller
             'to'            => $newStatus,
         ]);
 
-        return back()->with('success', 'Scope status updated.');
+        return $this->saveResponse($request, 'Scope status updated.', [
+            'candidate_id'  => $candidate->id,
+            'scope_type_id' => $scopeTypeId,
+            'status'        => $newStatus,
+            'started_at'    => $update['started_at'] ?? $pivot->started_at,
+            'completed_at'  => array_key_exists('completed_at', $update) ? $update['completed_at'] : $pivot->completed_at,
+        ]);
+    }
+
+    /**
+     * Save typed findings (narrative comment + structured record fields)
+     * for a single scope check on a candidate. Becomes the body content
+     * for that scope in the generated PDF.
+     */
+    public function updateScopeFindings(Request $request, ScreeningRequest $screeningRequest, int $candidateId, int $scopeTypeId)
+    {
+        $data = $request->validate([
+            'comment' => 'nullable|string|max:8000',
+            'record'  => 'nullable|array',
+            'record.*' => 'nullable|string|max:1000',
+        ]);
+
+        $candidate = $screeningRequest->candidates()->findOrFail($candidateId);
+
+        $exists = DB::table('candidate_scope_type')
+            ->where('request_candidate_id', $candidate->id)
+            ->where('scope_type_id', $scopeTypeId)
+            ->exists();
+
+        if (! $exists) {
+            abort(404, 'Scope is not assigned to this candidate.');
+        }
+
+        $payload = [];
+        if (isset($data['comment']) && trim($data['comment']) !== '') {
+            $payload['comment'] = trim($data['comment']);
+        }
+        if (! empty($data['record'])) {
+            $clean = array_filter(
+                array_map(fn ($v) => is_string($v) ? trim($v) : $v, $data['record']),
+                fn ($v) => $v !== null && $v !== ''
+            );
+            if (! empty($clean)) {
+                $payload['record'] = $clean;
+            }
+        }
+
+        DB::table('candidate_scope_type')
+            ->where('request_candidate_id', $candidate->id)
+            ->where('scope_type_id', $scopeTypeId)
+            ->update(['findings' => empty($payload) ? null : json_encode($payload)]);
+
+        AdminAuditLog::record('scope_findings.updated', null, [
+            'request_id'    => $screeningRequest->id,
+            'reference'     => $screeningRequest->reference,
+            'candidate_id'  => $candidate->id,
+            'scope_type_id' => $scopeTypeId,
+            'has_comment'   => isset($payload['comment']),
+            'record_keys'   => isset($payload['record']) ? array_keys($payload['record']) : [],
+        ]);
+
+        return $this->saveResponse($request, 'Findings saved.', [
+            'candidate_id'  => $candidate->id,
+            'scope_type_id' => $scopeTypeId,
+            'has_findings'  => ! empty($payload),
+        ]);
+    }
+
+    /**
+     * Update report metadata stored on screening_requests.meta
+     * (Research analyst, editor, PO #, basic/prelim/full completion dates).
+     */
+    public function updateMeta(Request $request, ScreeningRequest $screeningRequest)
+    {
+        $data = $request->validate([
+            'analyst'           => 'nullable|string|max:255',
+            'editor'            => 'nullable|string|max:255',
+            'po_number'         => 'nullable|string|max:120',
+            'completion_basic'  => 'nullable|date',
+            'completion_prelim' => 'nullable|date',
+            'completion_full'   => 'nullable|date',
+        ]);
+
+        $meta = $screeningRequest->meta ?? [];
+        foreach ($data as $key => $value) {
+            if ($value === null || $value === '') {
+                unset($meta[$key]);
+            } else {
+                $meta[$key] = $value;
+            }
+        }
+
+        $screeningRequest->update(['meta' => $meta]);
+
+        return $this->saveResponse($request, 'Report metadata saved.', ['meta' => $meta]);
+    }
+
+    /**
+     * Standardised save response — JSON for AJAX callers, redirect-with-flash otherwise.
+     */
+    private function saveResponse(Request $request, string $message, array $payload = [])
+    {
+        if ($request->expectsJson()) {
+            return response()->json(array_merge(['ok' => true, 'message' => $message], $payload));
+        }
+        return back()->with('success', $message);
     }
 }

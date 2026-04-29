@@ -16,13 +16,14 @@ class CandidateScopeType extends Pivot
 
     protected $fillable = [
         'request_candidate_id', 'scope_type_id', 'status',
-        'assigned_at', 'started_at', 'completed_at',
+        'assigned_at', 'started_at', 'completed_at', 'findings',
     ];
 
     protected $casts = [
         'assigned_at'  => 'datetime',
         'started_at'   => 'datetime',
         'completed_at' => 'datetime',
+        'findings'     => 'array',
     ];
 
     /**

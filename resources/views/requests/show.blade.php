@@ -249,6 +249,70 @@
     .rq-scope-select:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 2px rgba(5,150,105,0.10); }
     .rq-scope-select.readonly { cursor: default; appearance: none; background: transparent; border-color: transparent; }
 
+    /* Findings editor */
+    .rq-scope-wrap { border-radius: 6px; }
+    .rq-scope-wrap.has-findings .rq-scope-row { border-left: 2px solid var(--emerald-600); padding-left: 6px; }
+    .rq-scope-findings-toggle {
+        font-size: 10px; padding: 3px 7px; border-radius: 4px;
+        background: transparent; border: 1px dashed var(--ink-300, var(--line));
+        color: var(--ink-500); cursor: pointer; font-family: inherit;
+        white-space: nowrap;
+    }
+    .rq-scope-findings-toggle:hover { color: var(--emerald-700); border-color: var(--emerald-600); border-style: solid; }
+    .rq-scope-findings-toggle.has { color: var(--emerald-700); border-color: var(--emerald-600); border-style: solid; background: rgba(5,150,105,0.05); }
+
+    .rq-findings-panel {
+        margin: 4px 8px 8px 18px;
+        padding: 12px 14px;
+        background: var(--paper-2);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+    }
+    .rq-findings-label {
+        font-size: 9px; text-transform: uppercase; letter-spacing: 0.16em;
+        color: var(--ink-500); font-weight: 600;
+        font-family: 'JetBrains Mono', monospace;
+        margin-bottom: 5px;
+    }
+    .rq-findings-textarea {
+        width: 100%; min-height: 90px; padding: 8px 10px;
+        border: 1px solid var(--line); background: var(--card);
+        border-radius: 6px; font-family: inherit; font-size: 12px;
+        color: var(--ink-900); outline: none; resize: vertical;
+    }
+    .rq-findings-textarea:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 2px rgba(5,150,105,0.10); }
+    .rq-findings-actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+    .rq-record-row {
+        display: grid; grid-template-columns: 140px 1fr 22px;
+        gap: 6px; margin-top: 6px;
+    }
+    .rq-record-input {
+        padding: 5px 8px; border: 1px solid var(--line);
+        background: var(--card); border-radius: 5px;
+        font-size: 11px; font-family: inherit; color: var(--ink-900); outline: none;
+    }
+    .rq-record-input:focus { border-color: var(--emerald-600); }
+    .rq-record-rm-btn {
+        background: transparent; border: none; cursor: pointer;
+        color: var(--ink-400); font-size: 14px; padding: 0;
+    }
+    .rq-record-rm-btn:hover { color: var(--danger); }
+
+    /* Meta editor */
+    .rq-meta-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px;
+        padding: 14px 18px;
+    }
+    .rq-meta-grid .col-2 { grid-column: 1 / -1; }
+    .rq-meta-input {
+        width: 100%; padding: 7px 9px;
+        border: 1px solid var(--line); background: var(--card);
+        border-radius: 6px; font-size: 12px; font-family: inherit;
+        color: var(--ink-900); outline: none;
+    }
+    .rq-meta-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 2px rgba(5,150,105,0.10); }
+    .rq-meta-input.mono { font-family: 'JetBrains Mono', monospace; }
+
     /* ── Layout ── */
     .rq-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
     @media (max-width: 1100px) { .rq-layout { grid-template-columns: 1fr; } }
@@ -469,26 +533,91 @@
                             }
                         }
                     @endphp
-                    <div class="rq-scope-row">
-                        <span class="rq-scope-dot {{ $sStatus }}" title="Status: {{ str_replace('_', ' ', $sStatus) }}"></span>
-                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            {{ $scope->name }}
-                            @if($target)
-                            <span style="color: var(--ink-400); font-size: 10px; font-family: 'JetBrains Mono', monospace; margin-left: 6px;">SLA {{ $target }}h</span>
-                            @endif
-                        </span>
-                        <span class="rq-scope-tat {{ $tatClass }}" title="TAT (business hours)">{{ $tatLabel }}</span>
+                    @php
+                        $findings = $pivot->findings ?? [];
+                        $existingComment = $findings['comment'] ?? '';
+                        $existingRecord  = $findings['record'] ?? [];
+                        $hasFindings     = !empty($existingComment) || !empty($existingRecord);
+                    @endphp
+                    <div class="rq-scope-wrap {{ $hasFindings ? 'has-findings' : '' }}"
+                         x-data="{
+                            open: false,
+                            comment: @js($existingComment),
+                            record: @js(array_map(fn($k, $v) => ['key' => $k, 'value' => $v], array_keys($existingRecord), array_values($existingRecord))),
+                            addRow() { this.record.push({ key: '', value: '' }); }
+                         }">
+                        <div class="rq-scope-row">
+                            <span class="rq-scope-dot {{ $sStatus }}" title="Status: {{ str_replace('_', ' ', $sStatus) }}"></span>
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                {{ $scope->name }}
+                                @if($target)
+                                <span style="color: var(--ink-400); font-size: 10px; font-family: 'JetBrains Mono', monospace; margin-left: 6px;">SLA {{ $target }}h</span>
+                                @endif
+                            </span>
+                            <span class="rq-scope-tat {{ $tatClass }}" title="TAT (business hours)">{{ $tatLabel }}</span>
+                            @allowed('request.update')
+                            <span style="display:inline-flex; gap:6px; align-items:center;">
+                                <button type="button" @click="open = !open" class="rq-scope-findings-toggle {{ $hasFindings ? 'has' : '' }}" title="Edit findings for this scope">
+                                    <span x-show="!open">✎ Findings{{ $hasFindings ? ' ✓' : '' }}</span>
+                                    <span x-show="open" x-cloak>Hide</span>
+                                </button>
+                                <form method="POST" action="{{ route('requests.scope.status', [$request, $candidate->id, $scope->id]) }}" style="margin: 0;">
+                                    @csrf @method('PATCH')
+                                    <select name="status" onchange="this.form.submit()" class="rq-scope-select">
+                                        @foreach(['new', 'in_progress', 'flagged', 'complete'] as $s)
+                                        <option value="{{ $s }}" {{ $sStatus === $s ? 'selected' : '' }}>{{ str_replace('_', ' ', ucfirst($s)) }}</option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                            </span>
+                            @else
+                            <span style="font-size: 11px; color: var(--ink-500); padding: 3px 7px;">{{ str_replace('_', ' ', $sStatus) }}</span>
+                            @endallowed
+                        </div>
+
                         @allowed('request.update')
-                        <form method="POST" action="{{ route('requests.scope.status', [$request, $candidate->id, $scope->id]) }}" style="margin: 0;">
-                            @csrf @method('PATCH')
-                            <select name="status" onchange="this.form.submit()" class="rq-scope-select">
-                                @foreach(['new', 'in_progress', 'flagged', 'complete'] as $s)
-                                <option value="{{ $s }}" {{ $sStatus === $s ? 'selected' : '' }}>{{ str_replace('_', ' ', ucfirst($s)) }}</option>
-                                @endforeach
-                            </select>
-                        </form>
-                        @else
-                        <span style="font-size: 11px; color: var(--ink-500); padding: 3px 7px;">{{ str_replace('_', ' ', $sStatus) }}</span>
+                        <div x-show="open" x-cloak class="rq-findings-panel">
+                            <form method="POST" action="{{ route('requests.scope.findings', [$request, $candidate->id, $scope->id]) }}">
+                                @csrf @method('PATCH')
+
+                                <div class="rq-findings-label">Comment / narrative</div>
+                                <textarea name="comment" x-model="comment"
+                                          placeholder="e.g. NRH Intelligence's search has been completed. No adverse findings against the candidate's name and identity number."
+                                          class="rq-findings-textarea"></textarea>
+
+                                <div class="rq-findings-label" style="margin-top:12px;">Record details (optional)</div>
+                                <p style="font-size: 10px; color: var(--ink-400); margin: -2px 0 4px;">
+                                    Structured key/value pairs that appear under the scope's "Record" sub-table in the report. e.g. Name / Date / Court / Amount.
+                                </p>
+                                <template x-for="(row, idx) in record" :key="idx">
+                                    <div class="rq-record-row">
+                                        <input type="text" :name="`record_keys[]`" x-model="row.key"
+                                               placeholder="Field name" class="rq-record-input">
+                                        <input type="text" :name="`record_values[]`" x-model="row.value"
+                                               placeholder="Value" class="rq-record-input">
+                                        <button type="button" @click="record.splice(idx, 1)" class="rq-record-rm-btn" title="Remove">×</button>
+                                    </div>
+                                </template>
+
+                                {{-- Hidden inputs that flatten to record[$key] = $value at submit --}}
+                                <template x-for="row in record" :key="row.key + '|' + row.value">
+                                    <input type="hidden" :name="row.key ? `record[${row.key}]` : ''" :value="row.value">
+                                </template>
+
+                                <button type="button" @click="addRow()"
+                                        style="font-size: 10px; padding: 4px 9px; border-radius: 4px; border: 1px dashed var(--line); background: transparent; color: var(--emerald-700); cursor: pointer; font-weight: 600; margin-top: 6px;">
+                                    + Add field
+                                </button>
+
+                                <div class="rq-findings-actions">
+                                    <button type="submit" class="nrh-btn nrh-btn-primary" style="font-size: 11px; padding: 6px 14px;">Save findings</button>
+                                    <button type="button" @click="open = false" style="font-size: 11px; color: var(--ink-500); background: none; border: none; cursor: pointer; padding: 6px 10px;">Cancel</button>
+                                    @if($hasFindings)
+                                    <span style="margin-left: auto; font-size: 10px; color: var(--ink-400); font-style: italic;">Findings on file — last edited via this form.</span>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
                         @endallowed
                     </div>
                     @endforeach
@@ -547,6 +676,50 @@
                 @endallowed
             </div>
         </div>
+
+        {{-- Report metadata (used in PDF cover) --}}
+        @allowed('request.update')
+        <div class="rq-section">
+            <div class="rq-section-head">
+                <div class="rq-section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+                </div>
+                <div class="rq-section-title">Report metadata</div>
+            </div>
+            <form method="POST" action="{{ route('requests.meta', $request) }}">
+                @csrf @method('PATCH')
+                <div class="rq-meta-grid">
+                    <div class="col-2">
+                        <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">Research analyst</div>
+                        <input type="text" name="analyst" value="{{ data_get($request->meta, 'analyst') }}" placeholder="Analyst name" class="rq-meta-input">
+                    </div>
+                    <div class="col-2">
+                        <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">Editor</div>
+                        <input type="text" name="editor" value="{{ data_get($request->meta, 'editor') }}" placeholder="Editor name" class="rq-meta-input">
+                    </div>
+                    <div class="col-2">
+                        <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">Purchase order</div>
+                        <input type="text" name="po_number" value="{{ data_get($request->meta, 'po_number') }}" placeholder="PO #" class="rq-meta-input mono">
+                    </div>
+                    <div>
+                        <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">Basic completion</div>
+                        <input type="date" name="completion_basic" value="{{ data_get($request->meta, 'completion_basic') }}" class="rq-meta-input mono">
+                    </div>
+                    <div>
+                        <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">Prelim completion</div>
+                        <input type="date" name="completion_prelim" value="{{ data_get($request->meta, 'completion_prelim') }}" class="rq-meta-input mono">
+                    </div>
+                    <div class="col-2">
+                        <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">Full completion</div>
+                        <input type="date" name="completion_full" value="{{ data_get($request->meta, 'completion_full') }}" class="rq-meta-input mono">
+                    </div>
+                    <div class="col-2">
+                        <button type="submit" class="nrh-btn nrh-btn-primary" style="width: 100%; padding: 9px 16px; font-size: 12px; font-weight: 600; margin-top: 4px;">Save metadata</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        @endallowed
 
         {{-- Activity --}}
         <div class="rq-section">
