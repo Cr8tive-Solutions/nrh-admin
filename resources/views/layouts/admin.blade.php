@@ -12,6 +12,63 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        // Reusable Alpine factory: convert any form into an AJAX submit
+        // with inline saving / saved / error feedback.
+        // Usage:
+        //   <form x-data="ajaxForm()" @submit.prevent="submit($event)" action="..." method="POST">
+        //     <button type="submit">Save</button>
+        //     <span x-show="state === 'saving'">Saving…</span>
+        //     <span x-show="state === 'saved'" x-cloak>Saved ✓</span>
+        //     <span x-show="state === 'error'" x-cloak x-text="message"></span>
+        //   </form>
+        document.addEventListener('alpine:init', () => {
+            window.Alpine.data('ajaxForm', (opts = {}) => ({
+                state: '',          // '' | 'saving' | 'saved' | 'error'
+                message: '',
+                response: null,
+                async submit(event) {
+                    const form = event?.target?.closest ? event.target.closest('form') : event?.target;
+                    if (!form || form.tagName !== 'FORM') return;
+
+                    this.state = 'saving';
+                    this.message = '';
+
+                    const fd = new FormData(form);
+                    const method = (fd.get('_method') || form.method || 'POST').toUpperCase();
+                    fd.set('_token', document.querySelector('meta[name=csrf-token]')?.content || '');
+
+                    try {
+                        const res = await fetch(form.action, {
+                            method: 'POST',  // always POST; spoofed via _method when needed
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '',
+                            },
+                            body: fd,
+                        });
+
+                        if (!res.ok) {
+                            const body = await res.json().catch(() => ({}));
+                            throw new Error(body.message || `HTTP ${res.status}`);
+                        }
+
+                        this.response = await res.json().catch(() => ({}));
+                        this.state = 'saved';
+                        this.message = this.response?.message || 'Saved';
+                        if (typeof opts.onSuccess === 'function') opts.onSuccess(this.response);
+                        setTimeout(() => { if (this.state === 'saved') { this.state = ''; this.message = ''; } }, 2000);
+                    } catch (e) {
+                        this.state = 'error';
+                        this.message = e.message || 'Save failed';
+                        if (typeof opts.onError === 'function') opts.onError(e);
+                        setTimeout(() => { if (this.state === 'error') { this.state = ''; this.message = ''; } }, 4000);
+                    }
+                },
+            }));
+        });
+    </script>
     <style>
         body { background: var(--paper); color: var(--ink-900); font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 

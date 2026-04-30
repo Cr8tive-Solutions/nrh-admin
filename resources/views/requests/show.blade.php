@@ -313,6 +313,18 @@
     .rq-meta-input:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 2px rgba(5,150,105,0.10); }
     .rq-meta-input.mono { font-family: 'JetBrains Mono', monospace; }
 
+    /* AJAX inline feedback indicator next to selects */
+    .ajax-state {
+        display: inline-flex; align-items: center;
+        font-size: 11px; font-weight: 600;
+        min-width: 16px; padding: 0 4px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+    .ajax-state.saving { color: var(--ink-400); }
+    .ajax-state.saved  { color: var(--emerald-700); }
+    .ajax-state.error  { color: var(--danger); font-weight: 500; }
+
     /* ── Layout ── */
     .rq-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
     @media (max-width: 1100px) { .rq-layout { grid-template-columns: 1fr; } }
@@ -477,13 +489,20 @@
             </div>
             <div class="rq-cand-actions">
                 @allowed('request.update')
-                <form method="POST" action="{{ route('requests.candidates.status', [$request, $candidate->id]) }}">
+                <form method="POST" action="{{ route('requests.candidates.status', [$request, $candidate->id]) }}"
+                      x-data="ajaxForm()" @submit.prevent="submit($event)">
                     @csrf @method('PATCH')
-                    <select name="status" onchange="this.form.submit()" class="rq-cand-status-select">
+                    <select name="status" @change="$el.form.requestSubmit()" class="rq-cand-status-select">
                         @foreach(['new', 'in_progress', 'flagged', 'complete'] as $s)
                         <option value="{{ $s }}" {{ $candidate->status === $s ? 'selected' : '' }}>{{ str_replace('_', ' ', ucfirst($s)) }}</option>
                         @endforeach
                     </select>
+                    <span class="ajax-state" x-show="state" x-cloak
+                          :class="{ 'saving': state==='saving', 'saved': state==='saved', 'error': state==='error' }">
+                        <span x-show="state === 'saving'">·</span>
+                        <span x-show="state === 'saved'">✓</span>
+                        <span x-show="state === 'error'" x-text="message"></span>
+                    </span>
                 </form>
                 @endallowed
                 <button type="button" @click="open = !open" :class="open ? 'open' : ''" class="rq-cand-toggle">
@@ -561,13 +580,21 @@
                                     <span x-show="!open">✎ Findings{{ $hasFindings ? ' ✓' : '' }}</span>
                                     <span x-show="open" x-cloak>Hide</span>
                                 </button>
-                                <form method="POST" action="{{ route('requests.scope.status', [$request, $candidate->id, $scope->id]) }}" style="margin: 0;">
+                                <form method="POST" action="{{ route('requests.scope.status', [$request, $candidate->id, $scope->id]) }}"
+                                      style="margin: 0; display:inline-flex; align-items:center; gap:4px;"
+                                      x-data="ajaxForm()" @submit.prevent="submit($event)">
                                     @csrf @method('PATCH')
-                                    <select name="status" onchange="this.form.submit()" class="rq-scope-select">
+                                    <select name="status" @change="$el.form.requestSubmit()" class="rq-scope-select">
                                         @foreach(['new', 'in_progress', 'flagged', 'complete'] as $s)
                                         <option value="{{ $s }}" {{ $sStatus === $s ? 'selected' : '' }}>{{ str_replace('_', ' ', ucfirst($s)) }}</option>
                                         @endforeach
                                     </select>
+                                    <span class="ajax-state" x-show="state" x-cloak
+                                          :class="{ 'saving': state==='saving', 'saved': state==='saved', 'error': state==='error' }">
+                                        <span x-show="state === 'saving'">·</span>
+                                        <span x-show="state === 'saved'">✓</span>
+                                        <span x-show="state === 'error'" x-text="message"></span>
+                                    </span>
                                 </form>
                             </span>
                             @else
@@ -577,7 +604,8 @@
 
                         @allowed('request.update')
                         <div x-show="open" x-cloak class="rq-findings-panel">
-                            <form method="POST" action="{{ route('requests.scope.findings', [$request, $candidate->id, $scope->id]) }}">
+                            <form method="POST" action="{{ route('requests.scope.findings', [$request, $candidate->id, $scope->id]) }}"
+                                  x-data="ajaxForm()" @submit.prevent="submit($event)">
                                 @csrf @method('PATCH')
 
                                 <div class="rq-findings-label">Comment / narrative</div>
@@ -610,10 +638,20 @@
                                 </button>
 
                                 <div class="rq-findings-actions">
-                                    <button type="submit" class="nrh-btn nrh-btn-primary" style="font-size: 11px; padding: 6px 14px;">Save findings</button>
+                                    <button type="submit" class="nrh-btn nrh-btn-primary" style="font-size: 11px; padding: 6px 14px;"
+                                            :disabled="state === 'saving'">
+                                        <span x-show="state !== 'saving'">Save findings</span>
+                                        <span x-show="state === 'saving'" x-cloak>Saving…</span>
+                                    </button>
                                     <button type="button" @click="open = false" style="font-size: 11px; color: var(--ink-500); background: none; border: none; cursor: pointer; padding: 6px 10px;">Cancel</button>
+                                    <span class="ajax-state" x-show="state === 'saved' || state === 'error'" x-cloak
+                                          :class="{ 'saved': state==='saved', 'error': state==='error' }"
+                                          style="font-size: 11px; font-weight: 600;">
+                                        <span x-show="state === 'saved'">✓ Saved</span>
+                                        <span x-show="state === 'error'" x-text="message"></span>
+                                    </span>
                                     @if($hasFindings)
-                                    <span style="margin-left: auto; font-size: 10px; color: var(--ink-400); font-style: italic;">Findings on file — last edited via this form.</span>
+                                    <span style="margin-left: auto; font-size: 10px; color: var(--ink-400); font-style: italic;" x-show="state !== 'saved' && state !== 'error'">Findings on file.</span>
                                     @endif
                                 </div>
                             </form>
@@ -648,7 +686,10 @@
             </div>
             <div class="rq-status-form">
                 @allowed('request.update')
-                <form method="POST" action="{{ route('requests.status', $request) }}" x-data="{ chosen: '{{ $request->status }}' }">
+                <div x-data="{ chosen: '{{ $request->status }}', current: '{{ $request->status }}' }">
+                <form method="POST" action="{{ route('requests.status', $request) }}"
+                      x-data="ajaxForm({ onSuccess: () => { current = chosen; } })"
+                      @submit.prevent="submit($event)">
                     @csrf @method('PATCH')
                     <div class="rq-status-options">
                         @foreach($statusMap as $key => $cfg)
@@ -666,11 +707,19 @@
                     </div>
                     <button type="submit" class="nrh-btn nrh-btn-primary"
                             style="display: block; width: 100%; padding: 12px 18px; margin-top: 16px; font-size: 13px; font-weight: 600;"
-                            :disabled="chosen === '{{ $request->status }}'"
-                            :class="chosen === '{{ $request->status }}' ? 'opacity-40 cursor-not-allowed' : ''">
-                        Update Status
+                            :disabled="chosen === current || state === 'saving'"
+                            :class="(chosen === current || state === 'saving') ? 'opacity-40 cursor-not-allowed' : ''">
+                        <span x-show="state !== 'saving'">Update Status</span>
+                        <span x-show="state === 'saving'" x-cloak>Saving…</span>
                     </button>
+                    <div x-show="state === 'saved' || state === 'error'" x-cloak
+                         style="text-align: center; margin-top: 8px; font-size: 11px; font-weight: 600;"
+                         :style="state === 'saved' ? 'color: var(--emerald-700);' : 'color: var(--danger);'">
+                        <span x-show="state === 'saved'">✓ Status updated</span>
+                        <span x-show="state === 'error'" x-text="message"></span>
+                    </div>
                 </form>
+                </div>
                 @else
                 <p style="font-size: 12px; color: var(--ink-400); font-style: italic; margin: 0;">Read-only — you don't have permission to update request status.</p>
                 @endallowed
@@ -686,7 +735,8 @@
                 </div>
                 <div class="rq-section-title">Report metadata</div>
             </div>
-            <form method="POST" action="{{ route('requests.meta', $request) }}">
+            <form method="POST" action="{{ route('requests.meta', $request) }}"
+                  x-data="ajaxForm()" @submit.prevent="submit($event)">
                 @csrf @method('PATCH')
                 <div class="rq-meta-grid">
                     <div class="col-2">
@@ -714,7 +764,18 @@
                         <input type="date" name="completion_full" value="{{ data_get($request->meta, 'completion_full') }}" class="rq-meta-input mono">
                     </div>
                     <div class="col-2">
-                        <button type="submit" class="nrh-btn nrh-btn-primary" style="width: 100%; padding: 9px 16px; font-size: 12px; font-weight: 600; margin-top: 4px;">Save metadata</button>
+                        <button type="submit" class="nrh-btn nrh-btn-primary"
+                                style="width: 100%; padding: 9px 16px; font-size: 12px; font-weight: 600; margin-top: 4px;"
+                                :disabled="state === 'saving'">
+                            <span x-show="state !== 'saving'">Save metadata</span>
+                            <span x-show="state === 'saving'" x-cloak>Saving…</span>
+                        </button>
+                        <div x-show="state === 'saved' || state === 'error'" x-cloak
+                             style="text-align: center; margin-top: 6px; font-size: 11px; font-weight: 600;"
+                             :style="state === 'saved' ? 'color: var(--emerald-700);' : 'color: var(--danger);'">
+                            <span x-show="state === 'saved'">✓ Metadata saved</span>
+                            <span x-show="state === 'error'" x-text="message"></span>
+                        </div>
                     </div>
                 </div>
             </form>
