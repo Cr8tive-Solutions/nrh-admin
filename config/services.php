@@ -41,4 +41,9 @@ return [
         'url' => env('CLIENT_PORTAL_URL', 'https://app.nrhintelligence.com'),
     ],
 
+    'calendarific' => [
+        // Free tier: 1,000 requests/month. Sign up at calendarific.com.
+        'key' => env('CALENDARIFIC_API_KEY'),
+    ],
+
 ];

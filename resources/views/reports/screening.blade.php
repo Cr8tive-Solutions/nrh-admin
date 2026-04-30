@@ -222,11 +222,45 @@
 </div>
 
 <div class="cover-notice">
-    <div class="heading">PRIVACY LAW</div>
+    <div class="heading">PRIVACY LAW &amp; CONSENT</div>
+    @php
+        $consents = $candidates->map(fn ($c) => $c->latestConsent)->filter();
+        $consentedCount = $consents->count();
+        $totalCandidates = $candidates->count();
+        $allConsented = $totalCandidates > 0 && $consentedCount === $totalCandidates;
+    @endphp
     <div class="body">
-        The PII of the data subject (candidate) was validly obtained, conforming to the 'consent' principle under the
-        applicable privacy law.
+        The PII of the data subject(s) (candidate(s)) was validly obtained under the Personal Data Protection Act 2010 (Malaysia),
+        conforming to the 'consent' principle.
+        @if($allConsented)
+            Consent {{ $totalCandidates === 1 ? 'was obtained' : 'records were obtained for all '.$totalCandidates.' candidates' }} as follows:
+        @elseif($consentedCount > 0)
+            Consent records on file for {{ $consentedCount }} of {{ $totalCandidates }} candidates:
+        @else
+            <em>No consent records on file for the candidate(s) at the time of this report.</em>
+        @endif
     </div>
+    @if($consents->count())
+    <table class="report-table" style="margin-top: 6px;">
+        <tr>
+            <th class="label" style="width: 32%;">CANDIDATE</th>
+            <th class="label" style="width: 22%;">CONSENTED</th>
+            <th class="label" style="width: 23%;">METHOD</th>
+            <th class="label" style="width: 23%;">VERSION</th>
+        </tr>
+        @foreach($candidates as $c)
+            @php $cn = $c->latestConsent; @endphp
+            @if($cn)
+            <tr>
+                <td>{{ $c->name }}</td>
+                <td>{{ $cn->consented_at->format('d M Y, H:i') }}</td>
+                <td>{{ \App\Models\ConsentRecord::evidenceTypes()[$cn->evidence_type] ?? $cn->evidence_type }}</td>
+                <td style="font-family: 'DejaVu Sans Mono', monospace;">{{ $cn->consent_version }}</td>
+            </tr>
+            @endif
+        @endforeach
+    </table>
+    @endif
 </div>
 
 <div class="sec-head">REPORT</div>
@@ -269,6 +303,15 @@
     <tr><th class="label">RESEARCH ANALYST</th><td class="value">{{ data_get($request->meta, 'analyst') ?: '—' }}</td></tr>
     <tr><th class="label">EDITOR</th><td class="value">{{ data_get($request->meta, 'editor') ?: '—' }}</td></tr>
 </table>
+
+@if(! empty($reportType))
+<div style="margin: 8px 0 -4px; padding: 6px 12px; background: #f5ecd1; border-left: 3px solid #d4af37; font-size: 9pt; color: #1a1a1a;">
+    <strong>{{ strtoupper($reportType) }} REPORT — VERSION {{ $reportVersion }}</strong>
+    @if(! empty($reportHash))
+    &nbsp;·&nbsp; <span style="font-family: 'DejaVu Sans Mono', monospace; font-size: 8pt; color: #666;">SHA: {{ $reportHash }}</span>
+    @endif
+</div>
+@endif
 
 <div class="sec-head">REPORT EARMARK &amp; LEGEND</div>
 <table class="report-table">

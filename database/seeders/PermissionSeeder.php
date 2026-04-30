@@ -27,6 +27,11 @@ class PermissionSeeder extends Seeder
             // Administration
             ['key' => 'staff.manage',       'label' => 'Manage staff accounts',         'group' => 'Administration', 'sort' => 80],
             ['key' => 'permissions.manage', 'label' => 'Edit role & user permissions',  'group' => 'Administration', 'sort' => 90],
+
+            // PDPA / Compliance
+            ['key' => 'pdpa.consent',       'label' => 'Record candidate consent',           'group' => 'Compliance', 'sort' => 100],
+            ['key' => 'pdpa.dsar',          'label' => 'Manage data subject requests (DSAR)','group' => 'Compliance', 'sort' => 110],
+            ['key' => 'pdpa.retention',     'label' => 'Configure retention policies & purge','group' => 'Compliance', 'sort' => 120],
         ];
 
         foreach ($permissions as $p) {
@@ -35,7 +40,7 @@ class PermissionSeeder extends Seeder
 
         $defaults = [
             'super_admin' => Permission::pluck('id')->all(),
-            'operations'  => Permission::whereIn('key', ['request.update', 'customer.manage'])->pluck('id')->all(),
+            'operations'  => Permission::whereIn('key', ['request.update', 'customer.manage', 'pdpa.consent', 'pdpa.dsar'])->pluck('id')->all(),
             'finance'     => Permission::whereIn('key', ['pricing.manage', 'invoice.manage', 'transaction.manage'])->pluck('id')->all(),
             'viewer'      => [],
         ];

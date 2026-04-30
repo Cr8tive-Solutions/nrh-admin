@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class RequestCandidate extends Model
 {
@@ -39,5 +41,20 @@ class RequestCandidate extends Model
         return $this->belongsToMany(ScopeType::class, 'candidate_scope_type', 'request_candidate_id', 'scope_type_id')
             ->using(CandidateScopeType::class)
             ->withPivot('status', 'assigned_at', 'started_at', 'completed_at', 'findings');
+    }
+
+    public function consentRecords(): HasMany
+    {
+        return $this->hasMany(ConsentRecord::class);
+    }
+
+    public function latestConsent(): HasOne
+    {
+        return $this->hasOne(ConsentRecord::class)->latestOfMany('consented_at');
+    }
+
+    public function isRedacted(): bool
+    {
+        return $this->redacted_at !== null;
     }
 }

@@ -50,9 +50,19 @@ Route::middleware('admin.auth')->group(function () {
     // ── Read-only routes (any admin role, including viewer) ──────────────────
     Route::get('/requests', [RequestQueueController::class, 'index'])->name('requests.index');
     Route::get('/requests/{screeningRequest}', [RequestQueueController::class, 'show'])->name('requests.show');
-    Route::get('/requests/{screeningRequest}/report', [\App\Http\Controllers\ReportController::class, 'generate'])
+    // Live preview — never persists. Anyone with read access can see it.
+    Route::get('/requests/{screeningRequest}/report/preview', [\App\Http\Controllers\ReportController::class, 'preview'])
         ->whereNumber('screeningRequest')
-        ->name('requests.report');
+        ->name('requests.report.preview');
+
+    // Re-download a persisted version's exact bytes.
+    Route::get('/requests/{screeningRequest}/report/versions/{version}/download', [\App\Http\Controllers\ReportController::class, 'download'])
+        ->whereNumber('screeningRequest')->whereNumber('version')
+        ->name('requests.report.download');
+
+    Route::get('/requests/{screeningRequest}/report/versions/{version}/view', [\App\Http\Controllers\ReportController::class, 'view'])
+        ->whereNumber('screeningRequest')->whereNumber('version')
+        ->name('requests.report.view');
 
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->whereNumber('customer')->name('customers.show');
@@ -72,6 +82,11 @@ Route::middleware('admin.auth')->group(function () {
         Route::patch('/requests/{screeningRequest}/candidates/{candidateId}/scopes/{scopeTypeId}/status', [RequestQueueController::class, 'updateScopeStatus'])->name('requests.scope.status');
         Route::patch('/requests/{screeningRequest}/candidates/{candidateId}/scopes/{scopeTypeId}/findings', [RequestQueueController::class, 'updateScopeFindings'])->name('requests.scope.findings');
         Route::patch('/requests/{screeningRequest}/meta', [RequestQueueController::class, 'updateMeta'])->name('requests.meta');
+
+        // Issue a new persisted version (Basic / Prelim / Full).
+        Route::post('/requests/{screeningRequest}/report/generate', [\App\Http\Controllers\ReportController::class, 'generate'])
+            ->whereNumber('screeningRequest')
+            ->name('requests.report.generate');
     });
 
     // ── customer.manage ──────────────────────────────────────────────────────
@@ -126,6 +141,7 @@ Route::middleware('admin.auth')->group(function () {
         Route::get('/config/holidays', [\App\Http\Controllers\Config\BusinessHolidayController::class, 'index'])->name('config.holidays.index');
         Route::post('/config/holidays', [\App\Http\Controllers\Config\BusinessHolidayController::class, 'store'])->name('config.holidays.store');
         Route::delete('/config/holidays/{holiday}', [\App\Http\Controllers\Config\BusinessHolidayController::class, 'destroy'])->name('config.holidays.destroy');
+        Route::post('/config/holidays/sync', [\App\Http\Controllers\Config\BusinessHolidayController::class, 'syncFromApi'])->name('config.holidays.sync');
     });
 
     // ── config.countries ─────────────────────────────────────────────────────
@@ -144,6 +160,38 @@ Route::middleware('admin.auth')->group(function () {
         Route::get('/staff/{admin}/permissions', [StaffController::class, 'permissions'])->name('staff.permissions');
         Route::put('/staff/{admin}/permissions', [StaffController::class, 'updatePermissions'])->name('staff.permissions.update');
         Route::patch('/staff/{admin}/reset-2fa', [StaffController::class, 'resetTwoFactor'])->name('staff.reset-2fa');
+    });
+
+    // ── pdpa.consent — record candidate consent ──────────────────────────────
+    Route::middleware('admin.can:pdpa.consent')->group(function () {
+        Route::post('/requests/{screeningRequest}/candidates/{candidateId}/consent', [\App\Http\Controllers\Compliance\ConsentController::class, 'store'])
+            ->whereNumber('screeningRequest')->whereNumber('candidateId')
+            ->name('compliance.consent.store');
+        Route::get('/compliance/consent/{consent}/evidence', [\App\Http\Controllers\Compliance\ConsentController::class, 'downloadEvidence'])
+            ->whereNumber('consent')
+            ->name('compliance.consent.evidence');
+    });
+
+    // ── pdpa.retention — retention config + manual purge ─────────────────────
+    Route::middleware('admin.can:pdpa.retention')->group(function () {
+        Route::get('/compliance/retention', [\App\Http\Controllers\Compliance\RetentionController::class, 'index'])->name('compliance.retention.index');
+        Route::put('/compliance/retention', [\App\Http\Controllers\Compliance\RetentionController::class, 'update'])->name('compliance.retention.update');
+        Route::post('/compliance/retention/purge-now', [\App\Http\Controllers\Compliance\RetentionController::class, 'purgeNow'])->name('compliance.retention.purge-now');
+    });
+
+    // ── pdpa.dsar — Data Subject Requests ────────────────────────────────────
+    Route::middleware('admin.can:pdpa.dsar')->group(function () {
+        Route::get('/compliance/dsar', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'index'])->name('compliance.dsar.index');
+        Route::get('/compliance/dsar/create', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'create'])->name('compliance.dsar.create');
+        Route::post('/compliance/dsar', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'store'])->name('compliance.dsar.store');
+        Route::get('/compliance/dsar/{dsar}', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'show'])->whereNumber('dsar')->name('compliance.dsar.show');
+        Route::patch('/compliance/dsar/{dsar}/verify', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'verify'])->whereNumber('dsar')->name('compliance.dsar.verify');
+        Route::patch('/compliance/dsar/{dsar}/confirm-identity', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'confirmIdentity'])->whereNumber('dsar')->name('compliance.dsar.confirm-identity');
+        Route::patch('/compliance/dsar/{dsar}/link-candidate', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'linkCandidate'])->whereNumber('dsar')->name('compliance.dsar.link-candidate');
+        Route::patch('/compliance/dsar/{dsar}/complete', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'complete'])->whereNumber('dsar')->name('compliance.dsar.complete');
+        Route::patch('/compliance/dsar/{dsar}/reject', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'reject'])->whereNumber('dsar')->name('compliance.dsar.reject');
+        Route::post('/compliance/dsar/{dsar}/execute-erasure', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'executeErasure'])->whereNumber('dsar')->name('compliance.dsar.execute-erasure');
+        Route::get('/compliance/dsar/{dsar}/evidence', [\App\Http\Controllers\Compliance\DataSubjectRequestController::class, 'downloadEvidence'])->whereNumber('dsar')->name('compliance.dsar.evidence');
     });
 
     // ── permissions.manage (role matrix) ─────────────────────────────────────

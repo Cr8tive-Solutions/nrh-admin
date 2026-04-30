@@ -72,10 +72,37 @@
         @endif
     </div>
 
-    <aside class="hl-card">
+    <aside>
+    <div class="hl-card" style="margin-bottom: 14px;">
+        <div class="hl-card-head">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--gold-700, #b8860b);"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <h2>Sync from Calendarific</h2>
+        </div>
+        <form method="POST" action="{{ route('config.holidays.sync') }}" style="padding: 14px 18px;">
+            @csrf
+            <p style="font-size: 11px; color: var(--ink-500); margin: 0 0 10px; line-height: 1.5;">
+                Fetches Malaysian federal holidays via the Calendarific API. Existing dates are kept — only new ones are added.
+            </p>
+            <div style="display: flex; gap: 8px;">
+                <select name="year" style="flex: 1; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; outline: none; font-family: 'JetBrains Mono', monospace;">
+                    @for($y = now()->year - 1; $y <= now()->year + 2; $y++)
+                    <option value="{{ $y }}" {{ $y === now()->year ? 'selected' : '' }}>{{ $y }}</option>
+                    @endfor
+                </select>
+                <button type="submit" class="nrh-btn nrh-btn-primary" style="font-size: 11px; padding: 8px 14px; white-space: nowrap;">
+                    Sync
+                </button>
+            </div>
+            <p style="font-size: 10px; color: var(--ink-400); margin: 8px 0 0;">
+                Auto-syncs annually on Jan 5 at 03:00. National holidays only — state-specific holidays (Hari Hol, Sultan birthdays) excluded; add manually if needed.
+            </p>
+        </form>
+    </div>
+
+    <div class="hl-card">
         <div class="hl-card-head">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--emerald-700);"><path d="M12 5v14M5 12h14"/></svg>
-            <h2>Add holiday</h2>
+            <h2>Add manually</h2>
         </div>
         <form method="POST" action="{{ route('config.holidays.store') }}" class="hl-add-form">
             @csrf
@@ -101,6 +128,7 @@
                 <strong>Timezone:</strong> {{ config('business_hours.timezone') }}
             </div>
         </form>
+    </div>
     </aside>
 
 </div>

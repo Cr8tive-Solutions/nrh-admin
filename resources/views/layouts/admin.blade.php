@@ -379,6 +379,26 @@
                 <div class="sb-section-label">Admin</div>
                 @endif
 
+                @if(admin_can('pdpa.consent') || admin_can('pdpa.dsar') || admin_can('pdpa.retention'))
+                <div class="sb-section-label">Compliance</div>
+
+                @allowed('pdpa.dsar')
+                <a href="{{ route('compliance.dsar.index') }}"
+                   class="sb-link {{ request()->routeIs('compliance.dsar.*') ? 'active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+                    Data Subject Requests
+                </a>
+                @endallowed
+
+                @allowed('pdpa.retention')
+                <a href="{{ route('compliance.retention.index') }}"
+                   class="sb-link {{ request()->routeIs('compliance.retention.*') ? 'active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    Retention &amp; Purge
+                </a>
+                @endallowed
+                @endif
+
                 @allowed('staff.manage')
                 <a href="{{ route('staff.index') }}"
                    class="sb-link {{ request()->routeIs('staff.*') ? 'active' : '' }}">

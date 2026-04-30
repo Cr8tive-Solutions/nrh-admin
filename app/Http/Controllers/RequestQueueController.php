@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdminAuditLog;
+use App\Models\ReportVersion;
 use App\Models\ScreeningRequest;
+use App\Services\ReportSnapshot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -32,7 +34,7 @@ class RequestQueueController extends Controller
 
     public function show(ScreeningRequest $screeningRequest)
     {
-        $screeningRequest->load(['customer', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes']);
+        $screeningRequest->load(['customer', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes', 'candidates.latestConsent.capturedBy']);
 
         $candidateStats = [
             'total'       => $screeningRequest->candidates->count(),
@@ -42,9 +44,31 @@ class RequestQueueController extends Controller
             'complete'    => $screeningRequest->candidates->where('status', 'complete')->count(),
         ];
 
+        // Report versions, current snapshot hash, and per-type freshness for the Generate panel.
+        $versions = ReportVersion::with('generatedBy', 'supersededBy')
+            ->where('screening_request_id', $screeningRequest->id)
+            ->orderBy('type')
+            ->orderByDesc('version')
+            ->get();
+
+        $currentSnapshot = ReportSnapshot::build($screeningRequest);
+        $currentHash     = ReportSnapshot::hash($currentSnapshot);
+
+        $latestPerType = $versions->groupBy('type')->map(fn ($g) => $g->sortByDesc('version')->first());
+        $reportFreshness = collect(ReportVersion::types())->mapWithKeys(function ($type) use ($latestPerType, $currentHash) {
+            $latest = $latestPerType->get($type);
+            return [$type => [
+                'latest'      => $latest,
+                'has_changes' => $latest === null || $latest->content_hash !== $currentHash,
+            ]];
+        })->all();
+
         return view('requests.show', [
-            'request'        => $screeningRequest,
-            'candidateStats' => $candidateStats,
+            'request'         => $screeningRequest,
+            'candidateStats'  => $candidateStats,
+            'versions'        => $versions,
+            'currentHash'     => $currentHash,
+            'reportFreshness' => $reportFreshness,
         ]);
     }
 

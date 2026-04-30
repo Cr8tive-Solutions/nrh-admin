@@ -25,7 +25,17 @@
       "Read(//tmp/**)",
       "Bash(pdftoppm -r 100 -png /tmp/nrh-test-report.pdf /tmp/nrh-test-page)",
       "Bash(composer show *)",
-      "Bash(pdfinfo /tmp/nrh-test-report.pdf)"
+      "Bash(pdfinfo /tmp/nrh-test-report.pdf)",
+      "Bash(curl -s -i \"https://date.nager.at/api/v3/PublicHolidays/2026/MY\")",
+      "Bash(curl -s \"https://date.nager.at/api/v3/AvailableCountries\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s \"https://date.nager.at/api/v3/PublicHolidays/2024/MY\")",
+      "Bash(curl -s \"https://date.nager.at/api/v3/PublicHolidays/2025/MY\")",
+      "Bash(curl -s \"https://date.nager.at/api/v3/PublicHolidays/2026/US\")",
+      "Bash(python3 -c \"import json, sys; data=json.load\\(sys.stdin\\); print\\('Total:', len\\(data\\)\\); print\\('SG/MY/ID/TH:', [c for c in data if c['countryCode'] in ['SG','MY','ID','TH','PH','VN']]\\)\")",
+      "Bash(curl -s \"https://api.api-ninjas.com/v1/holidays?country=MY&year=2026\")",
+      "Bash(curl -s -H \"X-Api-Key: test\" \"https://api.api-ninjas.com/v1/holidays?country=MY&year=2026\")",
+      "Bash(curl -s \"https://openholidaysapi.org/PublicHolidays?countryIsoCode=MY&languageIsoCode=EN&validFrom=2026-01-01&validTo=2026-12-31\")"
     ]
   }
 }

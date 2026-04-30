@@ -6,13 +6,9 @@
 
 @section('header-actions')
     <a href="{{ route('requests.index') }}" class="nrh-btn nrh-btn-ghost">← Back to Queue</a>
-    <a href="{{ route('requests.report', ['screeningRequest' => $request, 'inline' => 1]) }}" target="_blank" class="nrh-btn nrh-btn-ghost">
+    <a href="{{ route('requests.report.preview', $request) }}" target="_blank" class="nrh-btn nrh-btn-ghost">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Preview Report
-    </a>
-    <a href="{{ route('requests.report', $request) }}" class="nrh-btn nrh-btn-primary">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
-        Download PDF
     </a>
 @endsection
 
@@ -325,6 +321,99 @@
     .ajax-state.saved  { color: var(--emerald-700); }
     .ajax-state.error  { color: var(--danger); font-weight: 500; }
 
+    /* Generate report panel */
+    .rq-gen-grid { padding: 14px 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .rq-gen-btn {
+        background: var(--card); border: 1px solid var(--line);
+        border-radius: 8px; padding: 10px 8px;
+        cursor: pointer; font-family: inherit;
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        transition: all 120ms;
+    }
+    .rq-gen-btn:hover:not([disabled]) { border-color: var(--emerald-600); background: rgba(5,150,105,0.04); }
+    .rq-gen-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+    .rq-gen-btn.is-saving {
+        opacity: 1 !important;
+        border-color: var(--emerald-600);
+        background: linear-gradient(135deg, rgba(5,150,105,0.08), rgba(212,175,55,0.06));
+        box-shadow: inset 0 0 0 1px var(--emerald-600);
+    }
+    .rq-gen-spinner {
+        width: 16px; height: 16px;
+        border: 2px solid var(--ink-100);
+        border-top-color: var(--emerald-700);
+        border-radius: 50%;
+        animation: rq-spin 0.7s linear infinite;
+    }
+    @keyframes rq-spin {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+    }
+    .rq-gen-btn-label {
+        font-size: 11px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.1em;
+        color: var(--ink-900);
+    }
+    .rq-gen-btn-sub {
+        font-size: 9px; color: var(--ink-500);
+        font-family: 'JetBrains Mono', monospace;
+        text-transform: uppercase; letter-spacing: 0.08em;
+    }
+
+    /* Versions list */
+    .rq-version-row {
+        display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--line);
+        font-size: 12px;
+    }
+    .rq-version-row:last-child { border-bottom: none; }
+    .rq-version-row.is-superseded .rq-version-label { text-decoration: line-through; color: var(--ink-500); }
+    .rq-version-label { font-weight: 600; color: var(--ink-900); }
+    .rq-version-meta {
+        font-size: 10px; color: var(--ink-500);
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: 2px;
+    }
+    .rq-superseded-badge {
+        display: inline-block; padding: 1px 7px; border-radius: 99px;
+        background: rgba(196,69,58,0.08); color: var(--danger);
+        font-size: 9px; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.08em; margin-left: 6px;
+    }
+    .rq-version-actions { display: flex; gap: 4px; }
+    .rq-version-action-btn {
+        font-size: 10px; padding: 3px 7px;
+        border-radius: 4px; background: transparent;
+        border: 1px solid var(--line); color: var(--ink-500);
+        cursor: pointer; text-decoration: none;
+        font-family: inherit;
+    }
+    .rq-version-action-btn:hover { border-color: var(--emerald-600); color: var(--emerald-700); }
+
+    /* Supersede modal */
+    .rq-modal-backdrop {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+        z-index: 100; display: grid; place-items: center;
+        backdrop-filter: blur(4px);
+    }
+    .rq-modal {
+        background: var(--card); border: 1px solid var(--line);
+        border-radius: 12px; max-width: 460px; width: 90%;
+        box-shadow: 0 20px 40px -12px rgba(0,0,0,0.3);
+    }
+    .rq-modal-head { padding: 16px 20px; border-bottom: 1px solid var(--line); }
+    .rq-modal-head h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink-900); }
+    .rq-modal-head p { margin: 4px 0 0; font-size: 12px; color: var(--ink-500); }
+    .rq-modal-body { padding: 16px 20px; }
+    .rq-modal-textarea {
+        width: 100%; min-height: 80px; padding: 9px 11px;
+        border: 1px solid var(--line); border-radius: 6px;
+        font-size: 12px; font-family: inherit; outline: none; resize: vertical;
+    }
+    .rq-modal-textarea:focus { border-color: var(--emerald-600); box-shadow: 0 0 0 2px rgba(5,150,105,0.10); }
+    .rq-modal-foot { padding: 12px 20px; border-top: 1px solid var(--line); display: flex; gap: 8px; justify-content: flex-end; background: var(--paper-2); border-radius: 0 0 12px 12px; }
+
     /* ── Layout ── */
     .rq-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
     @media (max-width: 1100px) { .rq-layout { grid-template-columns: 1fr; } }
@@ -466,7 +555,7 @@
         @php
             $statusCfg = $statusMap[$candidate->status] ?? $statusMap['new'];
         @endphp
-        <div class="rq-cand" x-data="{ open: false }" :class="open ? 'is-open' : ''">
+        <div class="rq-cand" x-data="{ open: false, consentOpen: false }" :class="open ? 'is-open' : ''">
             <div class="rq-cand-avatar {{ $candidate->status }}">
                 {{ strtoupper(substr($candidate->name, 0, 2)) }}
             </div>
@@ -486,6 +575,30 @@
                 @if($candidate->remarks)
                 <div style="font-size: 11px; color: var(--ink-500); margin-top: 4px; font-style: italic;">{{ $candidate->remarks }}</div>
                 @endif
+
+                @php $consent = $candidate->latestConsent; @endphp
+                <div style="margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+                    @if($consent)
+                        <span style="font-size: 10px; color: var(--emerald-700); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="Consent on file: {{ $consent->consented_at->format('d M Y') }} via {{ \App\Models\ConsentRecord::evidenceTypes()[$consent->evidence_type] ?? $consent->evidence_type }}">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                            Consent · {{ $consent->consented_at->format('d M Y') }}
+                        </span>
+                    @else
+                        <span style="font-size: 10px; color: var(--gold-700, #b8860b); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="No consent record on file — required by PDPA">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                            Consent missing
+                        </span>
+                    @endif
+                    @allowed('pdpa.consent')
+                    <button type="button" @click="consentOpen = !consentOpen"
+                            style="font-size: 10px; padding: 2px 7px; border-radius: 4px;
+                                   background: transparent; border: 1px dashed var(--line);
+                                   color: var(--ink-500); cursor: pointer; font-family: inherit;">
+                        <span x-show="!consentOpen">{{ $consent ? 'Update' : 'Add consent' }}</span>
+                        <span x-show="consentOpen" x-cloak>Cancel</span>
+                    </button>
+                    @endallowed
+                </div>
             </div>
             <div class="rq-cand-actions">
                 @allowed('request.update')
@@ -510,6 +623,68 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
             </div>
+
+            @allowed('pdpa.consent')
+            <div x-show="consentOpen" x-cloak
+                 style="grid-column: 1 / -1; padding-top: 14px; margin-top: 12px; border-top: 1px dashed var(--gold-500, #d4af37); padding: 14px; background: rgba(212,175,55,0.04); border-radius: 8px;">
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--gold-700, #b8860b); font-weight: 600; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace;">
+                    Record consent — PDPA evidence
+                </div>
+                <form method="POST" action="{{ route('compliance.consent.store', [$request, $candidate->id]) }}"
+                      enctype="multipart/form-data"
+                      x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
+                      @submit.prevent="submit($event)">
+                    @csrf
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-500); font-weight: 600; margin-bottom: 4px;">Consented at <span style="color: var(--danger);">*</span></div>
+                            <input type="datetime-local" name="consented_at" required value="{{ now()->format('Y-m-d\TH:i') }}"
+                                   style="width: 100%; padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; outline: none;">
+                        </div>
+                        <div>
+                            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-500); font-weight: 600; margin-bottom: 4px;">Evidence type <span style="color: var(--danger);">*</span></div>
+                            <select name="evidence_type" required style="width: 100%; padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; outline: none;">
+                                @foreach(\App\Models\ConsentRecord::evidenceTypes() as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-500); font-weight: 600; margin-bottom: 4px;">Evidence file (optional)</div>
+                            <input type="file" name="evidence_file" accept=".pdf,.jpg,.jpeg,.png"
+                                   style="width: 100%; font-size: 11px; padding: 4px 0;">
+                            <p style="font-size: 9px; color: var(--ink-400); margin: 2px 0 0;">PDF / JPG / PNG, max 5 MB. Stored privately, accessible only to admins with pdpa.consent permission.</p>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-500); font-weight: 600; margin-bottom: 4px;">Notes</div>
+                            <textarea name="notes" rows="2" placeholder="Internal note about this consent capture (optional)"
+                                      style="width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; font-family: inherit; outline: none; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+                        <button type="submit" class="nrh-btn nrh-btn-primary"
+                                style="font-size: 11px; padding: 6px 14px;"
+                                :disabled="state === 'saving'">
+                            <span x-show="state !== 'saving'">Save consent record</span>
+                            <span x-show="state === 'saving'" x-cloak>Saving…</span>
+                        </button>
+                        <span x-show="state === 'error'" x-cloak x-text="message"
+                              style="font-size: 11px; color: var(--danger); font-weight: 500;"></span>
+                    </div>
+                </form>
+
+                @if($consent)
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 11px; color: var(--ink-500);">
+                    <strong>Latest record:</strong> {{ $consent->consented_at->format('d M Y, H:i') }}
+                    via {{ \App\Models\ConsentRecord::evidenceTypes()[$consent->evidence_type] ?? $consent->evidence_type }}
+                    · captured by {{ $consent->capturedBy?->name ?? '—' }}
+                    @if($consent->evidence_file_path)
+                    · <a href="{{ route('compliance.consent.evidence', $consent) }}" style="color: var(--emerald-700); font-weight: 600;">View file →</a>
+                    @endif
+                </div>
+                @endif
+            </div>
+            @endallowed
 
             <div x-show="open" x-cloak class="rq-scopes">
                 @if($candidate->scopeTypes->count())
@@ -724,6 +899,161 @@
                 <p style="font-size: 12px; color: var(--ink-400); font-style: italic; margin: 0;">Read-only — you don't have permission to update request status.</p>
                 @endallowed
             </div>
+        </div>
+
+        {{-- Generate Report --}}
+        <div class="rq-section"
+             x-data="{
+                supersedeOpen: false,
+                supersedeVersion: null,
+                supersedeType: '',
+                supersedeReason: '',
+                openSupersede(version) {
+                    this.supersedeVersion = version.id;
+                    this.supersedeType = version.type;
+                    this.supersedeReason = '';
+                    this.supersedeOpen = true;
+                }
+             }">
+            <div class="rq-section-head">
+                <div class="rq-section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+                </div>
+                <div class="rq-section-title">Generate Report</div>
+            </div>
+
+            @allowed('request.update')
+            <div class="rq-gen-grid">
+                @foreach(['basic' => 'Basic', 'prelim' => 'Prelim', 'full' => 'Full'] as $type => $label)
+                @php
+                    $f = $reportFreshness[$type];
+                    $latest = $f['latest'];
+                    $disabled = $latest && ! $f['has_changes'];
+                @endphp
+                <form method="POST" action="{{ route('requests.report.generate', $request) }}"
+                      x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
+                      @submit.prevent="submit($event)">
+                    @csrf
+                    <input type="hidden" name="type" value="{{ $type }}">
+                    <button type="submit" class="rq-gen-btn"
+                            :class="{ 'is-saving': state === 'saving' }"
+                            {{ $disabled ? 'disabled' : '' }}
+                            :disabled="state === 'saving'"
+                            title="{{ $disabled
+                                ? 'No changes since '.$latest->label().' · '.$latest->generated_at->diffForHumans()
+                                : ($latest ? 'Will issue '.ucfirst($type).' v'.($latest->version + 1) : 'Will issue '.ucfirst($type).' v1') }}">
+                        <template x-if="state !== 'saving'">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                <span class="rq-gen-btn-label">{{ $label }}</span>
+                                <span class="rq-gen-btn-sub">
+                                    @if($latest)
+                                        @if($f['has_changes'])
+                                            Issue v{{ $latest->version + 1 }}
+                                        @else
+                                            On v{{ $latest->version }}
+                                        @endif
+                                    @else
+                                        Issue v1
+                                    @endif
+                                </span>
+                            </div>
+                        </template>
+                        <template x-if="state === 'saving'">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0;">
+                                <div class="rq-gen-spinner"></div>
+                                <span class="rq-gen-btn-sub" style="color: var(--emerald-700);">Generating…</span>
+                            </div>
+                        </template>
+                    </button>
+                </form>
+                @endforeach
+            </div>
+
+            @if($versions->count())
+            <div style="border-top: 1px solid var(--line);">
+                @foreach($versions as $v)
+                @php $isSuperseded = $v->isSuperseded(); @endphp
+                <div class="rq-version-row {{ $isSuperseded ? 'is-superseded' : '' }}">
+                    <div>
+                        <div class="rq-version-label">
+                            {{ $v->label() }}
+                            @if($isSuperseded)
+                                <span class="rq-superseded-badge" title="Superseded by {{ $v->supersededBy->first()?->label() }}">superseded</span>
+                            @endif
+                        </div>
+                        <div class="rq-version-meta">
+                            {{ $v->generated_at->format('d M Y, H:i') }} · {{ $v->generatedBy?->name ?? 'Deleted admin' }} · SHA {{ $v->shortHash() }}
+                        </div>
+                        @if($v->supersedes_id && $v->supersede_reason)
+                        <div style="font-size: 10px; color: var(--ink-500); font-style: italic; margin-top: 3px;">
+                            Reason: {{ $v->supersede_reason }}
+                        </div>
+                        @endif
+                    </div>
+                    <div class="rq-version-actions">
+                        <a href="{{ route('requests.report.view', [$request, $v]) }}" target="_blank" class="rq-version-action-btn" title="Open in new tab">View</a>
+                        <a href="{{ route('requests.report.download', [$request, $v]) }}" class="rq-version-action-btn" title="Download exact bytes">Download</a>
+                    </div>
+                    @if(! $isSuperseded)
+                    <button type="button" class="rq-version-action-btn"
+                            @click="openSupersede({ id: {{ $v->id }}, type: '{{ $v->type }}', label: '{{ $v->label() }}' })"
+                            title="Issue a corrected version that supersedes this one">
+                        Supersede…
+                    </button>
+                    @else
+                    <span></span>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+            @else
+            <div style="padding: 24px 18px; text-align: center; font-size: 12px; color: var(--ink-400); font-style: italic; border-top: 1px solid var(--line);">
+                No reports issued yet.
+            </div>
+            @endif
+
+            {{-- Supersede modal --}}
+            <div x-show="supersedeOpen" x-cloak class="rq-modal-backdrop" @click.self="supersedeOpen = false">
+                <div class="rq-modal">
+                    <div class="rq-modal-head">
+                        <h3>Supersede &amp; reissue</h3>
+                        <p>Issues a new version of the same type, marked as superseding the chosen one. The old version stays in the audit history.</p>
+                    </div>
+                    <form method="POST" action="{{ route('requests.report.generate', $request) }}"
+                          x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
+                          @submit.prevent="submit($event)">
+                        @csrf
+                        <input type="hidden" name="type" :value="supersedeType">
+                        <input type="hidden" name="supersedes_id" :value="supersedeVersion">
+                        <div class="rq-modal-body">
+                            <div style="font-size: 11px; color: var(--ink-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 5px; font-family: 'JetBrains Mono', monospace;">Reason for supersede <span style="color: var(--danger);">*</span></div>
+                            <textarea name="supersede_reason" required maxlength="1000"
+                                      x-model="supersedeReason"
+                                      placeholder="e.g. Corrected analyst attribution. Updated PO number from XYZ to ABC."
+                                      class="rq-modal-textarea"></textarea>
+                            <p style="font-size: 10px; color: var(--ink-400); margin: 6px 0 0;">
+                                This reason is recorded in the audit log and shown next to the new version on this page.
+                            </p>
+                        </div>
+                        <div class="rq-modal-foot">
+                            <button type="button" @click="supersedeOpen = false"
+                                    style="font-size: 12px; color: var(--ink-500); background: none; border: none; cursor: pointer; padding: 6px 12px;">Cancel</button>
+                            <button type="submit" class="nrh-btn nrh-btn-primary"
+                                    :disabled="state === 'saving' || !supersedeReason.trim()"
+                                    :class="(state === 'saving' || !supersedeReason.trim()) ? 'opacity-40 cursor-not-allowed' : ''"
+                                    style="font-size: 12px; padding: 7px 14px; display: inline-flex; align-items: center; gap: 6px;">
+                                <span x-show="state === 'saving'" x-cloak class="rq-gen-spinner"
+                                      style="width:12px; height:12px; border-width:1.5px; border-top-color:#fff; border-color:rgba(255,255,255,0.3);"></span>
+                                <span x-show="state !== 'saving'">Issue superseding version</span>
+                                <span x-show="state === 'saving'" x-cloak>Generating…</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            @else
+            <p style="padding: 18px; font-size: 12px; color: var(--ink-400); font-style: italic; margin: 0;">Read-only — you don't have permission to issue reports.</p>
+            @endallowed
         </div>
 
         {{-- Report metadata (used in PDF cover) --}}
