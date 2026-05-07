@@ -38,4 +38,25 @@ class Agreement extends Model
     {
         return $this->days_left <= 14;
     }
+
+    /**
+     * Canonical billing mode. The client portal alias-matches multiple
+     * legacy synonyms ('cash', 'invoice', etc.) — anything that isn't
+     * explicitly 'per_request' is treated as monthly/credit (the safer
+     * default), so this resolver mirrors that behaviour.
+     */
+    public function billingMode(): string
+    {
+        return $this->billing === 'per_request' ? 'per_request' : 'monthly';
+    }
+
+    public function isPerRequest(): bool
+    {
+        return $this->billingMode() === 'per_request';
+    }
+
+    public function isMonthly(): bool
+    {
+        return $this->billingMode() === 'monthly';
+    }
 }

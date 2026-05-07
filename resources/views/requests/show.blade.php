@@ -15,16 +15,23 @@
 @section('content')
 
 @php
-    // Map status keys to display config
+    // Map status keys to display config — colours mirror the client portal so customers see consistent badges.
     $statusMap = [
-        'new'         => ['label' => 'New',          'color' => 'var(--ink-500)',     'bg' => 'var(--ink-100)',   'icon' => 'circle'],
-        'in_progress' => ['label' => 'In progress',  'color' => 'var(--gold-700, #b8860b)', 'bg' => '#fef3c7',  'icon' => 'clock'],
-        'flagged'     => ['label' => 'Flagged',      'color' => 'var(--danger)',      'bg' => '#fbeeec',          'icon' => 'flag'],
-        'complete'    => ['label' => 'Complete',     'color' => 'var(--emerald-700)', 'bg' => 'var(--emerald-50)','icon' => 'check'],
+        'new'         => ['label' => 'New',          'color' => 'var(--ink-500)',           'bg' => 'var(--ink-100)',     'icon' => 'circle'],
+        'in_progress' => ['label' => 'In progress',  'color' => 'var(--gold-700, #b8860b)', 'bg' => '#fef3c7',            'icon' => 'clock'],
+        'rejected'    => ['label' => 'Rejected',     'color' => 'var(--danger)',            'bg' => '#fbeeec',            'icon' => 'x'],
+        'prelim'      => ['label' => 'Preliminary',  'color' => '#ffffff',                  'bg' => 'var(--ink-900)',     'icon' => 'doc'],
+        'complete'    => ['label' => 'Complete',     'color' => 'var(--emerald-700)',       'bg' => 'var(--emerald-50)',  'icon' => 'check'],
+        'updated'     => ['label' => 'Updated',      'color' => 'var(--emerald-700)',       'bg' => 'var(--emerald-50)',  'icon' => 'refresh'],
+        'flagged'     => ['label' => 'Flagged',      'color' => '#b45309',                  'bg' => '#fef3c7',            'icon' => 'flag'],
     ];
-    $cur = $statusMap[$request->status];
-    $progressOrder = ['new', 'in_progress', 'flagged', 'complete'];
+    $cur = $statusMap[$request->status] ?? $statusMap['new'];
+    $progressOrder = ['new', 'in_progress', 'complete'];
     $currentIndex = array_search($request->status, $progressOrder);
+    if ($currentIndex === false) {
+        // Side-tracks (rejected / prelim / updated / flagged) — don't anchor the rail forward.
+        $currentIndex = $request->status === 'updated' ? 2 : ($request->status === 'prelim' ? 1 : 0);
+    }
 @endphp
 
 <style>
@@ -450,6 +457,68 @@
     .rq-empty-icon svg { width: 18px; height: 18px; }
 </style>
 
+{{-- ── Cash-billing payment banner ── --}}
+@if($awaitingPayment)
+<div style="background: linear-gradient(135deg, rgba(212,175,55,0.10), rgba(212,175,55,0.04));
+            border: 1px solid rgba(212,175,55,0.40);
+            border-radius: 14px; padding: 18px 22px; margin-bottom: 14px;
+            display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center;">
+    <div style="width: 40px; height: 40px; border-radius: 10px;
+                background: var(--gold-700, #b8860b); color: white;
+                display: grid; place-items: center; flex-shrink: 0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+    </div>
+    <div>
+        <div style="font-size: 13px; font-weight: 600; color: var(--gold-700, #b8860b); display: flex; align-items: center; gap: 8px;">
+            Awaiting payment · Cash customer
+            <span style="font-size: 10px; padding: 2px 8px; border-radius: 99px; background: var(--gold-700, #b8860b); color: white; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">Per request</span>
+        </div>
+        <div style="font-size: 12px; color: var(--ink-700); margin-top: 4px; line-height: 1.55;">
+            This customer is on cash billing — processing should not start until the bank transfer is received.
+            Expected amount: <strong style="font-family: 'JetBrains Mono', monospace; color: var(--ink-900);">MYR {{ number_format($paymentAmount, 2) }}</strong>
+            · reference <strong style="font-family: 'JetBrains Mono', monospace; color: var(--ink-900);">{{ $request->reference }}</strong>.
+        </div>
+    </div>
+    @allowed('transaction.manage')
+    <form method="POST" action="{{ route('requests.confirm-payment', $request) }}"
+          x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
+          @submit.prevent="submit($event)" style="margin: 0;">
+        @csrf
+        <button type="submit"
+                style="background: var(--gold-700, #b8860b); color: white;
+                       border: none; border-radius: 8px;
+                       padding: 10px 18px; font-size: 12px; font-weight: 600;
+                       text-transform: uppercase; letter-spacing: 0.08em;
+                       cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+                       white-space: nowrap; font-family: inherit;
+                       box-shadow: 0 4px 10px -4px rgba(184,134,11,0.45);"
+                :disabled="state === 'saving'"
+                :style="state === 'saving' ? 'opacity: 0.6; cursor: wait;' : ''"
+                onmouseover="if(!this.disabled) this.style.background='#9a7209'"
+                onmouseout="this.style.background='var(--gold-700, #b8860b)'">
+            <template x-if="state === 'saving'">
+                <span style="width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; display: inline-block; animation: rq-spin 0.7s linear infinite;"></span>
+            </template>
+            <template x-if="state !== 'saving'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
+            </template>
+            <span x-show="state !== 'saving'">Confirm payment</span>
+            <span x-show="state === 'saving'" x-cloak>Confirming…</span>
+        </button>
+    </form>
+    @endallowed
+</div>
+@elseif($isCashBilled)
+{{-- Already in progress / past stage — quiet info chip so ops know billing terms at a glance. --}}
+<div style="background: rgba(212,175,55,0.05); border: 1px solid rgba(212,175,55,0.25);
+            border-radius: 10px; padding: 8px 14px; margin-bottom: 14px;
+            font-size: 11px; color: var(--gold-700, #b8860b); font-weight: 500;
+            display: flex; align-items: center; gap: 8px;">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+    Cash customer · payment confirmed for this request
+</div>
+@endif
+
 {{-- ── Hero ── --}}
 <div class="rq-hero">
     <div class="rq-hero-top">
@@ -679,7 +748,9 @@
                     via {{ \App\Models\ConsentRecord::evidenceTypes()[$consent->evidence_type] ?? $consent->evidence_type }}
                     · captured by {{ $consent->capturedBy?->name ?? '—' }}
                     @if($consent->evidence_file_path)
-                    · <a href="{{ route('compliance.consent.evidence', $consent) }}" style="color: var(--emerald-700); font-weight: 600;">View file →</a>
+                    · <a href="{{ route('compliance.consent.evidence', $consent) }}" style="color: var(--emerald-700); font-weight: 600;">
+                        {{ $consent->evidence_type === 'paper_signed' ? 'View signed consent form →' : 'View file →' }}
+                    </a>
                     @endif
                 </div>
                 @endif
@@ -698,7 +769,11 @@
                         $slaState = $pivot->slaState($target);
 
                         // Build TAT label
-                        if (! $pivot->assigned_at) {
+                        if ($request->isTatPaused()) {
+                            // Request was rejected — TAT clock should not run.
+                            $tatLabel = 'Paused';
+                            $tatClass = 'no-target';
+                        } elseif (! $pivot->assigned_at) {
                             $tatLabel = '—';
                             $tatClass = 'no-target';
                         } elseif ($isRunning) {
@@ -861,7 +936,7 @@
             </div>
             <div class="rq-status-form">
                 @allowed('request.update')
-                <div x-data="{ chosen: '{{ $request->status }}', current: '{{ $request->status }}' }">
+                <div x-data="{ chosen: '{{ $request->status }}', current: '{{ $request->status }}', rejectionReason: @js($request->rejection_reason ?? '') }">
                 <form method="POST" action="{{ route('requests.status', $request) }}"
                       x-data="ajaxForm({ onSuccess: () => { current = chosen; } })"
                       @submit.prevent="submit($event)">
@@ -872,7 +947,8 @@
                             <input type="radio" name="status" value="{{ $key }}"
                                    x-model="chosen"
                                    {{ $request->status === $key ? 'checked' : '' }}>
-                            <span class="rq-status-opt-dot" style="background: {{ $cfg['color'] }};"></span>
+                            <span class="rq-status-opt-dot" style="background: {{ $cfg['color'] }};
+                                {{ $cfg['color'] === '#ffffff' ? 'border: 1px solid var(--ink-300);' : '' }}"></span>
                             <span class="rq-status-opt-label">{{ $cfg['label'] }}</span>
                             @if($key === $request->status)
                             <span style="font-size: 10px; color: var(--ink-400); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em;">current</span>
@@ -880,10 +956,43 @@
                         </label>
                         @endforeach
                     </div>
+
+                    {{-- Rejection reason — required when chosen is 'rejected'. Persisted on screening_requests.rejection_reason and surfaced on the client portal. --}}
+                    <div x-show="chosen === 'rejected'" x-cloak x-transition
+                         style="margin-top: 14px; padding: 12px 14px; border-radius: 8px;
+                                background: #fbeeec; border: 1px solid rgba(196,69,58,0.25);">
+                        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em;
+                                    color: var(--danger); font-weight: 600; font-family: 'JetBrains Mono', monospace;
+                                    margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+                            Reason for rejection <span style="color: var(--danger);">*</span>
+                        </div>
+                        <textarea name="rejection_reason" x-model="rejectionReason" rows="3" maxlength="2000"
+                                  placeholder="e.g. Candidate identification document is illegible. Please re-upload a clearer scan."
+                                  style="width: 100%; padding: 8px 10px; border: 1px solid rgba(196,69,58,0.30);
+                                         background: var(--card); border-radius: 6px; font-family: inherit;
+                                         font-size: 12px; color: var(--ink-900); outline: none; resize: vertical;"
+                                  :required="chosen === 'rejected'"></textarea>
+                        <p style="font-size: 10px; color: var(--ink-500); margin: 6px 0 0; line-height: 1.5;">
+                            The customer will see this reason on the client portal under their request detail.
+                            Be specific so they know how to remedy and resubmit.
+                        </p>
+                    </div>
+
+                    {{-- If a reason was previously set but admin is moving away from 'rejected', show a quiet note that it'll be cleared. --}}
+                    @if($request->rejection_reason)
+                    <div x-show="current === 'rejected' && chosen !== 'rejected'" x-cloak
+                         style="margin-top: 10px; padding: 8px 12px; border-radius: 6px;
+                                background: var(--paper-2); border: 1px dashed var(--ink-300, var(--line));
+                                font-size: 11px; color: var(--ink-500); line-height: 1.55;">
+                        Saving will clear the previous rejection reason on this request.
+                    </div>
+                    @endif
+
                     <button type="submit" class="nrh-btn nrh-btn-primary"
                             style="display: block; width: 100%; padding: 12px 18px; margin-top: 16px; font-size: 13px; font-weight: 600;"
-                            :disabled="chosen === current || state === 'saving'"
-                            :class="(chosen === current || state === 'saving') ? 'opacity-40 cursor-not-allowed' : ''">
+                            :disabled="chosen === current || state === 'saving' || (chosen === 'rejected' && !rejectionReason.trim())"
+                            :class="(chosen === current || state === 'saving' || (chosen === 'rejected' && !rejectionReason.trim())) ? 'opacity-40 cursor-not-allowed' : ''">
                         <span x-show="state !== 'saving'">Update Status</span>
                         <span x-show="state === 'saving'" x-cloak>Saving…</span>
                     </button>
@@ -894,6 +1003,18 @@
                         <span x-show="state === 'error'" x-text="message"></span>
                     </div>
                 </form>
+
+                {{-- Show currently-saved rejection reason (read-only) when status is rejected. --}}
+                @if($request->status === 'rejected' && $request->rejection_reason)
+                <div style="margin-top: 14px; padding: 12px 14px; border-radius: 8px;
+                            background: #fbeeec; border: 1px solid rgba(196,69,58,0.20);">
+                    <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em;
+                                color: var(--danger); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-bottom: 5px;">
+                        Visible to customer
+                    </div>
+                    <div style="font-size: 12px; color: var(--ink-900); line-height: 1.55; white-space: pre-line;">{{ $request->rejection_reason }}</div>
+                </div>
+                @endif
                 </div>
                 @else
                 <p style="font-size: 12px; color: var(--ink-400); font-style: italic; margin: 0;">Read-only — you don't have permission to update request status.</p>

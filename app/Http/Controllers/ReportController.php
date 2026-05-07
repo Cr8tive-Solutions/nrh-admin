@@ -143,8 +143,25 @@ class ReportController extends Controller
         $version->file_path   = $relPath;
         $version->file_sha256 = $fileSha256;
 
-        DB::transaction(function () use ($version, $supersedesId) {
+        // Map report types to the request workflow status they imply.
+        // Basic reports are bookkeeping artefacts (typically a quick-turn
+        // intermediate doc) and don't move the request forward.
+        $previousStatus = $screeningRequest->status;
+        $statusFlip = null;
+        if ($type === 'prelim' && $previousStatus !== 'complete' && $previousStatus !== 'updated') {
+            $statusFlip = 'prelim';
+        } elseif ($type === 'full') {
+            // Re-issuing a full report after the request was already complete
+            // signals an amendment — surface that to the customer as 'updated'.
+            $statusFlip = in_array($previousStatus, ['complete', 'updated'], true) ? 'updated' : 'complete';
+        }
+
+        DB::transaction(function () use ($version, $supersedesId, $screeningRequest, $statusFlip, $previousStatus) {
             $version->save();
+
+            if ($statusFlip && $statusFlip !== $previousStatus) {
+                $screeningRequest->update(['status' => $statusFlip]);
+            }
 
             if ($supersedesId) {
                 AdminAuditLog::record('report.version_superseded', null, [
@@ -163,6 +180,9 @@ class ReportController extends Controller
                 'file_sha256'   => $version->file_sha256,
                 'content_hash'  => $version->content_hash,
                 'supersedes_id' => $supersedesId,
+                'status_flip'   => $statusFlip && $statusFlip !== $previousStatus
+                    ? ['from' => $previousStatus, 'to' => $statusFlip]
+                    : null,
             ]);
         });
 

@@ -9,13 +9,14 @@ class ScopeType extends Model
 {
     protected $fillable = [
         'country_id', 'name', 'category', 'turnaround', 'turnaround_hours',
-        'price', 'price_on_request', 'description',
+        'price', 'price_on_request', 'description', 'requires_signed_consent',
     ];
 
     protected $casts = [
-        'price'            => 'decimal:2',
-        'price_on_request' => 'boolean',
-        'turnaround_hours' => 'integer',
+        'price'                   => 'decimal:2',
+        'price_on_request'        => 'boolean',
+        'requires_signed_consent' => 'boolean',
+        'turnaround_hours'        => 'integer',
     ];
 
     public function country(): BelongsTo

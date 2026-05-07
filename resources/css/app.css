@@ -204,9 +204,11 @@
 }
 @utility badge-blue   { background-color: var(--emerald-50);  color: var(--emerald-800); }
 @utility badge-yellow { background-color: var(--gold-100);    color: var(--gold-700); }
+@utility badge-amber  { background-color: #fef3c7;            color: #b45309; }
 @utility badge-red    { background-color: #fbeeec;            color: var(--danger); }
 @utility badge-green  { background-color: var(--emerald-50);  color: var(--emerald-700); }
 @utility badge-gray   { background-color: var(--ink-100);     color: var(--ink-700); }
+@utility badge-black  { background-color: var(--ink-900);     color: #ffffff; }
 
 /* ── NRH Table ── */
 .nrh-table { width: 100%; border-collapse: collapse; }
@@ -314,8 +316,10 @@
 [data-theme="dark"] .badge-blue   { background: rgba(16,185,129,0.12);  color: var(--emerald-500); }
 [data-theme="dark"] .badge-green  { background: rgba(16,185,129,0.12);  color: var(--emerald-500); }
 [data-theme="dark"] .badge-yellow { background: rgba(212,175,55,0.12);  color: var(--gold-400); }
+[data-theme="dark"] .badge-amber  { background: rgba(245,158,11,0.16);  color: #fbbf24; }
 [data-theme="dark"] .badge-red    { background: rgba(196,69,58,0.18);   color: #e06057; }
 [data-theme="dark"] .badge-gray   { background: rgba(255,255,255,0.06); color: var(--ink-700); }
+[data-theme="dark"] .badge-black  { background: rgba(255,255,255,0.92); color: var(--ink-900); }
 
 /* ── Dark mode: table row hover ── */
 [data-theme="dark"] .nrh-table tbody tr:hover { background: rgba(255,255,255,0.03); }

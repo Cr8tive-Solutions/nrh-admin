@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Agreement;
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AgreementController extends Controller
 {
@@ -15,16 +16,7 @@ class AgreementController extends Controller
 
     public function store(Request $request, Customer $customer)
     {
-        $data = $request->validate([
-            'type'        => 'required|string|max:100',
-            'start_date'  => 'required|date',
-            'expiry_date' => 'required|date|after:start_date',
-            'sla_tat'     => 'nullable|string|max:100',
-            'billing'     => 'nullable|string|max:100',
-            'payment'     => 'nullable|string|max:100',
-        ]);
-
-        $customer->agreements()->create($data);
+        $customer->agreements()->create($this->validated($request));
 
         return redirect()->route('customers.show', $customer)->with('success', 'Agreement created.');
     }
@@ -36,17 +28,20 @@ class AgreementController extends Controller
 
     public function update(Request $request, Customer $customer, Agreement $agreement)
     {
-        $data = $request->validate([
+        $agreement->update($this->validated($request));
+
+        return redirect()->route('customers.show', $customer)->with('success', 'Agreement updated.');
+    }
+
+    private function validated(Request $request): array
+    {
+        return $request->validate([
             'type'        => 'required|string|max:100',
             'start_date'  => 'required|date',
             'expiry_date' => 'required|date|after:start_date',
             'sla_tat'     => 'nullable|string|max:100',
-            'billing'     => 'nullable|string|max:100',
+            'billing'     => ['required', Rule::in(['monthly', 'per_request'])],
             'payment'     => 'nullable|string|max:100',
         ]);
-
-        $agreement->update($data);
-
-        return redirect()->route('customers.show', $customer)->with('success', 'Agreement updated.');
     }
 }

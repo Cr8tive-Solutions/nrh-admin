@@ -61,7 +61,17 @@
                 <tbody>
                     @foreach($scopes as $scope)
                     <tr x-show="scopeSearch === '' || {{ json_encode(strtolower($scope->name)) }}.includes(scopeSearch.toLowerCase())">
-                        <td class="text-gray-900 w-2/5">{{ $scope->name }}</td>
+                        <td class="text-gray-900 w-2/5">
+                            {{ $scope->name }}
+                            @if($scope->requires_signed_consent)
+                                <span class="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider"
+                                      style="background: rgba(212,175,55,0.12); color: var(--gold-700, #b8860b); border: 1px solid rgba(212,175,55,0.35); letter-spacing: 0.06em;"
+                                      title="Customers must upload an individually-signed consent form per candidate">
+                                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                    Signed consent
+                                </span>
+                            @endif
+                        </td>
                         <td class="text-gray-500 text-xs w-1/5">{{ $scope->turnaround ?? '—' }}</td>
                         <td class="font-mono text-xs w-1/5">
                             @if($scope->price_on_request)

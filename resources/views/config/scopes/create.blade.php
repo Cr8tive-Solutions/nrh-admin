@@ -84,6 +84,22 @@
                       class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">{{ old('description') }}</textarea>
         </div>
 
+        <div class="rounded-md border border-amber-200 bg-amber-50/40 px-3 py-3">
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" name="requires_signed_consent" value="1"
+                       {{ old('requires_signed_consent') ? 'checked' : '' }}
+                       class="accent-amber-600 w-4 h-4 mt-0.5 flex-shrink-0">
+                <span class="flex-1">
+                    <span class="block text-sm font-medium text-gray-900">Requires individually-signed consent form</span>
+                    <span class="block text-xs text-gray-500 mt-1 leading-relaxed">
+                        When checked, customers cannot use the standard PDPA checkbox to declare consent for this scope.
+                        They must upload a signed form per candidate, and the client portal will block submission if any are missing.
+                        Use for: Social Media checks, Education verification, Employment verification, Reference Checks.
+                    </span>
+                </span>
+            </label>
+        </div>
+
         <div class="flex gap-3 pt-2">
             <button type="submit" class="nrh-btn nrh-btn-primary">
                 Create Scope

@@ -10,6 +10,7 @@ use App\Http\Controllers\Config\ScopeTypeController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\RequestQueueController;
 use App\Http\Controllers\ScopePricingController;
@@ -127,6 +128,23 @@ Route::middleware('admin.auth')->group(function () {
     Route::middleware('admin.can:transaction.manage')->group(function () {
         Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
         Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
+
+        // Confirm a cash-billed customer's bank transfer for a screening request.
+        // Records a transactions row, flips request status, and writes an audit entry.
+        Route::post('/requests/{screeningRequest}/confirm-payment', [RequestQueueController::class, 'confirmPayment'])
+            ->whereNumber('screeningRequest')
+            ->name('requests.confirm-payment');
+
+        // Customer-uploaded payment receipts — admin verify/reject + view file.
+        Route::post('/payment-receipts/{receipt}/verify', [PaymentReceiptController::class, 'verify'])
+            ->whereNumber('receipt')
+            ->name('payment-receipts.verify');
+        Route::post('/payment-receipts/{receipt}/reject', [PaymentReceiptController::class, 'reject'])
+            ->whereNumber('receipt')
+            ->name('payment-receipts.reject');
+        Route::get('/payment-receipts/{receipt}/file', [PaymentReceiptController::class, 'downloadFile'])
+            ->whereNumber('receipt')
+            ->name('payment-receipts.file');
     });
 
     // ── config.scopes ────────────────────────────────────────────────────────

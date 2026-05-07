@@ -31,6 +31,27 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(InvoicePaymentReceipt::class)->latest();
+    }
+
+    public function screeningRequests(): HasMany
+    {
+        return $this->hasMany(ScreeningRequest::class);
+    }
+
+    /**
+     * Sum of verified receipt amounts. Used to decide whether incoming
+     * payments are enough to flip the invoice to 'paid'.
+     */
+    public function verifiedReceiptsTotal(): float
+    {
+        return (float) $this->receipts()
+            ->where('status', 'verified')
+            ->sum('amount_claimed');
+    }
+
     public static function generateNumber(): string
     {
         $year = now()->year;

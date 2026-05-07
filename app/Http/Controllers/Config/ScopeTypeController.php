@@ -27,17 +27,19 @@ class ScopeTypeController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'country_id'       => 'required|exists:countries,id',
-            'name'             => 'required|string|max:255',
-            'category'         => 'nullable|string|max:255',
-            'turnaround'       => 'nullable|string|max:100',
-            'turnaround_hours' => 'nullable|integer|min:1|max:1440',
-            'price'            => 'required|numeric|min:0',
-            'price_on_request' => 'boolean',
-            'description'      => 'nullable|string',
+            'country_id'              => 'required|exists:countries,id',
+            'name'                    => 'required|string|max:255',
+            'category'                => 'nullable|string|max:255',
+            'turnaround'              => 'nullable|string|max:100',
+            'turnaround_hours'        => 'nullable|integer|min:1|max:1440',
+            'price'                   => 'required|numeric|min:0',
+            'price_on_request'        => 'boolean',
+            'requires_signed_consent' => 'boolean',
+            'description'             => 'nullable|string',
         ]);
 
-        $data['price_on_request'] = $request->boolean('price_on_request');
+        $data['price_on_request']        = $request->boolean('price_on_request');
+        $data['requires_signed_consent'] = $request->boolean('requires_signed_consent');
 
         ScopeType::create($data);
 
@@ -53,17 +55,19 @@ class ScopeTypeController extends Controller
     public function update(Request $request, ScopeType $scope)
     {
         $data = $request->validate([
-            'country_id'       => 'required|exists:countries,id',
-            'name'             => 'required|string|max:255',
-            'category'         => 'nullable|string|max:255',
-            'turnaround'       => 'nullable|string|max:100',
-            'turnaround_hours' => 'nullable|integer|min:1|max:1440',
-            'price'            => 'required|numeric|min:0',
-            'price_on_request' => 'boolean',
-            'description'      => 'nullable|string',
+            'country_id'              => 'required|exists:countries,id',
+            'name'                    => 'required|string|max:255',
+            'category'                => 'nullable|string|max:255',
+            'turnaround'              => 'nullable|string|max:100',
+            'turnaround_hours'        => 'nullable|integer|min:1|max:1440',
+            'price'                   => 'required|numeric|min:0',
+            'price_on_request'        => 'boolean',
+            'requires_signed_consent' => 'boolean',
+            'description'             => 'nullable|string',
         ]);
 
-        $data['price_on_request'] = $request->boolean('price_on_request');
+        $data['price_on_request']        = $request->boolean('price_on_request');
+        $data['requires_signed_consent'] = $request->boolean('requires_signed_consent');
 
         $scope->update($data);
 

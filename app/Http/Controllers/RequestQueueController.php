@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AdminAuditLog;
 use App\Models\ReportVersion;
 use App\Models\ScreeningRequest;
+use App\Models\Transaction;
 use App\Services\ReportSnapshot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,7 @@ class RequestQueueController extends Controller
 
     public function show(ScreeningRequest $screeningRequest)
     {
-        $screeningRequest->load(['customer', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes', 'candidates.latestConsent.capturedBy']);
+        $screeningRequest->load(['customer.agreements', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes', 'candidates.latestConsent.capturedBy']);
 
         $candidateStats = [
             'total'       => $screeningRequest->candidates->count(),
@@ -63,30 +64,116 @@ class RequestQueueController extends Controller
             ]];
         })->all();
 
+        // Cash-billed customers need explicit payment confirmation before processing starts.
+        $activeAgreement = $screeningRequest->customer?->agreements
+            ->filter(fn ($a) => $a->expiry_date->isFuture())
+            ->sortByDesc('expiry_date')
+            ->first();
+        $isCashBilled = $activeAgreement?->isPerRequest() ?? false;
+        $awaitingPayment = $isCashBilled && $screeningRequest->status === 'new';
+        $paymentAmount = $awaitingPayment ? $screeningRequest->calculateTotal() : null;
+
         return view('requests.show', [
             'request'         => $screeningRequest,
             'candidateStats'  => $candidateStats,
             'versions'        => $versions,
             'currentHash'     => $currentHash,
             'reportFreshness' => $reportFreshness,
+            'activeAgreement' => $activeAgreement,
+            'isCashBilled'    => $isCashBilled,
+            'awaitingPayment' => $awaitingPayment,
+            'paymentAmount'   => $paymentAmount,
+        ]);
+    }
+
+    /**
+     * Confirm bank transfer received for a cash-billed (per-request) customer:
+     *   1. record a transactions row referencing this request
+     *   2. flip request status from 'new' to 'in_progress' so the TAT clock starts
+     *   3. write an audit log entry
+     *
+     * Idempotent: only callable while status='new' AND the customer's active
+     * agreement is per_request. Wraps everything in a DB transaction.
+     */
+    public function confirmPayment(Request $request, ScreeningRequest $screeningRequest)
+    {
+        $screeningRequest->load('customer.agreements');
+
+        $agreement = $screeningRequest->customer?->agreements
+            ->filter(fn ($a) => $a->expiry_date->isFuture())
+            ->sortByDesc('expiry_date')
+            ->first();
+
+        if (! $agreement || ! $agreement->isPerRequest()) {
+            return $this->saveResponse($request, 'Customer is not on cash billing — no payment confirmation needed.', [], 422);
+        }
+
+        if ($screeningRequest->status !== 'new') {
+            return $this->saveResponse($request, 'Payment was already confirmed for this request.', [], 422);
+        }
+
+        $amount = $screeningRequest->calculateTotal();
+
+        DB::transaction(function () use ($screeningRequest, $amount) {
+            Transaction::create([
+                'customer_id' => $screeningRequest->customer_id,
+                'type'        => 'payment',
+                'amount'      => $amount,
+                'reference'   => $screeningRequest->reference,
+                'status'      => 'completed',
+                'method'      => 'Bank Transfer',
+                'notes'       => "Cash payment for screening request {$screeningRequest->reference}.",
+            ]);
+
+            $screeningRequest->update(['status' => 'in_progress']);
+        });
+
+        AdminAuditLog::record('payment.confirmed', null, [
+            'request_id' => $screeningRequest->id,
+            'reference'  => $screeningRequest->reference,
+            'customer'   => $screeningRequest->customer?->name,
+            'amount'     => $amount,
+            'method'     => 'Bank Transfer',
+        ]);
+
+        return $this->saveResponse($request, 'Payment confirmed — request is now in progress.', [
+            'status' => $screeningRequest->status,
+            'amount' => $amount,
         ]);
     }
 
     public function updateStatus(Request $request, ScreeningRequest $screeningRequest)
     {
+        $statuses = implode(',', ScreeningRequest::STATUSES);
         $data = $request->validate([
-            'status' => 'required|in:new,in_progress,flagged,complete',
+            'status'           => "required|in:{$statuses}",
+            'rejection_reason' => 'nullable|string|max:2000|required_if:status,rejected',
+        ], [
+            'rejection_reason.required_if' => 'A reason is required when rejecting a request.',
         ]);
 
-        $screeningRequest->update(['status' => $data['status']]);
+        $update = ['status' => $data['status']];
+
+        // Capture / clear rejection reason in lock-step with the status flip,
+        // so the client portal never shows a stale reason on a non-rejected row.
+        if ($data['status'] === 'rejected') {
+            $update['rejection_reason'] = $data['rejection_reason'];
+        } elseif ($screeningRequest->rejection_reason !== null) {
+            $update['rejection_reason'] = null;
+        }
+
+        $screeningRequest->update($update);
 
         return $this->saveResponse($request, 'Request status updated.', [
-            'status' => $screeningRequest->status,
+            'status'           => $screeningRequest->status,
+            'rejection_reason' => $screeningRequest->rejection_reason,
         ]);
     }
 
     public function updateCandidateStatus(Request $request, ScreeningRequest $screeningRequest, int $candidateId)
     {
+        // Candidate-level status uses the original four — prelim/updated/rejected
+        // are request-level workflow concepts, not per-candidate.
         $data = $request->validate([
             'status' => 'required|in:new,in_progress,flagged,complete',
         ]);
@@ -263,11 +350,12 @@ class RequestQueueController extends Controller
     /**
      * Standardised save response — JSON for AJAX callers, redirect-with-flash otherwise.
      */
-    private function saveResponse(Request $request, string $message, array $payload = [])
+    private function saveResponse(Request $request, string $message, array $payload = [], int $status = 200)
     {
+        $ok = $status < 400;
         if ($request->expectsJson()) {
-            return response()->json(array_merge(['ok' => true, 'message' => $message], $payload));
+            return response()->json(array_merge(['ok' => $ok, 'message' => $message], $payload), $status);
         }
-        return back()->with('success', $message);
+        return back()->with($ok ? 'success' : 'error', $message);
     }
 }

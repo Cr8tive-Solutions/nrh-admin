@@ -208,6 +208,28 @@
         margin-top: 12px; overflow: hidden;
     }
     .ch-expiry-fill { height: 100%; border-radius: 99px; transition: width 200ms; }
+
+    /* ── Billing mode chip ── */
+    .ch-billing-chip {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 10px;
+        border-radius: 99px;
+        font-size: 11px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.06em;
+        font-family: 'JetBrains Mono', monospace;
+        border: 1px solid transparent;
+    }
+    .ch-billing-chip svg { width: 11px; height: 11px; }
+    .ch-billing-chip-credit {
+        background: var(--emerald-50);
+        color: var(--emerald-700);
+        border-color: rgba(5,150,105,0.20);
+    }
+    .ch-billing-chip-cash {
+        background: rgba(212,175,55,0.10);
+        color: var(--gold-700, #b8860b);
+        border-color: rgba(212,175,55,0.35);
+    }
 </style>
 
 <div x-data="{ tab: '{{ session('invitation_url') ? 'team' : 'info' }}' }">
@@ -271,6 +293,20 @@
                     <span class="badge badge-yellow">Agreement expires in {{ $activeAgreement->days_left }}d</span>
                 @else
                     <span class="badge badge-green">Agreement active · {{ $activeAgreement->days_left }}d left</span>
+                @endif
+            </span>
+            <span class="ch-meta-sep"></span>
+            <span class="ch-meta-item">
+                @if($activeAgreement->isPerRequest())
+                    <span class="ch-billing-chip ch-billing-chip-cash" title="Customer must transfer payment before each request is processed">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                        Cash · Per request
+                    </span>
+                @else
+                    <span class="ch-billing-chip ch-billing-chip-credit" title="Customer is billed at month-end; requests start processing immediately">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        Credit · Monthly
+                    </span>
                 @endif
             </span>
             @endif
@@ -473,8 +509,14 @@
                     <div class="ch-info-value">{{ $agreement->sla_tat ?? '—' }}</div>
                 </div>
                 <div>
-                    <div class="ch-info-label">Billing</div>
-                    <div class="ch-info-value">{{ $agreement->billing ?? '—' }}</div>
+                    <div class="ch-info-label">Billing Mode</div>
+                    <div class="ch-info-value" style="display: flex; align-items: center; gap: 6px;">
+                        @if($agreement->isPerRequest())
+                            <span class="ch-billing-chip ch-billing-chip-cash">Cash · Per request</span>
+                        @else
+                            <span class="ch-billing-chip ch-billing-chip-credit">Credit · Monthly</span>
+                        @endif
+                    </div>
                 </div>
                 <div>
                     <div class="ch-info-label">Payment</div>
