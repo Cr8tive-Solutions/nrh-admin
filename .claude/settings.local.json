@@ -35,7 +35,20 @@
       "Bash(python3 -c \"import json, sys; data=json.load\\(sys.stdin\\); print\\('Total:', len\\(data\\)\\); print\\('SG/MY/ID/TH:', [c for c in data if c['countryCode'] in ['SG','MY','ID','TH','PH','VN']]\\)\")",
       "Bash(curl -s \"https://api.api-ninjas.com/v1/holidays?country=MY&year=2026\")",
       "Bash(curl -s -H \"X-Api-Key: test\" \"https://api.api-ninjas.com/v1/holidays?country=MY&year=2026\")",
-      "Bash(curl -s \"https://openholidaysapi.org/PublicHolidays?countryIsoCode=MY&languageIsoCode=EN&validFrom=2026-01-01&validTo=2026-12-31\")"
+      "Bash(curl -s \"https://openholidaysapi.org/PublicHolidays?countryIsoCode=MY&languageIsoCode=EN&validFrom=2026-01-01&validTo=2026-12-31\")",
+      "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Http/Controllers/RequestQueueController.php)",
+      "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Models/ScreeningRequest.php)",
+      "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Models/Agreement.php)",
+      "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Http/Controllers/AgreementController.php)",
+      "Bash(php -r 'require '\\\\''/Users/anwarsaad/Herd/nrh-admin/vendor/autoload.php'\\\\''; $app = require '\\\\''/Users/anwarsaad/Herd/nrh-admin/bootstrap/app.php'\\\\''; $app->make\\(Illuminate\\\\Contracts\\\\Console\\\\Kernel::class\\)->bootstrap\\(\\); echo view\\('\\\\''agreements.create'\\\\'', ['\\\\''customer'\\\\'' => \\\\App\\\\Models\\\\Customer::first\\(\\)]\\)->render\\(\\) === null ? '\\\\''fail'\\\\'' : '\\\\''ok'\\\\''; echo PHP_EOL;')",
+      "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Http/Controllers/ReportController.php)",
+      "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Http/Controllers/Config/ScopeTypeController.php)",
+      "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Models/ScopeType.php)",
+      "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Http/Controllers/PaymentReceiptController.php)",
+      "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Models/InvoicePaymentReceipt.php)",
+      "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Models/Invoice.php)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }
