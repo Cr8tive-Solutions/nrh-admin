@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use App\Services\ReportSnapshot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class RequestQueueController extends Controller
 {
@@ -24,7 +25,7 @@ class RequestQueueController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('reference', 'ilike', "%{$search}%")
-                  ->orWhereHas('customer', fn ($c) => $c->where('name', 'ilike', "%{$search}%"));
+                    ->orWhereHas('customer', fn ($c) => $c->where('name', 'ilike', "%{$search}%"));
             });
         }
 
@@ -38,11 +39,11 @@ class RequestQueueController extends Controller
         $screeningRequest->load(['customer.agreements', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes', 'candidates.latestConsent.capturedBy']);
 
         $candidateStats = [
-            'total'       => $screeningRequest->candidates->count(),
-            'new'         => $screeningRequest->candidates->where('status', 'new')->count(),
+            'total' => $screeningRequest->candidates->count(),
+            'new' => $screeningRequest->candidates->where('status', 'new')->count(),
             'in_progress' => $screeningRequest->candidates->where('status', 'in_progress')->count(),
-            'flagged'     => $screeningRequest->candidates->where('status', 'flagged')->count(),
-            'complete'    => $screeningRequest->candidates->where('status', 'complete')->count(),
+            'flagged' => $screeningRequest->candidates->where('status', 'flagged')->count(),
+            'complete' => $screeningRequest->candidates->where('status', 'complete')->count(),
         ];
 
         // Report versions, current snapshot hash, and per-type freshness for the Generate panel.
@@ -53,13 +54,14 @@ class RequestQueueController extends Controller
             ->get();
 
         $currentSnapshot = ReportSnapshot::build($screeningRequest);
-        $currentHash     = ReportSnapshot::hash($currentSnapshot);
+        $currentHash = ReportSnapshot::hash($currentSnapshot);
 
         $latestPerType = $versions->groupBy('type')->map(fn ($g) => $g->sortByDesc('version')->first());
         $reportFreshness = collect(ReportVersion::types())->mapWithKeys(function ($type) use ($latestPerType, $currentHash) {
             $latest = $latestPerType->get($type);
+
             return [$type => [
-                'latest'      => $latest,
+                'latest' => $latest,
                 'has_changes' => $latest === null || $latest->content_hash !== $currentHash,
             ]];
         })->all();
@@ -74,28 +76,32 @@ class RequestQueueController extends Controller
         $paymentAmount = $awaitingPayment ? $screeningRequest->calculateTotal() : null;
 
         return view('requests.show', [
-            'request'         => $screeningRequest,
-            'candidateStats'  => $candidateStats,
-            'versions'        => $versions,
-            'currentHash'     => $currentHash,
+            'request' => $screeningRequest,
+            'candidateStats' => $candidateStats,
+            'versions' => $versions,
+            'currentHash' => $currentHash,
             'reportFreshness' => $reportFreshness,
             'activeAgreement' => $activeAgreement,
-            'isCashBilled'    => $isCashBilled,
+            'isCashBilled' => $isCashBilled,
             'awaitingPayment' => $awaitingPayment,
-            'paymentAmount'   => $paymentAmount,
+            'paymentAmount' => $paymentAmount,
         ]);
     }
 
     /**
-     * Confirm bank transfer received for a cash-billed (per-request) customer:
-     *   1. record a transactions row referencing this request
-     *   2. flip request status from 'new' to 'in_progress' so the TAT clock starts
-     *   3. write an audit log entry
+     * Verify a cash-billed (per-request) customer's uploaded payment slip:
+     *   1. mark slip verified (payment_verified_at + payment_verified_by)
+     *   2. record a transactions row referencing this request
+     *   3. flip request status from 'new' to 'in_progress' so the TAT clock starts
+     *   4. write an audit log entry
      *
-     * Idempotent: only callable while status='new' AND the customer's active
-     * agreement is per_request. Wraps everything in a DB transaction.
+     * Requires a slip to be present — admins should not unblock cash-billed
+     * requests without a verifiable receipt on file. Idempotent: 422s if the
+     * request is past 'new' or already verified. Wraps everything in a DB
+     * transaction so a partial state (e.g. transaction recorded but status
+     * not flipped) is impossible.
      */
-    public function confirmPayment(Request $request, ScreeningRequest $screeningRequest)
+    public function verifyPaymentSlip(Request $request, ScreeningRequest $screeningRequest)
     {
         $screeningRequest->load('customer.agreements');
 
@@ -105,48 +111,85 @@ class RequestQueueController extends Controller
             ->first();
 
         if (! $agreement || ! $agreement->isPerRequest()) {
-            return $this->saveResponse($request, 'Customer is not on cash billing — no payment confirmation needed.', [], 422);
+            return $this->saveResponse($request, 'Customer is not on cash billing — no payment verification needed.', [], 422);
         }
 
         if ($screeningRequest->status !== 'new') {
-            return $this->saveResponse($request, 'Payment was already confirmed for this request.', [], 422);
+            return $this->saveResponse($request, 'Payment was already verified for this request.', [], 422);
+        }
+
+        if (! $screeningRequest->hasPaymentSlip()) {
+            return $this->saveResponse($request, 'No payment slip uploaded yet — customer must upload before verification.', [], 422);
+        }
+
+        if ($screeningRequest->isPaymentVerified()) {
+            return $this->saveResponse($request, 'Payment was already verified for this request.', [], 422);
         }
 
         $amount = $screeningRequest->calculateTotal();
+        $admin = current_admin();
 
-        DB::transaction(function () use ($screeningRequest, $amount) {
-            Transaction::create([
-                'customer_id' => $screeningRequest->customer_id,
-                'type'        => 'payment',
-                'amount'      => $amount,
-                'reference'   => $screeningRequest->reference,
-                'status'      => 'completed',
-                'method'      => 'Bank Transfer',
-                'notes'       => "Cash payment for screening request {$screeningRequest->reference}.",
+        DB::transaction(function () use ($screeningRequest, $amount, $admin) {
+            $screeningRequest->update([
+                'payment_verified_at' => now(),
+                'payment_verified_by' => $admin?->id,
+                'status' => 'in_progress',
             ]);
 
-            $screeningRequest->update(['status' => 'in_progress']);
+            Transaction::create([
+                'customer_id' => $screeningRequest->customer_id,
+                'type' => 'payment',
+                'amount' => $amount,
+                'reference' => $screeningRequest->reference,
+                'status' => 'completed',
+                'method' => 'Bank Transfer',
+                'notes' => "Cash payment verified via uploaded slip for screening request {$screeningRequest->reference}.",
+            ]);
         });
 
-        AdminAuditLog::record('payment.confirmed', null, [
+        AdminAuditLog::record('payment.verified', null, [
             'request_id' => $screeningRequest->id,
-            'reference'  => $screeningRequest->reference,
-            'customer'   => $screeningRequest->customer?->name,
-            'amount'     => $amount,
-            'method'     => 'Bank Transfer',
+            'reference' => $screeningRequest->reference,
+            'customer' => $screeningRequest->customer?->name,
+            'amount' => $amount,
+            'method' => 'Bank Transfer',
+            'slip_path' => $screeningRequest->payment_slip_path,
         ]);
 
-        return $this->saveResponse($request, 'Payment confirmed — request is now in progress.', [
+        return $this->saveResponse($request, 'Payment verified — request is now in progress.', [
             'status' => $screeningRequest->status,
             'amount' => $amount,
         ]);
+    }
+
+    /**
+     * Stream the customer-uploaded payment slip privately to admins. The slip
+     * lives on the customer portal's local disk; production must mount that
+     * storage shared between the two apps.
+     */
+    public function downloadPaymentSlip(ScreeningRequest $screeningRequest)
+    {
+        if (! $screeningRequest->hasPaymentSlip()) {
+            abort(404);
+        }
+
+        $disk = Storage::disk('local');
+
+        if (! $disk->exists($screeningRequest->payment_slip_path)) {
+            abort(404, 'Slip file is no longer available on disk.');
+        }
+
+        $extension = pathinfo($screeningRequest->payment_slip_path, PATHINFO_EXTENSION);
+        $filename = "payment-slip-{$screeningRequest->reference}.{$extension}";
+
+        return $disk->download($screeningRequest->payment_slip_path, $filename);
     }
 
     public function updateStatus(Request $request, ScreeningRequest $screeningRequest)
     {
         $statuses = implode(',', ScreeningRequest::STATUSES);
         $data = $request->validate([
-            'status'           => "required|in:{$statuses}",
+            'status' => "required|in:{$statuses}",
             'rejection_reason' => 'nullable|string|max:2000|required_if:status,rejected',
         ], [
             'rejection_reason.required_if' => 'A reason is required when rejecting a request.',
@@ -165,7 +208,7 @@ class RequestQueueController extends Controller
         $screeningRequest->update($update);
 
         return $this->saveResponse($request, 'Request status updated.', [
-            'status'           => $screeningRequest->status,
+            'status' => $screeningRequest->status,
             'rejection_reason' => $screeningRequest->rejection_reason,
         ]);
     }
@@ -183,7 +226,7 @@ class RequestQueueController extends Controller
 
         return $this->saveResponse($request, 'Candidate status updated.', [
             'candidate_id' => $candidate->id,
-            'status'       => $candidate->status,
+            'status' => $candidate->status,
         ]);
     }
 
@@ -241,21 +284,21 @@ class RequestQueueController extends Controller
             ->update($update);
 
         AdminAuditLog::record('scope_status.updated', null, [
-            'request_id'    => $screeningRequest->id,
-            'reference'     => $screeningRequest->reference,
-            'candidate_id'  => $candidate->id,
-            'candidate'     => $candidate->name,
+            'request_id' => $screeningRequest->id,
+            'reference' => $screeningRequest->reference,
+            'candidate_id' => $candidate->id,
+            'candidate' => $candidate->name,
             'scope_type_id' => $scopeTypeId,
-            'from'          => $previousStatus,
-            'to'            => $newStatus,
+            'from' => $previousStatus,
+            'to' => $newStatus,
         ]);
 
         return $this->saveResponse($request, 'Scope status updated.', [
-            'candidate_id'  => $candidate->id,
+            'candidate_id' => $candidate->id,
             'scope_type_id' => $scopeTypeId,
-            'status'        => $newStatus,
-            'started_at'    => $update['started_at'] ?? $pivot->started_at,
-            'completed_at'  => array_key_exists('completed_at', $update) ? $update['completed_at'] : $pivot->completed_at,
+            'status' => $newStatus,
+            'started_at' => $update['started_at'] ?? $pivot->started_at,
+            'completed_at' => array_key_exists('completed_at', $update) ? $update['completed_at'] : $pivot->completed_at,
         ]);
     }
 
@@ -268,7 +311,7 @@ class RequestQueueController extends Controller
     {
         $data = $request->validate([
             'comment' => 'nullable|string|max:8000',
-            'record'  => 'nullable|array',
+            'record' => 'nullable|array',
             'record.*' => 'nullable|string|max:1000',
         ]);
 
@@ -303,18 +346,18 @@ class RequestQueueController extends Controller
             ->update(['findings' => empty($payload) ? null : json_encode($payload)]);
 
         AdminAuditLog::record('scope_findings.updated', null, [
-            'request_id'    => $screeningRequest->id,
-            'reference'     => $screeningRequest->reference,
-            'candidate_id'  => $candidate->id,
+            'request_id' => $screeningRequest->id,
+            'reference' => $screeningRequest->reference,
+            'candidate_id' => $candidate->id,
             'scope_type_id' => $scopeTypeId,
-            'has_comment'   => isset($payload['comment']),
-            'record_keys'   => isset($payload['record']) ? array_keys($payload['record']) : [],
+            'has_comment' => isset($payload['comment']),
+            'record_keys' => isset($payload['record']) ? array_keys($payload['record']) : [],
         ]);
 
         return $this->saveResponse($request, 'Findings saved.', [
-            'candidate_id'  => $candidate->id,
+            'candidate_id' => $candidate->id,
             'scope_type_id' => $scopeTypeId,
-            'has_findings'  => ! empty($payload),
+            'has_findings' => ! empty($payload),
         ]);
     }
 
@@ -325,12 +368,12 @@ class RequestQueueController extends Controller
     public function updateMeta(Request $request, ScreeningRequest $screeningRequest)
     {
         $data = $request->validate([
-            'analyst'           => 'nullable|string|max:255',
-            'editor'            => 'nullable|string|max:255',
-            'po_number'         => 'nullable|string|max:120',
-            'completion_basic'  => 'nullable|date',
+            'analyst' => 'nullable|string|max:255',
+            'editor' => 'nullable|string|max:255',
+            'po_number' => 'nullable|string|max:120',
+            'completion_basic' => 'nullable|date',
             'completion_prelim' => 'nullable|date',
-            'completion_full'   => 'nullable|date',
+            'completion_full' => 'nullable|date',
         ]);
 
         $meta = $screeningRequest->meta ?? [];
@@ -356,6 +399,7 @@ class RequestQueueController extends Controller
         if ($request->expectsJson()) {
             return response()->json(array_merge(['ok' => $ok, 'message' => $message], $payload), $status);
         }
+
         return back()->with($ok ? 'success' : 'error', $message);
     }
 }

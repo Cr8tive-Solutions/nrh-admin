@@ -12,11 +12,30 @@ class ScreeningRequest extends Model
     protected $fillable = [
         'customer_id', 'customer_user_id', 'invoice_id', 'reference',
         'status', 'type', 'meta', 'rejection_reason',
+        'payment_slip_path', 'payment_slip_uploaded_at',
+        'payment_verified_at', 'payment_verified_by',
     ];
 
     protected $casts = [
         'meta' => 'array',
+        'payment_slip_uploaded_at' => 'datetime',
+        'payment_verified_at' => 'datetime',
     ];
+
+    public function hasPaymentSlip(): bool
+    {
+        return ! empty($this->payment_slip_path);
+    }
+
+    public function isPaymentVerified(): bool
+    {
+        return ! is_null($this->payment_verified_at);
+    }
+
+    public function paymentVerifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'payment_verified_by');
+    }
 
     /** Canonical list of every status value the workflow accepts. */
     public const STATUSES = ['new', 'in_progress', 'rejected', 'prelim', 'complete', 'updated', 'flagged'];
@@ -44,14 +63,14 @@ class ScreeningRequest extends Model
     public function statusBadgeClass(): string
     {
         return match ($this->status) {
-            'new'         => 'badge-blue',
+            'new' => 'badge-blue',
             'in_progress' => 'badge-yellow',
-            'rejected'    => 'badge-red',
-            'prelim'      => 'badge-black',
-            'complete'    => 'badge-green',
-            'updated'     => 'badge-green',
-            'flagged'     => 'badge-amber',
-            default       => 'badge-gray',
+            'rejected' => 'badge-red',
+            'prelim' => 'badge-black',
+            'complete' => 'badge-green',
+            'updated' => 'badge-green',
+            'flagged' => 'badge-amber',
+            default => 'badge-gray',
         };
     }
 
@@ -95,6 +114,7 @@ class ScreeningRequest extends Model
         foreach ($scopeIds as $sid) {
             $total += (float) ($customerPrices[$sid] ?? $defaultPrices[$sid] ?? 0);
         }
+
         return round($total, 2);
     }
 }

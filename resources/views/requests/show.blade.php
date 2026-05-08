@@ -459,6 +459,9 @@
 
 {{-- ── Cash-billing payment banner ── --}}
 @if($awaitingPayment)
+@php
+    $hasSlip = $request->hasPaymentSlip();
+@endphp
 <div style="background: linear-gradient(135deg, rgba(212,175,55,0.10), rgba(212,175,55,0.04));
             border: 1px solid rgba(212,175,55,0.40);
             border-radius: 14px; padding: 18px 22px; margin-bottom: 14px;
@@ -474,25 +477,32 @@
             <span style="font-size: 10px; padding: 2px 8px; border-radius: 99px; background: var(--gold-700, #b8860b); color: white; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">Per request</span>
         </div>
         <div style="font-size: 12px; color: var(--ink-700); margin-top: 4px; line-height: 1.55;">
-            This customer is on cash billing — processing should not start until the bank transfer is received.
             Expected amount: <strong style="font-family: 'JetBrains Mono', monospace; color: var(--ink-900);">MYR {{ number_format($paymentAmount, 2) }}</strong>
             · reference <strong style="font-family: 'JetBrains Mono', monospace; color: var(--ink-900);">{{ $request->reference }}</strong>.
+            @if($hasSlip)
+                Customer uploaded a slip on {{ $request->payment_slip_uploaded_at?->format('d M Y · H:i') }} — review and verify below.
+            @else
+                Waiting for the customer to upload their bank-transfer slip. Verification is blocked until they do.
+            @endif
         </div>
     </div>
     @allowed('transaction.manage')
-    <form method="POST" action="{{ route('requests.confirm-payment', $request) }}"
+    <form method="POST" action="{{ route('requests.verify-payment', $request) }}"
           x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
           @submit.prevent="submit($event)" style="margin: 0;">
         @csrf
         <button type="submit"
+                @if(!$hasSlip) disabled @endif
+                title="{{ $hasSlip ? 'Verify the customer\'s slip and start processing' : 'Customer must upload their slip first' }}"
                 style="background: var(--gold-700, #b8860b); color: white;
                        border: none; border-radius: 8px;
                        padding: 10px 18px; font-size: 12px; font-weight: 600;
                        text-transform: uppercase; letter-spacing: 0.08em;
-                       cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+                       cursor: {{ $hasSlip ? 'pointer' : 'not-allowed' }}; display: inline-flex; align-items: center; gap: 7px;
                        white-space: nowrap; font-family: inherit;
-                       box-shadow: 0 4px 10px -4px rgba(184,134,11,0.45);"
-                :disabled="state === 'saving'"
+                       box-shadow: 0 4px 10px -4px rgba(184,134,11,0.45);
+                       opacity: {{ $hasSlip ? '1' : '0.5' }};"
+                :disabled="state === 'saving' || {{ $hasSlip ? 'false' : 'true' }}"
                 :style="state === 'saving' ? 'opacity: 0.6; cursor: wait;' : ''"
                 onmouseover="if(!this.disabled) this.style.background='#9a7209'"
                 onmouseout="this.style.background='var(--gold-700, #b8860b)'">
@@ -502,12 +512,40 @@
             <template x-if="state !== 'saving'">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
             </template>
-            <span x-show="state !== 'saving'">Confirm payment</span>
-            <span x-show="state === 'saving'" x-cloak>Confirming…</span>
+            <span x-show="state !== 'saving'">Verify payment</span>
+            <span x-show="state === 'saving'" x-cloak>Verifying…</span>
         </button>
     </form>
     @endallowed
 </div>
+
+{{-- Slip viewer — sits between banner and rest of page when a slip exists --}}
+@if($hasSlip)
+<div style="background: var(--card, #fff); border: 1px solid var(--line, #e5e7eb);
+            border-radius: 12px; padding: 14px 18px; margin-bottom: 14px;
+            display: flex; align-items: center; gap: 14px;">
+    <div style="width: 32px; height: 32px; border-radius: 8px;
+                background: rgba(212,175,55,0.12); color: var(--gold-700, #b8860b);
+                display: grid; place-items: center; flex-shrink: 0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div style="flex: 1;">
+        <div style="font-size: 12px; font-weight: 600; color: var(--ink-900);">Payment slip uploaded</div>
+        <div style="font-size: 11px; color: var(--ink-600); margin-top: 2px;">
+            {{ $request->payment_slip_uploaded_at?->format('d M Y · H:i') }}
+            · file: <span style="font-family: 'JetBrains Mono', monospace;">{{ basename($request->payment_slip_path) }}</span>
+        </div>
+    </div>
+    <a href="{{ route('requests.payment-slip.download', $request) }}"
+       style="background: var(--ink-900); color: white; border-radius: 8px;
+              padding: 8px 14px; font-size: 11px; font-weight: 600;
+              text-decoration: none; text-transform: uppercase; letter-spacing: 0.08em;
+              display: inline-flex; align-items: center; gap: 6px;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+        View slip
+    </a>
+</div>
+@endif
 @elseif($isCashBilled)
 {{-- Already in progress / past stage — quiet info chip so ops know billing terms at a glance. --}}
 <div style="background: rgba(212,175,55,0.05); border: 1px solid rgba(212,175,55,0.25);
