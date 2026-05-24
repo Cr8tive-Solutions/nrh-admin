@@ -2,574 +2,569 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Background Screening Report — {{ $reference }}</title>
+<title>NRH Compliance Screening Report — {{ $reference }}</title>
 <style>
-    @page { margin: 90px 50px 60px 50px; }
+@page { margin: 82px 45px 52px 45px; }
+* { box-sizing: border-box; }
+body { font-family: 'Courier Prime', 'Courier', monospace; font-size: 8.5pt; color: #111; line-height: 1.55; }
 
-    * { box-sizing: border-box; }
-    body {
-        font-family: 'DejaVu Sans', sans-serif;
-        font-size: 10pt;
-        color: #111;
-        line-height: 1.4;
-    }
+/* ── Persistent header ── */
+.ph { position: fixed; top: -68px; left: 0; right: 0; height: 58px; border-bottom: 2px solid #023527; }
+.ph table { width: 100%; height: 55px; border-collapse: collapse; }
+.ph td { border: none; vertical-align: bottom; padding: 0; }
+.ph .ph-ref { font-size: 7.5pt; color: #555; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
+.ph .ph-logo { text-align: center; vertical-align: top; }
+.ph .ph-logo img { height: 46px; }
+.ph .ph-conf { text-align: right; font-size: 7pt; color: #888; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
 
-    /* ── Page header & footer (drawn by dompdf via fixed positioning) ── */
-    .page-header {
-        position: fixed; top: -75px; left: 0; right: 0;
-        height: 65px;
-        border-bottom: 1px solid #111;
-        padding-bottom: 6px;
-    }
-    .page-header .ref-no {
-        position: absolute; left: 0; top: 26px;
-        font-size: 10pt; font-weight: bold;
-    }
-    .page-header .crest {
-        position: absolute; left: 50%; top: 0;
-        transform: translateX(-50%);
-        text-align: center;
-    }
-    .page-header .crest img { height: 50px; }
-    .page-header .crest .tagline {
-        font-size: 6pt; letter-spacing: 0.18em;
-        color: #2a2a2a; margin-top: 1px; text-transform: uppercase;
-    }
+/* ── Persistent footer ── */
+.pf { position: fixed; bottom: -38px; left: 0; right: 0; height: 22px;
+      border-top: 1px solid #023527; padding-top: 3px;
+      font-size: 7pt; color: #888; text-align: center;
+      font-family: 'Oswald', sans-serif; letter-spacing: 0.03em; }
 
-    .page-footer {
-        position: fixed; bottom: -45px; left: 0; right: 0;
-        height: 30px;
-        border-top: 1px solid #111;
-    }
+/* ── Section headers ── */
+.sh  { background: #023527; color: #d4af37; padding: 7px 12px; font-weight: bold;
+       font-size: 9.5pt; margin-top: 12px; margin-bottom: 0; letter-spacing: 0.1em;
+       font-family: 'Oswald', sans-serif; }
+.shs { background: #d4af37; color: #1a1a1a; padding: 5px 10px; font-weight: bold;
+       font-size: 9pt; margin-top: 0; margin-bottom: 0;
+       font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
+.shd { background: #1a3a2a; color: #d4af37; padding: 4px 10px; font-size: 8pt;
+       font-weight: bold; letter-spacing: 0.14em; margin-top: 10px; margin-bottom: 0;
+       font-family: 'Oswald', sans-serif; }
 
-    /* ── Section header (orange/gold pill) ── */
-    .sec-head {
-        background: #d4af37;
-        color: #1a1a1a;
-        padding: 6px 12px;
-        font-weight: bold;
-        font-size: 10pt;
-        margin-top: 10px; margin-bottom: 0;
-        letter-spacing: 0.02em;
-    }
+/* ── Tables ── */
+table { border-collapse: collapse; }
+table.rt { width: 100%; margin-bottom: 8px; page-break-inside: avoid; }
+table.rt td, table.rt th { border: 1px solid #2a2a2a; padding: 5px 8px; vertical-align: top; }
+table.rt th.lbl { background: #023527; color: #d4af37; font-weight: bold; text-align: left;
+                  font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; font-size: 8.5pt; }
+table.rt td.val { background: #fff; }
+table.rt tr.div td { background: #d4af37; color: #1a1a1a; font-weight: bold; padding: 5px 10px;
+                     font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
 
-    /* ── Tables ── */
-    table.report-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 0;
-        margin-bottom: 12px;
-        page-break-inside: avoid;
-    }
-    table.report-table td, table.report-table th {
-        border: 1px solid #111;
-        padding: 5px 8px;
-        vertical-align: top;
-    }
-    table.report-table th.label {
-        background: #023527;
-        color: #fff;
-        text-align: left;
-        font-weight: bold;
-        width: 35%;
-    }
-    table.report-table th.label-narrow { width: 28%; }
-    table.report-table tr.section-divider td {
-        background: #d4af37;
-        color: #1a1a1a;
-        font-weight: bold;
-        padding: 6px 10px;
-        border: 1px solid #111;
-    }
-    table.report-table td.value { background: #fff; }
-    table.report-table .center { text-align: center; }
-    table.report-table tr.legend-row td {
-        background: #023527;
-        color: #fff;
-        text-align: center;
-        font-weight: bold;
-        width: 25%;
-        padding: 8px;
-        font-size: 13pt;
-    }
-    table.report-table tr.legend-row td.legend-text {
-        background: #fff; color: #1a1a1a;
-        text-align: left; font-size: 10pt;
-        font-weight: bold;
-    }
+/* ── Risk indicators ── */
+.ri-h { color: #c4453a; font-weight: bold; }
+.ri-m { color: #d97706; font-weight: bold; }
+.ri-l { color: #046c4e; font-weight: bold; }
+.ri-n { color: #4a90d9; font-weight: bold; }
 
-    /* ── Cover ── */
-    .cover-title {
-        text-align: center;
-        font-size: 18pt;
-        font-weight: bold;
-        margin: 20px 0 14px;
-    }
-    .cover-notice {
-        font-size: 8.5pt; line-height: 1.5;
-        margin-bottom: 10px;
-    }
-    .cover-notice .heading {
-        text-decoration: underline; font-weight: bold;
-        font-style: italic; color: #023527;
-    }
-    .cover-notice .body {
-        font-style: italic; color: #023527;
-        padding-left: 18px;
-    }
-    .cover-notice .body::before {
-        content: "•";
-        margin-right: 6px;
-    }
+/* ── Result cells ── */
+.res-clean  { background: #ecfdf5; color: #023527; font-weight: bold; }
+.res-record { background: #fef2f2; color: #c4453a; font-weight: bold; }
+.res-adverse{ background: #fff7ed; color: #c2410c; font-weight: bold; }
+.res-nil    { background: #f0f4f8; color: #4a5568; font-style: italic; }
+.res-prog   { background: #f5f5f5; color: #666; font-style: italic; }
 
-    /* ── Summary table — status icons ── */
-    .summary-row td { padding: 4px 8px; }
-    .icon-cell {
-        text-align: center; font-weight: bold;
-        width: 60px;
-    }
-    .icon-pass    { color: #046c4e; font-size: 14pt; }
-    .icon-fail    { color: #c4453a; font-size: 14pt; }
-    .icon-no-match{ color: #046c4e; font-size: 12pt; }
-    .icon-match   { color: #c4453a; font-size: 12pt; }
-    .icon-annot   { color: #b8860b; font-size: 14pt; }
-    .icon-pending { color: #888;    font-size: 12pt; }
+/* ── Cover ── */
+.cov-logo  { text-align: center; margin: 4px 0 8px; }
+.cov-logo img { height: 84px; }
+.cov-title { text-align: center; font-size: 17pt; font-weight: bold; color: #023527;
+             letter-spacing: 0.08em; margin: 6px 0 2px;
+             font-family: 'Oswald', sans-serif; }
+.cov-sub   { text-align: center; font-size: 8pt; color: #888; letter-spacing: 0.2em;
+             margin-bottom: 10px; text-transform: uppercase;
+             font-family: 'Oswald', sans-serif; }
 
-    /* ── Comprehensive section block ── */
-    .check-block {
-        page-break-inside: avoid;
-        margin-bottom: 8px;
-    }
-    .summary-table { page-break-inside: auto; }
-    .check-block .check-result-row td.result-pass {
-        background: #ecfdf5;
-        font-weight: bold;
-        color: #023527;
-    }
-    .check-block .check-result-row td.result-fail {
-        background: #fbeeec;
-        font-weight: bold;
-        color: #c4453a;
-    }
-    .check-block .check-result-row td.result-pending {
-        background: #f5f5f5;
-        font-style: italic;
-        color: #555;
-    }
+/* ── Info boxes ── */
+.clause-box { border: 1px solid #023527; background: #f8fdf9; padding: 8px 12px;
+              margin: 8px 0; font-size: 8pt; line-height: 1.6; }
+.clause-box .ct { font-weight: bold; color: #023527; font-size: 8.5pt; text-transform: uppercase; margin-bottom: 3px; }
+.disc-box   { border: 1px solid #ccc; background: #fafafa; padding: 8px 12px;
+              margin: 8px 0; font-size: 8pt; line-height: 1.6; }
+.disc-box .ct { font-weight: bold; color: #c2410c; font-size: 8.5pt; text-transform: uppercase; margin-bottom: 3px; }
+.disc-box ul { padding-left: 16px; margin: 4px 0; }
+.disc-box ul li { margin-bottom: 2px; }
 
-    /* ── Static / disclaimer pages ── */
-    .static-page-title {
-        font-size: 16pt; font-weight: bold;
-        margin-top: 20px; margin-bottom: 14px;
-    }
-    .static-block {
-        margin-bottom: 14px; line-height: 1.55;
-    }
-    .static-block ol { padding-left: 20px; margin: 6px 0; }
-    .static-block ol li { margin-bottom: 6px; }
-    .end-of-report {
-        text-align: center; font-weight: bold;
-        margin-top: 40px; font-size: 11pt;
-    }
+/* ── Risk matrix summary table (per candidate) ── */
+table.rmt { width: 100%; margin-bottom: 10px; }
+table.rmt th { background: #023527; color: #d4af37; font-weight: bold; padding: 5px 8px;
+               border: 1px solid #111; font-size: 8.5pt; text-align: left;
+               font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
+table.rmt td { border: 1px solid #ccc; padding: 5px 8px; font-size: 8pt; vertical-align: middle; }
 
-    .pagebreak { page-break-after: always; }
+/* ── DATA REPORT record entries ── */
+.rec-entry { border: 1px solid #ddd; margin: 6px 0; page-break-inside: avoid; }
+.rec-head  { background: #c4453a; color: #fff; padding: 4px 10px; font-weight: bold; font-size: 8.5pt;
+             font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
+.rec-body  { padding: 6px 10px; }
+table.rf   { width: 100%; }
+table.rf td { border: 1px solid #eee; padding: 4px 8px; font-size: 8pt; }
+table.rf td.rfl { background: #f5f5f0; font-weight: bold; width: 32%; }
 
-    /* ── Performance scale ── */
-    .perf-scale td { padding: 6px 10px; font-size: 9pt; }
-    .perf-scale td.range {
-        background: #023527; color: #fff;
-        text-align: center; font-weight: bold;
-        width: 70px;
-    }
-
-    /* ── Brand strip ── */
-    .brand-line {
-        border-top: 2px solid #d4af37;
-        margin: 4px 0 14px;
-    }
-
-    /* Helpers */
-    .nowrap { white-space: nowrap; }
-    .small { font-size: 8.5pt; }
-    .muted { color: #666; }
-    .center { text-align: center; }
-    .right  { text-align: right; }
-    .bold   { font-weight: bold; }
+/* ── Helpers ── */
+.pb   { page-break-after: always; }
+.pi   { page-break-inside: avoid; }
+.small{ font-size: 8pt; }
+.muted{ color: #666; }
+.bold { font-weight: bold; }
+.ital { font-style: italic; }
+.tc   { text-align: center; }
+.mb8  { margin-bottom: 8px; }
+.mt8  { margin-top: 8px; }
+.eor  { text-align: center; font-weight: bold; color: #023527;
+        margin: 30px 0 10px; font-size: 11pt; letter-spacing: 0.05em; }
+ol.dl { padding-left: 18px; margin: 6px 0; }
+ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 </style>
 </head>
 <body>
 
-{{-- ===================== Persistent header / footer ===================== --}}
-<div class="page-header">
-    <span class="ref-no">REP NO: {{ $reference }}</span>
-    <div class="crest">
-        <img src="{{ $logoSrc }}" alt="">
-        <div class="tagline">NRH Intelligence</div>
-    </div>
+@php
+    /* ─── Inline helpers ─────────────────────────────── */
+    $getResultType = function(string $st, array $f): string {
+        if (!empty($f['result_type'])) return $f['result_type'];
+        return match($st) {
+            'complete'    => 'clean',
+            'flagged'     => 'record_identified',
+            'in_progress' => 'in_progress',
+            default       => 'not_requested',
+        };
+    };
+    $getRiskLevel = function(string $st, array $f): string {
+        if (!empty($f['risk_level'])) return $f['risk_level'];
+        return match($st) { 'complete' => 'low', 'flagged' => 'high', default => 'nil' };
+    };
+    $riskBadge = function(string $lv): string {
+        return match($lv) {
+            'high'   => '<span class="ri-h">&#9679; HIGH</span>',
+            'medium' => '<span class="ri-m">&#9679; MEDIUM</span>',
+            'low'    => '<span class="ri-l">&#9679; LOW</span>',
+            default  => '<span class="ri-n">&#9679; NIL</span>',
+        };
+    };
+    $resultLabel = function(string $t): string {
+        return match($t) {
+            'clean'            => 'CLEAN RESULT',
+            'record_identified'=> 'RECORD IDENTIFIED',
+            'adverse'          => 'ADVERSE RESULT',
+            'not_requested'    => 'SCREENING NOT REQUESTED',
+            'in_progress'      => 'IN PROGRESS',
+            default            => 'PENDING',
+        };
+    };
+    $resultCss = function(string $t): string {
+        return match($t) {
+            'clean'            => 'res-clean',
+            'record_identified'=> 'res-record',
+            'adverse'          => 'res-adverse',
+            'not_requested'    => 'res-nil',
+            default            => 'res-prog',
+        };
+    };
+    $riskStatusText = function(string $lv, string $t, array $f): string {
+        if (!empty($f['risk_status_text'])) return $f['risk_status_text'];
+        return match(true) {
+            $t === 'clean'         => 'Low Risk – Candidate cleared for compliance integrity.',
+            $t === 'not_requested' => 'Nil – Screening not requested for this scope.',
+            $t === 'in_progress'   => 'Investigation in progress. Findings will appear in the final report.',
+            $lv === 'high'         => 'High – Adverse record identified. Enhanced due diligence required.',
+            $lv === 'medium'       => 'Medium – Record identified. Further review recommended.',
+            default                => 'Low Risk – No adverse findings identified.',
+        };
+    };
+    $getImplication = function(string $t, array $f): string {
+        if (!empty($f['implication'])) return $f['implication'];
+        return match($t) {
+            'clean'            => 'No Issues Found',
+            'not_requested'    => 'Not Screened',
+            'in_progress'      => 'Pending',
+            'record_identified'=> 'Record Found',
+            'adverse'          => 'Adverse Finding',
+            default            => '—',
+        };
+    };
+
+    /* Consent summary */
+    $consents       = $candidates->map(fn ($c) => $c->latestConsent)->filter();
+    $consentedCount = $consents->count();
+    $totalCandidates= $candidates->count();
+@endphp
+
+{{-- ══ Persistent header & footer ══ --}}
+<div class="ph">
+    <table><tr>
+        <td class="ph-ref" style="width:35%;">REP NO: {{ $reference }}</td>
+        <td class="ph-logo" style="width:30%;"><img src="{{ $logoSrc }}" alt="NRH Intelligence"></td>
+        <td class="ph-conf" style="width:35%;">PRIVATE &amp; CONFIDENTIAL</td>
+    </tr></table>
 </div>
-<div class="page-footer"></div>
+<div class="pf">NRH Intelligence Sdn. Bhd. &nbsp;·&nbsp; Integrity With Intelligence &nbsp;·&nbsp; {{ $reference }}</div>
 
-{{-- ===================== PAGE 1 — Cover ===================== --}}
-<h1 class="cover-title">NRH INTELLIGENCE<br>BACKGROUND SCREENING REPORT</h1>
+{{-- ══════════════════════════════════════════
+     PAGE 1 — REPORT PROFILE
+═══════════════════════════════════════════ --}}
 
-<div class="cover-notice">
-    <div class="heading">PRIVATE AND CONFIDENTIAL</div>
-    <div class="body">
-        NRH Intelligence Report is classified as Private and Confidential, strictly for the viewing of the client.
-        Disseminating material evidence from this report or sharing pertinent information to any person is strictly
-        prohibited, except as may be required by applicable law, rule, or regulation.
-    </div>
-</div>
+<div class="cov-logo"><img src="{{ $logoSrc }}" alt="NRH Intelligence"></div>
+<div class="cov-title">NRH INTELLIGENCE</div>
+<div class="cov-sub">Compliance Screening Report &nbsp;—&nbsp; Private &amp; Confidential</div>
 
-<div class="cover-notice">
-    <div class="heading">PRIVACY LAW &amp; CONSENT</div>
-    @php
-        $consents = $candidates->map(fn ($c) => $c->latestConsent)->filter();
-        $consentedCount = $consents->count();
-        $totalCandidates = $candidates->count();
-        $allConsented = $totalCandidates > 0 && $consentedCount === $totalCandidates;
-    @endphp
-    <div class="body">
-        The PII of the data subject(s) (candidate(s)) was validly obtained under the Personal Data Protection Act 2010 (Malaysia),
-        conforming to the 'consent' principle.
-        @if($allConsented)
-            Consent {{ $totalCandidates === 1 ? 'was obtained' : 'records were obtained for all '.$totalCandidates.' candidates' }} as follows:
-        @elseif($consentedCount > 0)
-            Consent records on file for {{ $consentedCount }} of {{ $totalCandidates }} candidates:
-        @else
-            <em>No consent records on file for the candidate(s) at the time of this report.</em>
-        @endif
-    </div>
-    @if($consents->count())
-    <table class="report-table" style="margin-top: 6px;">
-        <tr>
-            <th class="label" style="width: 32%;">CANDIDATE</th>
-            <th class="label" style="width: 22%;">CONSENTED</th>
-            <th class="label" style="width: 23%;">METHOD</th>
-            <th class="label" style="width: 23%;">VERSION</th>
-        </tr>
-        @foreach($candidates as $c)
-            @php $cn = $c->latestConsent; @endphp
-            @if($cn)
-            <tr>
-                <td>{{ $c->name }}</td>
-                <td>{{ $cn->consented_at->format('d M Y, H:i') }}</td>
-                <td>{{ \App\Models\ConsentRecord::evidenceTypes()[$cn->evidence_type] ?? $cn->evidence_type }}</td>
-                <td style="font-family: 'DejaVu Sans Mono', monospace;">{{ $cn->consent_version }}</td>
-            </tr>
-            @endif
-        @endforeach
-    </table>
-    @endif
-</div>
-
-<div class="sec-head">REPORT</div>
-<table class="report-table">
-    <tr><th class="label">REPORT NUMBER</th><td class="value">{{ $reference }}</td></tr>
-    <tr><th class="label">CLIENT</th><td class="value">{{ $customer->name ?? '—' }}</td></tr>
-    <tr><th class="label">CONTACT PERSON</th><td class="value">{{ $customer->contact_name ?? '—' }}</td></tr>
-    <tr><th class="label">CONTACT NUMBER</th><td class="value">{{ $customer->contact_phone ?? '—' }}</td></tr>
-    <tr><th class="label">EMAIL ADDRESS</th><td class="value">{{ $customer->contact_email ?? '—' }}</td></tr>
-    <tr><th class="label">BRANCH / SUBSIDIARY</th><td class="value">{{ $customer->industry ?? 'Nil' }}</td></tr>
+<div class="sh" style="margin-top:4px;">REPORT PROFILE</div>
+<table class="rt">
+    <tr><th class="lbl" style="width:38%;">REPORT REF NO</th>        <td class="val bold">{{ $reference }}</td></tr>
+    <tr><th class="lbl">ENGAGING COMPANY</th>                          <td class="val">{{ $customer->name ?? '—' }}</td></tr>
+    <tr><th class="lbl">REQUEST DATE</th>                              <td class="val">{{ $request->created_at->format('d F Y') }}</td></tr>
+    <tr><th class="lbl">INFO TYPE</th>                                 <td class="val">{{ strtoupper($request->type ?? 'DATA & SKILL SCREENING') }}</td></tr>
+    <tr><th class="lbl">AUTHORIZED REQUESTOR</th>                     <td class="val">{{ $customer->contact_name ?? '—' }}</td></tr>
+    <tr><th class="lbl">REQUESTOR EMAIL</th>                           <td class="val">{{ $customer->contact_email ?? '—' }}</td></tr>
+    <tr><th class="lbl">REQUESTOR CONTACT</th>                        <td class="val">{{ $customer->contact_phone ?? '—' }}</td></tr>
+    <tr><th class="lbl">NEW ADD-ON (If Any)</th>                      <td class="val">{{ data_get($request->meta, 'addon_date') ?: 'NIL' }}</td></tr>
 </table>
 
-<div class="sec-head">PIVOTAL</div>
-<table class="report-table">
-    <tr><th class="label">COMMENCEMENT DATE</th><td class="value">{{ $request->created_at->format('d F Y') }}</td></tr>
-    <tr>
-        <th class="label" rowspan="3" style="width:25%;">COMPLETION DATE</th>
-        <td class="value">
-            <table style="width:100%; border:none;">
-                <tr><td style="border:none; width:35%; background:#023527; color:#fff; padding:4px 8px; font-weight:bold;">BASIC REPORT</td><td style="border:none; padding:4px 8px;">{{ $completionBasic ?? '—' }}</td></tr>
-            </table>
-        </td>
-    </tr>
-    <tr>
-        <td class="value">
-            <table style="width:100%; border:none;">
-                <tr><td style="border:none; width:35%; background:#023527; color:#fff; padding:4px 8px; font-weight:bold;">PRELIM REPORT</td><td style="border:none; padding:4px 8px;">{{ $completionPrelim ?? '—' }}</td></tr>
-            </table>
-        </td>
-    </tr>
-    <tr>
-        <td class="value">
-            <table style="width:100%; border:none;">
-                <tr><td style="border:none; width:35%; background:#023527; color:#fff; padding:4px 8px; font-weight:bold;">FULL REPORT</td><td style="border:none; padding:4px 8px;">{{ $completionFull ?? ($request->status === 'complete' ? $request->updated_at->format('d F Y') : '—') }}</td></tr>
-            </table>
-        </td>
-    </tr>
-    <tr><th class="label">HIRING CATEGORY</th><td class="value">{{ strtoupper($request->type ?? 'V-PRO') }}</td></tr>
-    <tr><th class="label">PURCHASE ORDER NO</th><td class="value">{{ data_get($request->meta, 'po_number') ?: 'Nil' }}</td></tr>
-    <tr><th class="label">RESEARCH ANALYST</th><td class="value">{{ data_get($request->meta, 'analyst') ?: '—' }}</td></tr>
-    <tr><th class="label">EDITOR</th><td class="value">{{ data_get($request->meta, 'editor') ?: '—' }}</td></tr>
+<div class="shs">NRH INTERNAL</div>
+<table class="rt">
+    <tr><th class="lbl" style="width:38%;">NRH RESEARCH OFFICER</th>  <td class="val">{{ data_get($request->meta, 'analyst') ?: '—' }}</td></tr>
+    <tr><th class="lbl">COMPLIANCE EDITOR</th>                         <td class="val">{{ data_get($request->meta, 'editor') ?: '—' }}</td></tr>
+    <tr><th class="lbl">INTERIM REP 1 DATE</th>                        <td class="val">{{ $completionBasic ?? '—' }}</td></tr>
+    <tr><th class="lbl">INTERIM REP 2 DATE</th>                        <td class="val">{{ $completionPrelim ?? '—' }}</td></tr>
+    <tr><th class="lbl">FULL REP DATE</th>                             <td class="val">{{ $completionFull ?? '—' }}</td></tr>
+    <tr><th class="lbl">REVISED REP DATE</th>                          <td class="val">{{ data_get($request->meta, 'revised_date') ?: '—' }}</td></tr>
 </table>
 
 @if(! empty($reportType))
-<div style="margin: 8px 0 -4px; padding: 6px 12px; background: #f5ecd1; border-left: 3px solid #d4af37; font-size: 9pt; color: #1a1a1a;">
+<div style="margin:4px 0 6px; padding:5px 12px; background:#f5ecd1; border-left:3px solid #d4af37; font-size:8.5pt;">
     <strong>{{ strtoupper($reportType) }} REPORT — VERSION {{ $reportVersion }}</strong>
     @if(! empty($reportHash))
-    &nbsp;·&nbsp; <span style="font-family: 'DejaVu Sans Mono', monospace; font-size: 8pt; color: #666;">SHA: {{ $reportHash }}</span>
+    &nbsp;·&nbsp;<span style="font-family:'DejaVu Sans Mono',monospace; font-size:7.5pt; color:#666;">SHA: {{ $reportHash }}</span>
     @endif
 </div>
 @endif
 
-<div class="sec-head">REPORT EARMARK &amp; LEGEND</div>
-<table class="report-table">
-    <tr class="legend-row"><td>✓</td><td class="legend-text">PASS, NO RECORD &amp; REVIEW OBTAINED</td></tr>
-    <tr class="legend-row"><td>✗</td><td class="legend-text">FAIL, RECORD &amp; NO REVIEW OBTAINED</td></tr>
-    <tr class="legend-row"><td>○</td><td class="legend-text">"NO MATCH" RECORD</td></tr>
-    <tr class="legend-row"><td>●</td><td class="legend-text">"MATCH" RECORD</td></tr>
-    <tr class="legend-row"><td>!</td><td class="legend-text">ANNOTATION</td></tr>
-</table>
-
-<div class="pagebreak"></div>
-
-{{-- ===================== PAGE 2 — Summary ===================== --}}
-<div class="sec-head">SUMMARY REPORT</div>
-<table class="report-table">
-    <tr>
-        <th class="label" style="width: 75%;">CHECK</th>
-        <th class="label icon-cell">EARMARK</th>
-    </tr>
-    @foreach($candidates as $candidate)
-        <tr class="section-divider">
-            <td colspan="2">CANDIDATE: {{ strtoupper($candidate->name) }} ({{ $candidate->identity_number }})</td>
-        </tr>
-        @foreach($candidate->scopeTypes as $scope)
-        @php
-            $st = $scope->pivot->status ?? 'new';
-            $iconHtml = match ($st) {
-                'complete' => '<span class="icon-pass">✓</span>',
-                'flagged'  => '<span class="icon-fail">✗</span>',
-                'in_progress' => '<span class="icon-pending">…</span>',
-                default    => '<span class="icon-pending">·</span>',
-            };
-        @endphp
-        <tr class="summary-row">
-            <td>{{ $scope->name }}@if($scope->category)<span class="muted small"> · {{ $scope->category }}</span>@endif</td>
-            <td class="icon-cell">{!! $iconHtml !!}</td>
-        </tr>
-        @endforeach
-    @endforeach
-</table>
-
-<div class="pagebreak"></div>
-
-{{-- ===================== PAGES 3+ — Comprehensive sections ===================== --}}
-<h1 class="cover-title" style="font-size:14pt; margin-top:0;">COMPREHENSIVE REPORT</h1>
-
-<div class="static-block small">
-    <strong>Important Notice / Disclaimer:</strong>
-    While every endeavour has been made to ensure that the incriminating history listed as Incriminating Record is accurate,
-    and up-to-date, NRH Intelligence does not vouch for accuracy as the content might come from public domain that
-    is subject to constant change. Howsoever, NRH Intelligence is not liable for the lapses in coverage or
-    omission of records due to reliance on third-party data sources. NRH Intelligence accounts for and up-to-date
-    information that is reported within the 30 days from the date of release of this report and we shall verify
-    &amp; correct as soon as it is practicable to do so. Otherwise, the record is deemed accurate and up-to-date,
-    requiring no further update.
+<div class="clause-box">
+    <div class="ct">COMPLIANCE CLAUSE</div>
+    This report confirms that valid consent has been obtained from the data subject. All personal data has been
+    collected, processed, and safeguarded in compliance with the Personal Data Protection Act 2010 (Act 709),
+    as amended by the Personal Data Protection (Amendment) Act 2024 and international standards (ISO 27001 / ISO 31000).
+    @if($consentedCount > 0)
+    Consent records on file for {{ $consentedCount }} of {{ $totalCandidates }} candidate(s).
+    @endif
 </div>
 
+<div class="disc-box">
+    <div class="ct">LEGAL DISCLAIMER</div>
+    <ul>
+        <li><strong>Permitted Use:</strong> Legitimate business purposes only.</li>
+        <li><strong>Prohibited Use:</strong> Fraud, stalking, identity theft, or illegal activity.</li>
+        <li><strong>Consumer Report Limitation:</strong> NRH is not a consumer reporting agency.</li>
+        <li><strong>Confidentiality:</strong> Information must not be disclosed to unauthorised parties.</li>
+    </ul>
+</div>
+
+<div class="sh">GLOSSARY</div>
+<table class="rt">
+    <tr><th class="lbl" style="width:32%;">CLEAN RESULT</th>           <td class="val">No records or adverse findings identified.</td></tr>
+    <tr><th class="lbl">ADVERSE RESULT</th>                             <td class="val">Negative findings detected.</td></tr>
+    <tr><th class="lbl">RECORD IDENTIFIED</th>                          <td class="val">Record found in screening.</td></tr>
+    <tr><th class="lbl">SCREENING NOT REQUESTED</th>                    <td class="val">This scope was not included in the screening order.</td></tr>
+</table>
+
+<div class="sh">RISK MATRIX INTERPRETATION</div>
+<table class="rt" style="margin-bottom:0;">
+    <tr>
+        <td style="background:#023527; color:#fff; width:10%; text-align:center; font-size:14pt; padding:6px;">&#9679;</td>
+        <td style="background:#c4453a; width:14%; text-align:center; font-size:10pt; color:#fff; font-weight:bold; padding:6px; border:1px solid #2a2a2a;">HIGH</td>
+        <td style="padding:5px 10px; font-size:8.5pt; border:1px solid #2a2a2a;">Significant risk exposure. Immediate attention and enhanced due diligence required.</td>
+    </tr>
+    <tr>
+        <td style="background:#023527; color:#fff; text-align:center; font-size:14pt; padding:6px; border:1px solid #2a2a2a;">&#9679;</td>
+        <td style="background:#d97706; text-align:center; font-size:10pt; color:#fff; font-weight:bold; padding:6px; border:1px solid #2a2a2a;">MEDIUM</td>
+        <td style="padding:5px 10px; font-size:8.5pt; border:1px solid #2a2a2a;">Moderate risk exposure. Further review and monitoring recommended.</td>
+    </tr>
+    <tr>
+        <td style="background:#023527; color:#fff; text-align:center; font-size:14pt; padding:6px; border:1px solid #2a2a2a;">&#9679;</td>
+        <td style="background:#046c4e; text-align:center; font-size:10pt; color:#fff; font-weight:bold; padding:6px; border:1px solid #2a2a2a;">LOW</td>
+        <td style="padding:5px 10px; font-size:8.5pt; border:1px solid #2a2a2a;">No significant risk exposure identified. Candidate cleared for compliance integrity.</td>
+    </tr>
+</table>
+
+<div class="pb"></div>
+
+{{-- ══════════════════════════════════════════
+     CANDIDATE SECTIONS
+═══════════════════════════════════════════ --}}
 @foreach($candidates as $candidateIndex => $candidate)
-    <div class="sec-head">CANDIDATE {{ $candidateIndex + 1 }} — {{ strtoupper($candidate->name) }}</div>
 
-    <table class="report-table">
-        <tr><th class="label">FULL NAME</th><td class="value">{{ $candidate->name }}</td></tr>
-        @if($candidate->identityType)
-        <tr><th class="label">{{ strtoupper($candidate->identityType->name) }} NO</th><td class="value">{{ $candidate->identity_number }}</td></tr>
-        @endif
-        @if($candidate->mobile)
-        <tr><th class="label">CONTACT NUMBER</th><td class="value">{{ $candidate->mobile }}</td></tr>
-        @endif
-        <tr><th class="label">CANDIDATE STATUS</th><td class="value">{{ strtoupper(str_replace('_', ' ', $candidate->status)) }}</td></tr>
-    </table>
+<div class="sh">CANDIDATE {{ $candidateIndex + 1 }} — {{ strtoupper($candidate->name) }}</div>
 
+{{-- ── Candidate Info ── --}}
+<div class="shs">CANDIDATE INFO</div>
+<table class="rt">
+    <tr>
+        <th class="lbl" style="width:38%;">CANDIDATE NAME</th>
+        <td class="val bold">{{ $candidate->name }}</td>
+    </tr>
+    <tr>
+        <th class="lbl">{{ $candidate->identityType ? strtoupper($candidate->identityType->name) : 'ID' }} / PASSPORT NO</th>
+        <td class="val">{{ $candidate->identity_number }}</td>
+    </tr>
+    @if($candidate->mobile)
+    <tr><th class="lbl">CONTACT</th><td class="val">{{ $candidate->mobile }}</td></tr>
+    @endif
+    <tr>
+        <th class="lbl">CANDIDATE STATUS</th>
+        <td class="val bold">{{ strtoupper(str_replace('_', ' ', $candidate->status)) }}</td>
+    </tr>
+    @php $cn = $candidate->latestConsent; @endphp
+    @if($cn)
+    <tr>
+        <th class="lbl">CONSENT ON FILE</th>
+        <td class="val small">
+            {{ $cn->consented_at->format('d M Y, H:i') }} &nbsp;·&nbsp;
+            {{ \App\Models\ConsentRecord::evidenceTypes()[$cn->evidence_type] ?? $cn->evidence_type }}
+            <span class="muted">&nbsp;·&nbsp; v{{ $cn->consent_version }}</span>
+        </td>
+    </tr>
+    @endif
+</table>
+
+{{-- ── Risk Matrix — per candidate summary ── --}}
+<div class="sh">RISK MATRIX — COMPLIANCE SCREENING REPORT</div>
+<table class="rmt">
+    <tr>
+        <th style="width:36%;">SCOPE</th>
+        <th style="width:22%;">RESULT</th>
+        <th style="width:16%; text-align:center;">RISK LEVEL</th>
+        <th style="width:26%;">IMPLICATION</th>
+    </tr>
     @foreach($candidate->scopeTypes as $scope)
     @php
-        $pivotStatus = $scope->pivot->status ?? 'new';
-        $finished = in_array($pivotStatus, ['complete', 'flagged'], true);
-        $resultLabel = match ($pivotStatus) {
-            'complete' => 'PASS',
-            'flagged'  => 'FAIL / MATCH RECORD',
-            'in_progress' => 'IN PROGRESS',
-            default    => 'PENDING',
-        };
-        $resultClass = match ($pivotStatus) {
-            'complete' => 'result-pass',
-            'flagged'  => 'result-fail',
-            default    => 'result-pending',
-        };
-        $tatHours = $scope->pivot->tatHours();
+        $pSt = $scope->pivot->status ?? 'new';
+        $pF  = $scope->pivot->findings ?? [];
+        $pT  = $getResultType($pSt, $pF);
+        $pLv = $getRiskLevel($pSt, $pF);
+        $pIm = $getImplication($pT, $pF);
     @endphp
-    @php
-        $findings        = $scope->pivot->findings ?? [];
-        $typedComment    = $findings['comment'] ?? null;
-        $recordFields    = $findings['record']  ?? [];
-    @endphp
-    <div class="check-block">
-        <div class="sec-head">{{ strtoupper($scope->name) }}@if($scope->category) — {{ strtoupper($scope->category) }}@endif</div>
-        <table class="report-table">
-            <tr class="check-result-row">
-                <th class="label">RESULT</th>
-                <td class="value {{ $resultClass }}">{{ $resultLabel }}</td>
-            </tr>
-            <tr>
-                <th class="label">COMMENT</th>
-                <td class="value">
-                    @if($typedComment)
-                        {!! nl2br(e($typedComment)) !!}
-                    @elseif($finished)
-                        NRH Intelligence's search for <strong>{{ $scope->name }}</strong> has been
-                        @if($pivotStatus === 'complete')
-                            <strong>completed</strong> with no adverse findings against the candidate's name and identity number.
-                        @else
-                            <strong>completed with a record match</strong> against the candidate's name and identity number. See record details below.
-                        @endif
-                    @else
-                        <em class="muted">Investigation is still in progress. Findings will appear in the final report.</em>
-                    @endif
-                </td>
-            </tr>
-            @if(!empty($recordFields))
-            <tr><th class="label">RECORD</th><td class="value" style="padding:0;">
-                <table style="width:100%; border-collapse:collapse; margin:0;">
-                    @foreach($recordFields as $rk => $rv)
-                    <tr>
-                        <td style="background:#f7f7f4; border:1px solid #ccc; padding:5px 8px; font-weight:bold; width:35%;">{{ $rk }}</td>
-                        <td style="border:1px solid #ccc; padding:5px 8px;">{{ $rv }}</td>
-                    </tr>
+    <tr>
+        <td>
+            {{ $scope->name }}
+            @if($scope->category)<br><span class="muted small">{{ $scope->category }}</span>@endif
+        </td>
+        <td class="{{ match($pT) { 'clean','not_requested' => 'ri-l', 'record_identified','adverse' => 'ri-h', default => 'muted' } }} bold">
+            {{ $resultLabel($pT) }}
+        </td>
+        <td style="text-align:center;">{!! $riskBadge($pLv) !!}</td>
+        <td class="small muted ital">{{ $pIm }}</td>
+    </tr>
+    @endforeach
+</table>
+
+<div class="pb"></div>
+
+{{-- ── DATA REPORT blocks ── --}}
+<div class="sh">COMPLIANCE SCREENING REPORT — {{ strtoupper($candidate->name) }}</div>
+
+@foreach($candidate->scopeTypes as $scope)
+@php
+    $pSt      = $scope->pivot->status ?? 'new';
+    $findings = $scope->pivot->findings ?? [];
+    $rType    = $getResultType($pSt, $findings);
+    $rLevel   = $getRiskLevel($pSt, $findings);
+    $rLabel   = $resultLabel($rType);
+    $rCss     = $resultCss($rType);
+    $rStat    = $riskStatusText($rLevel, $rType, $findings);
+    $comment  = $findings['comment'] ?? null;
+    $records  = $findings['records'] ?? [];    // new structured format
+    $legacyRec= $findings['record']  ?? [];    // old key-value format
+    $verMethod= $findings['verification_method'] ?? ($scope->description ?? null);
+    $scopeDesc= $findings['scope_description'] ?? ($scope->description ?? null);
+    $tatHours = $scope->pivot->tatHours();
+    $finished = in_array($pSt, ['complete', 'flagged']);
+@endphp
+<div class="pi mb8">
+    <div class="shd">DATA REPORT</div>
+    <table class="rt" style="margin-bottom:0;">
+        <tr>
+            <th class="lbl" style="width:22%;">SCOPE</th>
+            <td class="val">
+                <span class="bold">{{ strtoupper($scope->name) }}</span>
+                @if($scope->category)<span class="muted small"> — {{ $scope->category }}</span>@endif
+                @if($scopeDesc && $scopeDesc !== $scope->name)
+                <br><span class="small" style="color:#444; display:block; margin-top:2px;">{{ $scopeDesc }}</span>
+                @endif
+            </td>
+        </tr>
+        <tr>
+            <th class="lbl">RESULT</th>
+            <td class="val {{ $rCss }}">{{ $rLabel }}</td>
+        </tr>
+        <tr>
+            <th class="lbl" style="background:#1a3a2a;">RISK STATUS</th>
+            <td class="val">{!! $riskBadge($rLevel) !!}&nbsp; {{ $rStat }}</td>
+        </tr>
+        @if($comment)
+        <tr>
+            <th class="lbl" style="background:#1a3a2a;">NOTES</th>
+            <td class="val">{!! nl2br(e($comment)) !!}</td>
+        </tr>
+        @endif
+    </table>
+
+    {{-- New structured record entries --}}
+    @if(!empty($records))
+        @foreach($records as $ri => $rec)
+        <div class="rec-entry">
+            <div class="rec-head">
+                RECORD {{ count($records) > 1 ? ($ri + 1).' IDENTIFIED' : 'IDENTIFIED' }}
+                @if(!empty($rec['title'])) – {{ strtoupper($rec['title']) }}@endif
+            </div>
+            <div class="rec-body">
+                @if(!empty($rec['act']))<div class="bold small" style="margin-bottom:3px;">{{ strtoupper($rec['act']) }}</div>@endif
+                @if(!empty($rec['section']))<div class="small muted" style="margin-bottom:3px;">{{ $rec['section'] }}</div>@endif
+                @if(!empty($rec['description']))<div class="small" style="margin-bottom:4px;"><strong>Offence:</strong> {{ $rec['description'] }}</div>@endif
+                @if(!empty($rec['penalty']))<div class="small" style="margin-bottom:4px;"><strong>Penalty:</strong> {{ $rec['penalty'] }}</div>@endif
+                @if(!empty($rec['fields']))
+                <table class="rf" style="margin:4px 0;">
+                    @foreach($rec['fields'] as $fk => $fv)
+                    <tr><td class="rfl">{{ $fk }}</td><td>{{ $fv }}</td></tr>
                     @endforeach
                 </table>
-            </td></tr>
-            @endif
-            @if($scope->turnaround_hours)
-            <tr>
-                <th class="label">SLA / TAT</th>
-                <td class="value">
-                    Target: {{ $scope->turnaround_hours }} business hours.
-                    @if($scope->pivot->assigned_at)
-                        Actual: <strong>{{ $tatHours }}h</strong>
-                        @if($finished && $tatHours > $scope->turnaround_hours)
-                            (<span style="color:#c4453a;">{{ round($tatHours - $scope->turnaround_hours, 1) }}h over SLA</span>)
-                        @elseif($finished)
-                            (<span style="color:#046c4e;">within SLA</span>)
-                        @endif
+                @endif
+                @if(!empty($rec['verdict']))
+                <div class="bold small ri-h" style="margin-top:4px;">Verdict: {{ strtoupper($rec['verdict']) }}</div>
+                @endif
+                @if(!empty($rec['risk_text']))
+                <div class="small" style="margin-top:3px;">{!! $riskBadge($rec['risk_level'] ?? $rLevel) !!} {{ $rec['risk_text'] }}</div>
+                @endif
+            </div>
+        </div>
+        @endforeach
+
+    {{-- Legacy key-value record (backwards compatible) --}}
+    @elseif(!empty($legacyRec))
+        <div class="rec-entry">
+            <div class="rec-head">RECORD IDENTIFIED</div>
+            <div class="rec-body">
+                <table class="rf">
+                    @foreach($legacyRec as $rk => $rv)
+                    <tr><td class="rfl">{{ $rk }}</td><td>{{ $rv }}</td></tr>
+                    @endforeach
+                </table>
+            </div>
+        </div>
+
+    {{-- Auto-generated clean/not-requested description --}}
+    @elseif($rType === 'clean')
+        <div style="padding:5px 10px; background:#ecfdf5; border:1px solid #b7f2d4; margin:4px 0; font-size:8.5pt; color:#023527;">
+            No risk match identified based on the identity details provided within this scope of screening.
+        </div>
+    @elseif($rType === 'not_requested')
+        <div style="padding:5px 10px; background:#f0f4f8; border:1px solid #cdd9e5; margin:4px 0; font-size:8.5pt; color:#4a5568;">
+            This scope was not requested. No screening was conducted.
+        </div>
+    @endif
+
+    <table class="rt" style="margin-top:4px; margin-bottom:0;">
+        <tr>
+            <th class="lbl" style="width:22%; background:#1a3a2a;">VERIFICATION METHOD</th>
+            <td class="val small">
+                @if($verMethod){{ $verMethod }}@else
+                Verification was conducted using the candidate's Name and ID against authoritative databases and declared information.
+                @endif
+                <br><span class="muted ital">Compliance aligned with PDPA 2010 (Act 709), as amended 2024, and ISO 27001 / ISO 31000 standards.</span>
+            </td>
+        </tr>
+        @if($scope->turnaround_hours)
+        <tr>
+            <th class="lbl" style="background:#1a3a2a;">SLA / TAT</th>
+            <td class="val small">
+                Target: {{ $scope->turnaround_hours }}h.
+                @if($scope->pivot->assigned_at)
+                    Actual: <strong>{{ $tatHours }}h</strong>
+                    @if($finished && $tatHours > $scope->turnaround_hours)
+                        <span class="ri-h">({{ round($tatHours - $scope->turnaround_hours, 1) }}h over SLA)</span>
+                    @elseif($finished)
+                        <span class="ri-l">(within SLA)</span>
                     @endif
-                </td>
-            </tr>
-            @endif
-        </table>
-    </div>
-    @endforeach
-@endforeach
-
-<div class="pagebreak"></div>
-
-{{-- ===================== Static — About / Accreditation ===================== --}}
-<h1 class="static-page-title">ABOUT NRH INTELLIGENCE</h1>
-<div class="static-block">
-    <p>NRH Intelligence Sdn. Bhd. is a Malaysia-based corporate due-diligence and pre-employment background-screening
-    firm. We deliver fact-based, defensible reports on candidates, partners, and counter-parties for clients in
-    banking, capital markets, fintech, legal, professional services, and government.</p>
-
-    <p>Our platform combines structured database queries, primary-source verification (institutions, employers, courts,
-    regulators), and human review by trained research analysts. Every report is editor-reviewed before release.</p>
-</div>
-
-<h1 class="static-page-title">SERVICES</h1>
-<div class="static-block">
-    <table class="report-table">
-        <tr>
-            <th class="label center" style="text-align:center;">CORE SERVICES</th>
-            <th class="label center" style="text-align:center;">SPECIALISED CHECKS</th>
-        </tr>
-        <tr>
-            <td>
-                Pre-Employment Background Screening<br>
-                Corporate Due Diligence<br>
-                Vendor &amp; Counter-party Due Diligence<br>
-                KYC / KYB / KYS<br>
-                Politically Exposed Persons (PEP) Screening<br>
-                Sanctions &amp; Watchlist Screening<br>
-                Adverse Media &amp; Reputation Risk
-            </td>
-            <td>
-                Education &amp; Qualification Verification<br>
-                Employment Reference Verification<br>
-                Criminal &amp; Civil Records Search<br>
-                Bankruptcy &amp; Litigation Search<br>
-                Financial Standing &amp; Credit Report<br>
-                Driving &amp; Licensing Records<br>
-                Digital Presence &amp; Online Risk Audit
+                @endif
             </td>
         </tr>
+        @endif
     </table>
 </div>
+@endforeach
 
-<h1 class="static-page-title">ACCREDITATION &amp; REGULATORY STANDING</h1>
-<div class="static-block">
-    <p>NRH Intelligence operates in compliance with applicable Malaysian privacy and consumer-protection law,
-    including the Personal Data Protection Act 2010 (PDPA). Our research practices align with international
-    background-screening industry standards and we maintain ongoing professional development for our analysts.</p>
+@if(!$loop->last)<div class="pb"></div>@endif
+@endforeach
 
-    <p>Our reports are produced and editor-reviewed in accordance with the principles of accuracy, fairness,
-    relevance, and verifiability. We retain full audit trails of every research action taken on every report.</p>
+<div class="pb"></div>
+
+{{-- ══════════════════════════════════════════
+     COMPETENCY & PROFESSIONAL VERIFICATION
+═══════════════════════════════════════════ --}}
+<div class="sh">COMPETENCY &amp; PROFESSIONAL VERIFICATION REPORT</div>
+
+@foreach($candidates as $candidate)
+@php
+    $profScopes = $candidate->scopeTypes->filter(fn($s) =>
+        collect(['academic','qualification','credential','employment','reference','education'])
+            ->contains(fn($kw) =>
+                str_contains(strtolower($s->name), $kw) ||
+                str_contains(strtolower($s->category ?? ''), $kw)
+            )
+    );
+@endphp
+@if($profScopes->count())
+<div class="shs" style="margin-top:8px;">{{ strtoupper($candidate->name) }}</div>
+<table class="rt">
+    @foreach($profScopes as $ps)
+    @php
+        $psT = $getResultType($ps->pivot->status ?? 'new', $ps->pivot->findings ?? []);
+        $psCm = ($ps->pivot->findings ?? [])['comment'] ?? null;
+    @endphp
+    <tr class="div"><td colspan="2">{{ strtoupper($ps->name) }}</td></tr>
+    <tr>
+        <th class="lbl" style="width:38%;">RESULT</th>
+        <td class="val {{ $resultCss($psT) }}">{{ $resultLabel($psT) }}</td>
+    </tr>
+    @if($psCm)
+    <tr><th class="lbl">DETAILS</th><td class="val">{!! nl2br(e($psCm)) !!}</td></tr>
+    @endif
+    @endforeach
+</table>
+@else
+<div class="shs" style="margin-top:8px;">ACADEMIC CREDENTIAL VERIFICATION</div>
+<table class="rt">
+    <tr>
+        <th class="lbl" style="width:38%;">PROVIDED INFORMATION</th>
+        <td class="val muted ital small">Academic and professional credential verification details will be reported upon completion of verification with the relevant institutions.</td>
+    </tr>
+</table>
+@endif
+@endforeach
+
+<div class="pb"></div>
+
+{{-- ══════════════════════════════════════════
+     END OF REPORT + FULL DISCLAIMER
+═══════════════════════════════════════════ --}}
+<div class="eor">— END OF REPORT —</div>
+
+<div class="sh">NRH LEGAL DISCLAIMER</div>
+
+<div style="margin-top:8px; font-size:8.5pt; font-weight:bold; color:#023527; text-transform:uppercase; margin-bottom:4px;">Permitted Use of Information</div>
+<div style="font-size:8.5pt; line-height:1.6; margin-bottom:8px;">
+    Information obtained from NRH is to be used solely for:
+    <ul style="padding-left:16px; margin:4px 0;">
+        <li>Legitimate business purposes involving a pre-existing or potential business relationship with the subject.</li>
+        <li>Uses that will not cause emotional, physical, or financial harm to any person, organisation, or third party.</li>
+        <li>Internal purposes only.</li>
+    </ul>
 </div>
 
-<div class="pagebreak"></div>
-
-{{-- ===================== Static — Disclaimer / Terms ===================== --}}
-<h1 class="static-page-title">DISCLAIMER &amp; TERMS</h1>
-<div class="static-block">
-    <ol>
-        <li>This report has been prepared exclusively for the use of the named client and is classified as
-        <strong>Private and Confidential</strong>. The client is the sole intended recipient.</li>
-
-        <li>The information contained herein has been compiled from a combination of public-domain sources,
-        primary-source verifications, and where applicable third-party data providers. NRH Intelligence has
-        exercised reasonable care in compiling this report.</li>
-
-        <li>This report represents NRH Intelligence's findings as at the date of release. NRH Intelligence does not
-        warrant that the information remains accurate or up-to-date thereafter, given that public-domain content
-        is subject to constant change.</li>
-
-        <li>NRH Intelligence shall not be liable for any decisions made by the client on the basis of this report.
-        The client is responsible for assessing the relevance, completeness, and applicability of the findings to
-        its own decision-making.</li>
-
-        <li>NRH Intelligence may update or correct any record reported herein within 30 days of release, upon
-        substantiated request. After the 30-day window, the record is deemed accurate and up-to-date and requires
-        no further action.</li>
-
-        <li>The candidate (data subject) has provided informed consent for the personal data used in this report,
-        in accordance with the PDPA 2010.</li>
-
-        <li>The findings are based on the identifiers (name, identity document number, date of birth, etc.) supplied
-        by the client. NRH Intelligence is not responsible for errors arising from incorrect identifiers.</li>
-
-        <li>This report is not, and shall not be construed as, a recommendation or endorsement of the candidate
-        for any purpose. The client retains sole responsibility for hiring, contracting, or business decisions.</li>
-
-        <li>NRH Intelligence is not liable for omissions arising from records that are sealed, expunged, restricted,
-        or otherwise unavailable through lawful access channels.</li>
-
-        <li>The methodology, data sources, and analyst notes underlying this report are the proprietary
-        intellectual property of NRH Intelligence and may not be reproduced, in whole or in part, without express
-        written permission.</li>
-
-        <li>Any dispute arising from this report shall be governed by the laws of Malaysia, with exclusive
-        jurisdiction in the Malaysian courts.</li>
-
-        <li>NRH Intelligence will not use the name of its client in any of its documents for advertising purposes
-        unless written confirmation from an authorised representative of the client is obtained.</li>
-
-        <li>NRH Intelligence will not reveal to any individual or organisation the client's name. Likewise, the
-        client is <strong>strictly prohibited</strong> from revealing any information pertaining to NRH
-        Intelligence and from disclosing the search conducted on the subject to the subject for any purpose
-        whatsoever.</li>
-    </ol>
-</div>
-
-<div class="end-of-report">— END OF REPORT —</div>
+<ol class="dl">
+    <li><strong>Prohibited Use:</strong> Any use of NRH information to plan stalking, identity theft, fraud, or any illegal activity is strictly prohibited and will be reported to the authorities.</li>
+    <li><strong>Consumer-Report Limitation:</strong> NRH is not a consumer-reporting agency. Data from NRH should not be used to determine eligibility for credit, insurance, or other purposes typically requiring a consumer report, except in connection with hiring decisions.</li>
+    <li><strong>Verification Requirement:</strong> Any adverse action based on NRH data must be verified with another source. NRH data is to be used as lead information only.</li>
+    <li><strong>Representation by Client:</strong> Clients must not misrepresent themselves, their company, or the purpose for accessing NRH services.</li>
+    <li><strong>Data Sources &amp; Methodology:</strong> NRH develops information using standard investigative methods, including public records, third-party sources, and creditor networks.</li>
+    <li><strong>No Guarantee:</strong> Searches are conducted on a best-effort basis. NRH makes no guarantees about results but will perform services professionally and without gross negligence.</li>
+    <li><strong>Pricing &amp; Service Modifications:</strong> NRH reserves the right to amend pricing, services, or refuse specific client requests at any time. NRH will cooperate with law enforcement if misuse is suspected.</li>
+    <li><strong>Legality of Searches:</strong> Clients warrant that searches comply with local laws. Orders are processed immediately and are non-cancellable upon receipt.</li>
+    <li><strong>Prohibited Purposes:</strong> NRH services may not be used for entrapment, sting operations, or targeting NRH, its employees, vendors, clients, affiliates, or officers.</li>
+    <li><strong>Reporting &amp; Consent:</strong> Any discrepancies in search results must be reported within 10 days. Clients agree to all NRH terms as amended from time to time.</li>
+    <li><strong>Client Confidentiality:</strong> NRH will not use client names for advertising without written consent and will not disclose client identities. Clients are likewise prohibited from disclosing NRH information or searches conducted to the subject or any third party.</li>
+</ol>
 
 </body>
 </html>

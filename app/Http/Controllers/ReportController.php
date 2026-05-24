@@ -271,21 +271,23 @@ class ReportController extends Controller
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
                 'isPhpEnabled'         => true,
-                'defaultFont'          => 'DejaVu Sans',
+                'defaultFont'          => 'Courier Prime',
+                'fontDir'              => storage_path('fonts'),
+                'fontCache'            => storage_path('fonts'),
             ]);
 
         $dompdf = $pdf->getDomPDF();
         $dompdf->render();
-        $canvas = $dompdf->getCanvas();
+        $canvas      = $dompdf->getCanvas();
         $fontMetrics = $dompdf->getFontMetrics();
-        $font = $fontMetrics->getFont('DejaVu Sans', 'bold');
+        $font        = $fontMetrics->getFont('Oswald', 'normal');
         $canvas->page_text(
             $canvas->get_width() - 115,
             $canvas->get_height() - 38,
             'Page {PAGE_NUM} of {PAGE_COUNT}',
             $font,
-            9,
-            [0, 0, 0]
+            8,
+            [0.4, 0.4, 0.4]
         );
 
         return $dompdf->output();

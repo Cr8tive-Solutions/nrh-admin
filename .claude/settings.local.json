@@ -48,7 +48,27 @@
       "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Models/InvoicePaymentReceipt.php)",
       "Bash(php -l /Users/anwarsaad/Herd/nrh-admin/app/Models/Invoice.php)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(cp '/Users/anwarsaad/Downloads/REPORT_TEMPLATE_2026_1504_01.docx' .)",
+      "Bash(unzip -o REPORT_TEMPLATE_2026_1504_01.docx -d report_template_extracted)",
+      "Bash(cp /tmp/report_template_extracted/word/media/image1.png /tmp/report_img1.png)",
+      "Bash(cp /tmp/report_template_extracted/word/media/image2.png /tmp/report_img2.png)",
+      "Bash(cp /tmp/report_template_extracted/word/media/image3.png /tmp/report_img3.png)",
+      "Bash(php -r ' *)",
+      "Bash(python3 *)",
+      "Bash(php *)",
+      "Bash(file /tmp/ibm_plex_fonts/*.ttf)",
+      "Bash(rm -rf ibm_plex_fonts)",
+      "Bash(mkdir ibm_plex_fonts)",
+      "Bash(curl -sL \"https://registry.npmjs.org/@ibm/plex/-/plex-6.4.0.tgz\" -o ibm_plex.tgz)",
+      "Bash(tar -tzf ibm_plex.tgz)",
+      "Bash(grep \"\\\\.ttf$\")",
+      "Bash(tar -tf ibm_plex.tgz)",
+      "Bash(pip3 show *)",
+      "Bash(pip3 install *)",
+      "Bash(tar -xf ibm_plex.tgz package/IBM-Plex-Serif/fonts/complete/woff/IBMPlexSerif-Regular.woff package/IBM-Plex-Serif/fonts/complete/woff/IBMPlexSerif-Bold.woff package/IBM-Plex-Serif/fonts/complete/woff/IBMPlexSerif-Italic.woff package/IBM-Plex-Serif/fonts/complete/woff/IBMPlexSerif-BoldItalic.woff package/IBM-Plex-Sans-Condensed/fonts/complete/woff/IBMPlexSansCondensed-Bold.woff)",
+      "Bash(curl -sL 'https://fonts.gstatic.com/l/font?kit=u-450q2lgwslOqpF_6gQ8kELWwc&skey=e017e80d5b8c8838&v=v11' -H 'User-Agent: Mozilla/5.0 \\(Linux; U; Android 2.2; en-us; Nexus One Build/FRF91\\) AppleWebKit/533.1 \\(KHTML, like Gecko\\) Version/4.0 Mobile Safari/533.1' -o test_regular.ttf)",
+      "Bash(open *)"
     ]
   }
 }
