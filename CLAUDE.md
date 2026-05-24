@@ -1,5 +1,6 @@
-# NRH Admin — Claude Code Project Brief
-> Drop this file as `CLAUDE.md` in the root of the `nrh-admin` Laravel project.
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ---
 
@@ -14,15 +15,70 @@
 
 ---
 
-## Technology Stack
+## Development Commands
 
-| Layer | Technology |
-|---|---|
-| Framework | Laravel 13 (PHP 8.5) |
-| Database | PostgreSQL via Supabase (Session Pooler) |
-| Frontend | Blade, Alpine.js, Tailwind CSS v4 |
-| Auth | Session-based (separate from client portal) |
-| Local dev | Laravel Herd |
+```bash
+# Full dev stack (server + queue + vite hot-reload)
+composer dev
+
+# Run tests
+composer test
+# or a single test file
+php artisan test tests/Feature/ExampleTest.php
+
+# Code style (Laravel Pint)
+./vendor/bin/pint
+
+# Compile assets (production)
+npm run build
+
+# First-time setup
+composer setup
+```
+
+The app runs at `http://nrh-admin.test` under Laravel Herd. Migrations run against the live Supabase DB — there is no local SQLite fallback.
+
+---
+
+## Architecture: Non-Obvious Patterns
+
+### Authentication (NOT Laravel's Auth facade)
+
+This app uses **custom session-based auth** — `App\Http\Middleware\AdminAuth` checks `session('admin_id')`, and `App\Support\AuthSession` handles login/logout. The `current_admin()` global helper (in `app/Support/helpers.php`) resolves the authenticated `Admin` model from the session, memoised in the service container per request. `admin_can(string $key)` is a shorthand for use in Blade.
+
+**Never use `Auth::user()`, `auth()->user()`, or `@auth`** — they refer to Laravel's default guard, which is unused.
+
+The `Admin` model is entirely separate from `User` (which exists only as a Laravel scaffold artefact and is unused).
+
+### Permission System
+
+Permissions are stored in `admin_permissions`, assigned to roles via `admin_role_permissions`, with per-user overrides in `admin_user_permissions` (pivot column `granted: true/false`). `Admin::effectivePermissionKeys()` merges role permissions with overrides and memoises the result. `Admin::can($key)` uses this — it does NOT delegate to Laravel's Gate/Policy system.
+
+Routes are gated with `middleware('admin.can:permission.key')` (`AdminCan` middleware), not by role. `super_admin` bypasses all checks. Default role permissions are seeded by `PermissionSeeder`; the role matrix can be edited via the admin UI at `/permissions`.
+
+Permission keys: `request.update`, `customer.manage`, `pricing.manage`, `invoice.manage`, `transaction.manage`, `config.scopes`, `config.countries`, `staff.manage`, `permissions.manage`, `pdpa.consent`, `pdpa.dsar`, `pdpa.retention`.
+
+### Two-Factor Auth Flow
+
+Login is a two-step process: password check → store `2fa.pending_admin_id` in session → redirect to `/two-factor-challenge`. `TwoFactorChallengeController` verifies the TOTP code via `pragmarx/google2fa`, then calls `AuthSession::login()` which clears `2fa.pending_admin_id` and stores the full admin session. Recovery codes are stored encrypted on the `admins` row; `Admin::consumeRecoveryCode()` removes a used code.
+
+### Report Versioning
+
+`ReportController::generate()` creates immutable `ReportVersion` records with a SHA-256 `content_hash` (built by `ReportSnapshot::build()` + `ReportSnapshot::hash()`). Re-issuing the same report type without any data change is rejected unless the caller passes `supersedes_id`. PDFs are rendered via `barryvdh/laravel-dompdf` from the `reports.screening` Blade view and stored at `storage/app/reports/{request_id}/{type}-v{n}.pdf` on the `local` disk. A second render pass embeds the file SHA-256 (first 8 chars) in the PDF footer.
+
+Status is auto-flipped on generate: `prelim` type → request status `prelim`; `full` type → `complete` (or `updated` if already complete/updated).
+
+### Audit Logging
+
+`AuditObserver` is registered in `AppServiceProvider` and fires on Eloquent `created`/`updated`/`deleted` events. It scrubs sensitive fields (`password`, `two_factor_secret`, etc.) and records to `admin_audit_logs` via `AdminAuditLog::record()`. Controllers also call `AdminAuditLog::record()` directly for workflow events (e.g. report generation, payment verification).
+
+### Business Hours / TAT
+
+`BusinessHours` (in `app/Services/`) calculates elapsed working seconds between two timestamps, excluding weekends and admin-managed public holidays (`business_holidays` table). Config is in `config/business_hours.php` (Mon–Fri, 09:00–18:00, Asia/Kuala_Lumpur). Call `BusinessHours::flushHolidayCache()` after updating holidays.
+
+### ajaxForm Alpine Component
+
+A reusable Alpine factory `ajaxForm()` is defined globally in `resources/views/layouts/admin.blade.php`. Attach with `x-data="ajaxForm()"` and `@submit.prevent="submit($event)"` on any form to get inline saving/saved/error feedback without a full-page reload.
 
 ---
 
@@ -67,18 +123,17 @@ remember_token, created_at, updated_at
 Service contracts between NRH and each customer.
 ```
 id, customer_id (FK→customers), type, start_date, expiry_date,
-sla_tat, billing, payment, terms (json), created_at, updated_at
+sla_tat, billing (monthly|per_request), payment, terms (json), created_at, updated_at
 ```
 > `days_left` is a computed accessor — calculate as `MAX(0, expiry_date - today)` in PHP.
+> `Agreement::billingMode()`, `isPerRequest()`, `isMonthly()` helpers exist on the model.
 
 ### `countries`
-Geographic coverage list.
 ```
-id, name, code (3-char), flag (emoji), region, created_at, updated_at
+id, name, code (3-char), flag (emoji), region, currency, created_at, updated_at
 ```
 
 ### `identity_types`
-Document types (MyKAD, Passport, etc.).
 ```
 id, name, created_at, updated_at
 ```
@@ -88,248 +143,132 @@ Individual verification services offered.
 ```
 id, country_id (FK→countries), name, category (nullable),
 turnaround, price (decimal 8,2), price_on_request (boolean, default false),
-description, created_at, updated_at
+requires_signed_consent (boolean), description, created_at, updated_at
 ```
-> Malaysia scopes: `price_on_request = true`, price = 0.00 (negotiated per customer via `customer_scope_prices`).
+> Malaysia scopes: `price_on_request = true`, price = 0.00.
 > Singapore/Indonesia/Thailand scopes: fixed price, `price_on_request = false`.
 
 ### `customer_scope_prices`
 Per-customer custom pricing (overrides `scope_types.price`).
 ```
-id, customer_id (FK→customers), scope_type_id (FK→scope_types),
-price (decimal 10,2), created_at, updated_at
+id, customer_id, scope_type_id, price (decimal 10,2), created_at, updated_at
 UNIQUE (customer_id, scope_type_id)
 ```
 
-### `packages`
-Pre-built scope bundles per customer per country.
-```
-id, customer_id (FK→customers), country_id (FK→countries),
-name, created_at, updated_at
-```
-
-### `package_scope_type`
-Pivot: packages ↔ scope_types.
-```
-package_id (FK→packages), scope_type_id (FK→scope_types)
-```
+### `packages` / `package_scope_type`
+Pre-built scope bundles. `package_scope_type` is the pivot.
 
 ### `screening_requests`
-Request headers submitted by clients.
 ```
-id, customer_id (FK→customers), customer_user_id (FK→customer_users),
-reference (e.g. REQ-2026-0001), status (new|in_progress|flagged|complete),
-type (nullable, e.g. "malaysia", "global", "kyc", "kyb", "kys"),
-meta (json, nullable), created_at, updated_at
+id, customer_id, customer_user_id, invoice_id (nullable FK→invoices),
+reference (REQ-YYYY-NNNN), status, type, meta (json), rejection_reason (nullable),
+payment_slip_path, payment_slip_uploaded_at, payment_verified_at, payment_verified_by,
+created_at, updated_at
 ```
+Status values: `new | in_progress | rejected | prelim | complete | updated | flagged`
 
 ### `request_candidates`
-Individual candidates under a screening request.
 ```
-id, screening_request_id (FK→screening_requests),
-identity_type_id (FK→identity_types),
+id, screening_request_id, identity_type_id,
 name, identity_number, mobile (nullable), remarks (nullable),
 status (new|in_progress|flagged|complete), created_at, updated_at
 ```
 
 ### `candidate_scope_type`
-Pivot: which scope checks are assigned to each candidate + per-check status.
+Pivot: candidates ↔ scope checks with per-check status and findings.
 ```
-request_candidate_id (FK→request_candidates),
-scope_type_id (FK→scope_types),
-status (varchar)
-```
-
-### `invoices`
-Monthly billing documents.
-```
-id, customer_id (FK→customers), number (e.g. INV-2026-001),
-period (e.g. "April 2026"), status (unpaid|paid|overdue),
-issued_at (date), due_at (date),
-subtotal (decimal 10,2), tax (decimal 10,2), total (decimal 10,2),
-created_at, updated_at
+request_candidate_id, scope_type_id, status,
+assigned_at, started_at, completed_at, findings (nullable text)
 ```
 
-### `invoice_items`
-Line items on each invoice.
+### `invoices` / `invoice_items`
+Monthly billing. Invoice number format: `INV-YYYY-NNN`.
 ```
-id, invoice_id (FK→invoices), description,
-qty (smallint), unit_price (decimal 8,2), total (decimal 10,2),
-created_at, updated_at
+invoices: id, customer_id, number, period, status (unpaid|paid|overdue),
+          issued_at, due_at, subtotal, tax (6% SST), total, created_at, updated_at
+invoice_items: id, invoice_id, description, qty, unit_price, total
 ```
+
+### `invoice_payment_receipts`
+Customer-uploaded payment slips linked to invoices.
+```
+id, invoice_id, screening_request_id (nullable), file_path, status (pending|verified|rejected),
+amount, rejection_reason (nullable), verified_at, verified_by_admin_id, created_at, updated_at
+```
+Verify cascade (single DB transaction): mark verified → write `transactions` row → if coverage hits invoice total flip invoice to `paid` → cascade-flip linked `new` requests to `in_progress` → audit log.
 
 ### `transactions`
-Payment records.
 ```
-id, customer_id (FK→customers),
-type (topup|payment|adjustment),
-amount (decimal 10,2), reference (nullable), status,
-method (e.g. "Bank Transfer", "Monthly Billing"),
-notes (nullable), created_at, updated_at
+id, customer_id, type (topup|payment|adjustment),
+amount, reference (nullable), status, method, notes (nullable), created_at, updated_at
 ```
 
----
-
-## Admin Auth Design
-
-- Admin staff have their **own table** — `admins` — which you must create via migration.
-- Do NOT use `customer_users` for admin login.
-- Use session-based auth with session keys prefixed `admin_*` (e.g. `admin_id`, `admin_name`, `admin_role`).
-- Roles: `super_admin`, `operations`, `finance`, `viewer`.
-- Protect all admin routes with a custom `AdminAuth` middleware that checks `session('admin_id')`.
-- The `admins` table does not exist yet — create it in your first migration.
-
-Suggested `admins` table:
+### `admins` (admin-only table)
 ```
-id, name, email (unique), password (hashed), role (enum), status (active|inactive),
-avatar (nullable), remember_token, created_at, updated_at
+id, name, email (unique), password (hashed), role (super_admin|operations|finance|viewer),
+status (active|inactive), avatar (nullable), remember_token,
+two_factor_secret (encrypted), two_factor_recovery_codes (encrypted array),
+two_factor_confirmed_at, created_at, updated_at
 ```
 
-Default seed accounts (password: `Admin@1234`):
-- `admin@nrhintelligence.com` → role: `super_admin`
-- `ops@nrhintelligence.com` → role: `operations`
+### `admin_permissions` / `admin_role_permissions` / `admin_user_permissions`
+Permission system tables — managed via `PermissionSeeder` and the `/permissions` UI.
 
----
+### `admin_audit_logs`
+Append-only event log. No `updated_at` — `$timestamps = false`, only `created_at`.
 
-## What the Admin Portal Must Do
+### `report_versions`
+Immutable PDF snapshots per screening request.
+```
+id, screening_request_id, type (basic|prelim|full), version (int),
+generated_at, generated_by_admin_id, content_hash, file_path, file_sha256,
+snapshot (json), supersedes_id (nullable self-FK), supersede_reason, created_at
+```
 
-### 1. Authentication
-- Login page at `/login`
-- Email + password (no 2FA required internally)
-- Redirect to dashboard on success
-- Separate session from client portal
+### `business_holidays`
+Admin-managed public holidays used by TAT calculation.
 
-### 2. Dashboard
-- Stats: active requests, flagged cases, completed today, total customers, unpaid invoices
-- Recent requests table (all customers)
-- Pending (new) requests queue
-
-### 3. Request Queue & Processing
-- List all screening requests with filter by status (new / in_progress / flagged / complete)
-- Search by reference or customer name
-- Request detail page:
-  - View all candidates + their assigned scopes
-  - **Update request status** (new → in_progress → flagged → complete)
-  - **Update individual candidate status**
-  - Add internal notes (optional)
-- When status = `complete`, the client portal automatically shows it as completed
-
-### 4. Customer Management
-- List all customers with search
-- Customer profile:
-  - Company info (name, reg no, address, industry, contact)
-  - Service agreement (type, dates, SLA, billing)
-  - Team members (customer_users)
-  - Recent screening requests
-  - Invoice history
-  - Transaction history
-
-### 5. Per-Customer Scope Pricing
-- View all scope types grouped by country and category
-- Set / update custom price for a specific customer per scope
-- Stored in `customer_scope_prices` table
-- If no custom price exists, `scope_types.price` is used as the default
-- Malaysia scopes are always `price_on_request` — admin sets custom price per customer here
-
-### 6. Invoice Management
-- List all invoices across all customers
-- Create invoice manually:
-  - Select customer, set period, due date
-  - Add line items (description, qty, unit price)
-  - Auto-calculate subtotal + 6% SST tax + total
-  - Generate invoice number (INV-YYYY-NNN)
-- Mark invoice as paid
-- View invoice detail
-
-### 7. Transaction Recording
-- Record incoming payments against a customer
-- Link to invoice (optional)
-- Method: Bank Transfer / Online / Adjustment
-
-### 8. Agreement Management
-- Create / edit service agreements per customer
-- Fields: type, start date, expiry date, SLA TAT, billing cycle, payment terms
-
-### 9. Staff Management (Super Admin only)
-- List admin staff accounts
-- Create / deactivate staff
-- Assign roles
-
-### 10. System Configuration
-- Manage scope types (add/edit/disable)
-- Manage countries
+### PDPA tables: `consent_records`, `data_subject_requests`, `retention_policies`
+PDPA compliance tracking. Consent records link to candidates; DSARs track erasure requests.
 
 ---
 
 ## Status Values (use exactly these strings)
 
 ```
-screening_requests.status:   new | in_progress | flagged | complete
+screening_requests.status:   new | in_progress | rejected | prelim | complete | updated | flagged
 request_candidates.status:   new | in_progress | flagged | complete
 invoices.status:             unpaid | paid | overdue
 transactions.type:           topup | payment | adjustment
 customer_users.role:         admin | user
 customer_users.status:       active | inactive
+admins.role:                 super_admin | operations | finance | viewer
+admins.status:               active | inactive
 ```
-
----
-
-## Screening Request Reference Format
-
-`REQ-YYYY-NNNN` — e.g. `REQ-2026-0042`
-
-Generated by the client portal. Admin reads and displays as-is.
-
-## Invoice Number Format
-
-`INV-YYYY-NNN` — e.g. `INV-2026-001`
-
-Admin generates these when creating invoices.
 
 ---
 
 ## Key Business Rules
 
-1. **Malaysia scopes** (`scope_types.price_on_request = true`) have no fixed price. Price is always set per customer in `customer_scope_prices`. If no price is set for a customer, show "Price on request".
-2. **Tax is 6% SST** — apply to invoice subtotal.
+1. **Malaysia scopes** (`price_on_request = true`) have no fixed price. Price is always set per customer in `customer_scope_prices`. If no price is set, show "Price on request".
+2. **Tax is 6% SST** — applied to invoice subtotal.
 3. **Agreement expiry** — warn at 60 days, critical at 14 days.
-4. **Candidate status** is independent of request status. A request can be `complete` even if some candidates are `flagged` — admin decides.
-5. **Balance** on `customers` is a credit balance (for prepaid accounts). Not currently used in billing logic but reserved for future.
-
----
-
-## Malaysia Scope Categories (42 scopes across 13 categories)
-
-1. Security & Integrity Check
-2. Anti-Money Laundering & CTF (AML/CTF)
-3. Securities Commission (Capital Market)
-4. Bursa Malaysia (Corporate Enforcement)
-5. Global Sanctions & PEP
-6. Financial Standing & Credit Records
-7. Legal & Civil Proceedings
-8. Driving & Licensing Records
-9. International Travel Restriction
-10. Corporate Governance & Ownership
-11. Digital Presence & Online Risk
-12. Academic & Qualification Verification
-13. Employment & Reference Verification
+4. **Candidate status** is independent of request status. A request can be `complete` even if some candidates are `flagged`.
+5. **TAT clock is paused** when `screening_requests.status = 'rejected'` (`ScreeningRequest::isTatPaused()`).
+6. **Billing mode** (`agreements.billing`): `monthly` = post-pay invoicing; `per_request` = cash/upfront. Per-request requests show a payment-slip confirmation workflow before going `in_progress`.
+7. **Report deduplication**: generating the same report type with no data changes is blocked unless `supersedes_id` is provided.
 
 ---
 
 ## Design Guidance
 
-- Use a **dark sidebar** — the admin portal should feel distinct from the client portal
-- Content area (cards, tables, buttons) can use the same design language
-- Desktop-first — admins work at desks, mobile is not a priority
-- Dense tables are preferred — admins need to see more data at once
-- Use Tailwind CSS v4 + Alpine.js for interactivity (same as client portal)
+- Dark sidebar layout (`resources/views/layouts/admin.blade.php`) — desktop-first, dense tables
+- Tailwind CSS v4 + Alpine.js; no React/Vue
+- Use `ajaxForm()` Alpine component for inline saves (defined in the layout)
+- Use `admin_can('permission.key')` in Blade to gate UI elements
 
 ---
 
 ## Related Project
 
-The client portal (`nrh-intelligence`) is the companion project. Its full system proposal is in `docs/system-proposal.md` — copy it to this project for full context.
-
----
-
-*NRH Intelligence Sdn. Bhd. — Internal use only*
+The client portal (`nrh-intelligence`) shares the same Supabase DB. Its models are duplicated — changes to shared table schema must be coordinated with both projects.
