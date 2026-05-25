@@ -303,16 +303,21 @@ class RequestQueueController extends Controller
     }
 
     /**
-     * Save typed findings (narrative comment + structured record fields)
-     * for a single scope check on a candidate. Becomes the body content
-     * for that scope in the generated PDF.
+     * Save structured findings for a single scope check on a candidate.
+     * Stores result_type, risk_level, narrative fields, and an array of
+     * adverse records as JSON. Becomes the body content for that scope
+     * in the generated PDF.
      */
     public function updateScopeFindings(Request $request, ScreeningRequest $screeningRequest, int $candidateId, int $scopeTypeId)
     {
         $data = $request->validate([
-            'comment' => 'nullable|string|max:8000',
-            'record' => 'nullable|array',
-            'record.*' => 'nullable|string|max:1000',
+            'result_type'         => 'nullable|in:clean,record_identified,adverse,not_requested',
+            'risk_level'          => 'nullable|in:high,medium,low,nil',
+            'risk_status_text'    => 'nullable|string|max:500',
+            'implication'         => 'nullable|string|max:500',
+            'verification_method' => 'nullable|string|max:4000',
+            'scope_description'   => 'nullable|string|max:4000',
+            'records_json'        => 'nullable|string|max:65535',
         ]);
 
         $candidate = $screeningRequest->candidates()->findOrFail($candidateId);
@@ -327,16 +332,54 @@ class RequestQueueController extends Controller
         }
 
         $payload = [];
-        if (isset($data['comment']) && trim($data['comment']) !== '') {
-            $payload['comment'] = trim($data['comment']);
+
+        if (! empty($data['result_type'])) {
+            $payload['result_type'] = $data['result_type'];
         }
-        if (! empty($data['record'])) {
-            $clean = array_filter(
-                array_map(fn ($v) => is_string($v) ? trim($v) : $v, $data['record']),
-                fn ($v) => $v !== null && $v !== ''
-            );
-            if (! empty($clean)) {
-                $payload['record'] = $clean;
+        if (! empty($data['risk_level'])) {
+            $payload['risk_level'] = $data['risk_level'];
+        }
+        foreach (['risk_status_text', 'implication', 'verification_method', 'scope_description'] as $field) {
+            $v = trim($data[$field] ?? '');
+            if ($v !== '') {
+                $payload[$field] = $v;
+            }
+        }
+
+        // Parse and normalise the records array from JSON.
+        // The client sends fields as [{key, value}] pairs; we store them as {key: value}.
+        if (! empty($data['records_json'])) {
+            $rawRecords = json_decode($data['records_json'], true);
+            if (is_array($rawRecords)) {
+                $records = [];
+                foreach ($rawRecords as $rec) {
+                    $title = trim($rec['title'] ?? '');
+                    if ($title === '') {
+                        continue; // skip blank records
+                    }
+                    $fieldsMap = [];
+                    foreach ($rec['fields'] ?? [] as $field) {
+                        $k = trim($field['key'] ?? '');
+                        if ($k !== '') {
+                            $fieldsMap[$k] = trim($field['value'] ?? '');
+                        }
+                    }
+                    $entry = ['title' => $title];
+                    foreach (['act', 'section', 'description', 'penalty', 'verdict', 'risk_text'] as $f) {
+                        $v = trim($rec[$f] ?? '');
+                        if ($v !== '') {
+                            $entry[$f] = $v;
+                        }
+                    }
+                    $entry['risk_level'] = $rec['risk_level'] ?? 'high';
+                    if (! empty($fieldsMap)) {
+                        $entry['fields'] = $fieldsMap;
+                    }
+                    $records[] = $entry;
+                }
+                if (! empty($records)) {
+                    $payload['records'] = $records;
+                }
             }
         }
 
@@ -346,18 +389,19 @@ class RequestQueueController extends Controller
             ->update(['findings' => empty($payload) ? null : json_encode($payload)]);
 
         AdminAuditLog::record('scope_findings.updated', null, [
-            'request_id' => $screeningRequest->id,
-            'reference' => $screeningRequest->reference,
-            'candidate_id' => $candidate->id,
+            'request_id'    => $screeningRequest->id,
+            'reference'     => $screeningRequest->reference,
+            'candidate_id'  => $candidate->id,
             'scope_type_id' => $scopeTypeId,
-            'has_comment' => isset($payload['comment']),
-            'record_keys' => isset($payload['record']) ? array_keys($payload['record']) : [],
+            'result_type'   => $payload['result_type'] ?? null,
+            'risk_level'    => $payload['risk_level'] ?? null,
+            'record_count'  => count($payload['records'] ?? []),
         ]);
 
         return $this->saveResponse($request, 'Findings saved.', [
-            'candidate_id' => $candidate->id,
+            'candidate_id'  => $candidate->id,
             'scope_type_id' => $scopeTypeId,
-            'has_findings' => ! empty($payload),
+            'has_findings'  => ! empty($payload),
         ]);
     }
 

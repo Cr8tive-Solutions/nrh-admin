@@ -894,9 +894,24 @@
                     <div class="rq-scope-wrap {{ $hasFindings ? 'has-findings' : '' }}"
                          x-data="{
                             open: false,
-                            comment: @js($existingComment),
-                            record: @js(array_map(fn($k, $v) => ['key' => $k, 'value' => $v], array_keys($existingRecord), array_values($existingRecord))),
-                            addRow() { this.record.push({ key: '', value: '' }); }
+                            result_type: @js($existingResultType),
+                            risk_level: @js($existingRiskLevel),
+                            risk_status_text: @js($existingRiskStatusText),
+                            implication: @js($existingImplication),
+                            verification_method: @js($existingVerificationMethod),
+                            scope_description: @js($existingScopeDescription),
+                            records: @js($existingRecords),
+                            addRecord() {
+                                this.records.push({ title: '', act: '', section: '', description: '', penalty: '', fields: [], verdict: 'CONVICTED', risk_level: 'high', risk_text: '' });
+                            },
+                            removeRecord(idx) { this.records.splice(idx, 1); },
+                            addField(idx) { this.records[idx].fields.push({ key: '', value: '' }); },
+                            removeField(idx, fIdx) { this.records[idx].fields.splice(fIdx, 1); },
+                            onResultTypeChange() {
+                                const isClean = this.result_type === 'clean' || this.result_type === 'not_requested';
+                                if (isClean && this.risk_level !== 'nil') this.risk_level = 'nil';
+                                if (!isClean && this.risk_level === 'nil') this.risk_level = 'high';
+                            }
                          }">
                         <div class="rq-scope-row">
                             <span class="rq-scope-dot {{ $sStatus }}" title="Status: {{ str_replace('_', ' ', $sStatus) }}"></span>
@@ -941,35 +956,147 @@
                                   x-data="ajaxForm()" @submit.prevent="submit($event)">
                                 @csrf @method('PATCH')
 
-                                <div class="rq-findings-label">Comment / narrative</div>
-                                <textarea name="comment" x-model="comment"
-                                          placeholder="e.g. NRH Intelligence's search has been completed. No adverse findings against the candidate's name and identity number."
-                                          class="rq-findings-textarea"></textarea>
-
-                                <div class="rq-findings-label" style="margin-top:12px;">Record details (optional)</div>
-                                <p style="font-size: 10px; color: var(--ink-400); margin: -2px 0 4px;">
-                                    Structured key/value pairs that appear under the scope's "Record" sub-table in the report. e.g. Name / Date / Court / Amount.
-                                </p>
-                                <template x-for="(row, idx) in record" :key="idx">
-                                    <div class="rq-record-row">
-                                        <input type="text" :name="`record_keys[]`" x-model="row.key"
-                                               placeholder="Field name" class="rq-record-input">
-                                        <input type="text" :name="`record_values[]`" x-model="row.value"
-                                               placeholder="Value" class="rq-record-input">
-                                        <button type="button" @click="record.splice(idx, 1)" class="rq-record-rm-btn" title="Remove">×</button>
+                                {{-- ── Assessment ─────────────────────────────────── --}}
+                                <div class="rq-findings-label">Assessment</div>
+                                <div class="rq-findings-grid-2">
+                                    <div>
+                                        <span class="rq-findings-sublabel" style="margin-top:0;">Result Type</span>
+                                        <select name="result_type" x-model="result_type" @change="onResultTypeChange()" class="rq-findings-select">
+                                            <option value="clean">Clean</option>
+                                            <option value="record_identified">Record Identified</option>
+                                            <option value="adverse">Adverse</option>
+                                            <option value="not_requested">Not Requested</option>
+                                        </select>
                                     </div>
-                                </template>
+                                    <div>
+                                        <span class="rq-findings-sublabel" style="margin-top:0;">Risk Level</span>
+                                        <select name="risk_level" x-model="risk_level" class="rq-findings-select">
+                                            <option value="nil">Nil</option>
+                                            <option value="low">Low</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    </div>
+                                </div>
 
-                                {{-- Hidden inputs that flatten to record[$key] = $value at submit --}}
-                                <template x-for="row in record" :key="row.key + '|' + row.value">
-                                    <input type="hidden" :name="row.key ? `record[${row.key}]` : ''" :value="row.value">
-                                </template>
+                                <span class="rq-findings-sublabel">Risk Status Text</span>
+                                <input type="text" name="risk_status_text" x-model="risk_status_text"
+                                       placeholder="e.g. Low Risk – Candidate cleared all checks."
+                                       class="rq-findings-input">
 
-                                <button type="button" @click="addRow()"
-                                        style="font-size: 10px; padding: 4px 9px; border-radius: 4px; border: 1px dashed var(--line); background: transparent; color: var(--emerald-700); cursor: pointer; font-weight: 600; margin-top: 6px;">
-                                    + Add field
-                                </button>
+                                <span class="rq-findings-sublabel">Implication</span>
+                                <input type="text" name="implication" x-model="implication"
+                                       placeholder="e.g. No Issues Found"
+                                       class="rq-findings-input">
 
+                                <span class="rq-findings-sublabel">Verification Method</span>
+                                <textarea name="verification_method" x-model="verification_method"
+                                          placeholder="e.g. Verification was conducted against official government databases…"
+                                          class="rq-findings-textarea" style="min-height:56px;"></textarea>
+
+                                <span class="rq-findings-sublabel">Scope Description</span>
+                                <textarea name="scope_description" x-model="scope_description"
+                                          placeholder="e.g. Screening conducted against the Royal Malaysia Police criminal records database…"
+                                          class="rq-findings-textarea" style="min-height:56px;"></textarea>
+
+                                {{-- ── Adverse Records (only when applicable) ──────── --}}
+                                <div class="rq-findings-section"
+                                     x-show="result_type === 'record_identified' || result_type === 'adverse'">
+                                    <div class="rq-findings-section-head">
+                                        <div class="rq-findings-label" style="margin:0;">Adverse Records</div>
+                                        <button type="button" @click="addRecord()" class="rq-add-btn">+ Add Record</button>
+                                    </div>
+
+                                    <template x-if="records.length === 0">
+                                        <p style="font-size:11px;color:var(--ink-400);font-style:italic;margin:8px 0 0;">No records added yet.</p>
+                                    </template>
+
+                                    <template x-for="(rec, recIdx) in records" :key="recIdx">
+                                        <div class="rq-rec-card">
+                                            <div class="rq-rec-card-head">
+                                                <span class="rq-rec-label" x-text="`Record ${recIdx + 1}`"></span>
+                                                <button type="button" @click="removeRecord(recIdx)" class="rq-rec-rm-btn">× Remove</button>
+                                            </div>
+
+                                            <div class="rq-findings-grid-2">
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Title (Malay law name)</span>
+                                                    <input type="text" x-model="rec.title"
+                                                           placeholder="e.g. AKTA DADAH BERBAHAYA 1952"
+                                                           class="rq-findings-input">
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Act (English name)</span>
+                                                    <input type="text" x-model="rec.act"
+                                                           placeholder="e.g. Dangerous Drugs Act 1952"
+                                                           class="rq-findings-input">
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Section</span>
+                                                    <input type="text" x-model="rec.section"
+                                                           placeholder="e.g. Section 15(1)(A)"
+                                                           class="rq-findings-input">
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Verdict</span>
+                                                    <select x-model="rec.verdict" class="rq-findings-select">
+                                                        <option value="CONVICTED">Convicted</option>
+                                                        <option value="ACQUITTED">Acquitted</option>
+                                                        <option value="DISCHARGED">Discharged</option>
+                                                        <option value="PENDING">Pending</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <span class="rq-findings-sublabel">Description</span>
+                                            <textarea x-model="rec.description"
+                                                      placeholder="Offence description text"
+                                                      class="rq-findings-textarea" style="min-height:48px;"></textarea>
+
+                                            <div class="rq-findings-grid-2">
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Penalty</span>
+                                                    <input type="text" x-model="rec.penalty"
+                                                           placeholder="e.g. Fine up to RM5,000 or 2 years"
+                                                           class="rq-findings-input">
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Record Risk Level</span>
+                                                    <select x-model="rec.risk_level" class="rq-findings-select">
+                                                        <option value="high">High</option>
+                                                        <option value="medium">Medium</option>
+                                                        <option value="low">Low</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <span class="rq-findings-sublabel">Risk Text</span>
+                                            <input type="text" x-model="rec.risk_text"
+                                                   placeholder="e.g. High – Criminal conviction recorded"
+                                                   class="rq-findings-input">
+
+                                            {{-- Additional fields (Place of Offence, Date, etc.) --}}
+                                            <div style="margin-top:10px;">
+                                                <div style="display:flex;align-items:center;justify-content:space-between;">
+                                                    <span class="rq-findings-sublabel" style="margin:0;">Additional Fields</span>
+                                                    <button type="button" @click="addField(recIdx)" class="rq-add-btn">+ Field</button>
+                                                </div>
+                                                <template x-for="(field, fIdx) in rec.fields" :key="fIdx">
+                                                    <div class="rq-record-row" style="margin-top:4px;">
+                                                        <input type="text" x-model="field.key" placeholder="Field name" class="rq-record-input">
+                                                        <input type="text" x-model="field.value" placeholder="Value" class="rq-record-input">
+                                                        <button type="button" @click="removeField(recIdx, fIdx)" class="rq-record-rm-btn" title="Remove">×</button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                {{-- Serialise records array as JSON for submission --}}
+                                <input type="hidden" name="records_json" :value="JSON.stringify(records)">
+
+                                {{-- ── Actions ─────────────────────────────────────── --}}
                                 <div class="rq-findings-actions">
                                     <button type="submit" class="nrh-btn nrh-btn-primary" style="font-size: 11px; padding: 6px 14px;"
                                             :disabled="state === 'saving'">

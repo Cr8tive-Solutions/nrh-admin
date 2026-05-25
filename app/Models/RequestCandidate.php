@@ -40,7 +40,8 @@ class RequestCandidate extends Model
     {
         return $this->belongsToMany(ScopeType::class, 'candidate_scope_type', 'request_candidate_id', 'scope_type_id')
             ->using(CandidateScopeType::class)
-            ->withPivot('status', 'assigned_at', 'started_at', 'completed_at', 'findings');
+            ->withPivot('status', 'assigned_at', 'started_at', 'completed_at', 'findings')
+            ->orderBy('scope_types.id');
     }
 
     public function consentRecords(): HasMany
