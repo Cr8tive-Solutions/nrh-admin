@@ -62,7 +62,7 @@ class CustomerController extends Controller
         $stats = [
             'requests_total'   => $customer->screeningRequests()->count(),
             'requests_active'  => $customer->screeningRequests()->whereIn('status', ['new', 'in_progress'])->count(),
-            'requests_flagged' => $customer->screeningRequests()->where('status', 'flagged')->count(),
+            'requests_flagged' => $customer->screeningRequests()->whereHas('candidates', fn ($q) => $q->where('status', 'flagged'))->count(),
             'invoices_unpaid'  => $customer->invoices()->whereIn('status', ['unpaid', 'overdue'])->count(),
             'team_members'     => $customer->customerUsers->count(),
         ];

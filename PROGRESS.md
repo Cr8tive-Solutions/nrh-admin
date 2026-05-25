@@ -40,3 +40,72 @@
 1. **Statement of Account PDF** — deferred from Handoff #3 (strongly-recommended). Admin generates per-customer monthly PDF (`storage/app/statements/{customer_id}/{yyyy-mm}.pdf`) listing invoices + payments, using the existing dompdf setup. ~30 min.
 2. **Retire (or keep) the legacy `confirmPayment` cash-flow** — decide whether the older Confirm Payment button on the request detail page should stay alongside the new receipt-verification flow, or collapse into a single source of truth (receipts only). Currently both coexist; `screening_requests.invoice_id` is nullable specifically to allow this.
 3. **Wait on client portal receipt-upload UI** — admin-side panel is empty until they ship. When the first real receipt lands, sanity-check the file path / mime handling and confirm the verify cascade behaves the same on a real upload as it did in the smoke test.
+
+---
+
+## 2026-05-25
+
+### Sync: nrh-admin ↔ nrh-intelligence flow alignment
+
+Audited both portals against the shared database and fixed all mismatches.
+
+**nrh-intelligence (client portal) — status handling:**
+- `ScreeningRequest::scopeActive()` expanded to cover all statuses; `scopeComplete()` includes `updated`
+- `rejection_reason` added to `$fillable`
+- `details.blade.php` — status pills, pipeline tracker, download button, rejection banner all aligned with admin statuses
+- `index.blade.php` — tabs/counts updated; Alpine filter maps `updated` → `complete` tab
+- `track.blade.php` — step map corrected
+- `candidates/show.blade.php` — renders new structured findings format (`result_type`, `risk_level`, `records[]`) with legacy fallback
+
+---
+
+### Report type rename + Basic removal (nrh-admin)
+
+Removed `Basic` report type. Generate panel is now **Prelim | Full | Updated**.
+
+- `ReportVersion::types()` → `['prelim', 'full']`; `label()` shows "Updated vN" for re-issued full reports
+- `ReportController` — validation `in:prelim,full`; prelim no longer flips request status (see status simplification below)
+- `show.blade.php` — new explicit Prelim / Full / Updated buttons; Updated button opens the supersede modal pre-loaded with the latest full version; `Basic completion` date removed from metadata section
+- Report labels in client portal sidebar: `PRELIM`, `FULL`, `UPDATED`
+
+---
+
+### Add candidate to existing request (nrh-intelligence)
+
+New feature: credit (monthly-billed) clients can add candidates to an in-flight request while `invoice_id IS NULL` and request is not complete/updated/rejected.
+
+- New `AddCandidateController` — eligibility enforced server-side
+- Route: `POST /requests/{id}/candidates` (requires `create-requests` permission)
+- `ViewRequestController::details()` passes `$canAddCandidate`, `$identityTypes`, `$availableScopeTypes`
+- `details.blade.php` — "Add candidate" button + Alpine modal with scope checkboxes pre-checked from existing request scopes
+
+---
+
+### Status simplification — removed `prelim` and `flagged` from request status (both portals)
+
+**Decision rationale:**
+- `flagged` is redundant at request level — already exists on `request_candidates` and `candidate_scope_type`; derivable via `whereHas`
+- `prelim` is a report event, not a workflow state — request stays `in_progress` after prelim report is issued
+
+**Final canonical request statuses: `new → in_progress → complete → updated` + `rejected` (terminal)**
+
+**nrh-admin:**
+- `ScreeningRequest::STATUSES` and `statusBadgeClass()` updated
+- `ReportController` — prelim report generation no longer flips request status
+- `DashboardController` — `flagged_cases` / `$flaggedRequests` now query by candidate status; `$recentRequests` eager-loads candidates
+- `CustomerController` — `requests_flagged` stat derived from candidate status
+- `show.blade.php` — `$statusMap`, `$currentIndex`, `$isDone` cleaned up
+- `index.blade.php` — filter: removed Flagged, added Rejected + Updated
+- `dashboard/index.blade.php` — `$isFlag` uses candidate check; "Review now" links to `in_progress`
+
+**nrh-intelligence:**
+- `scopeActive()` no longer includes `flagged`/`prelim`
+- `DashboardController` — `needs_review` queries by candidate status
+- `index.blade.php` — Flagged and Prelim tabs removed
+- `details.blade.php` — `$isFlagged` is now purely candidate-derived
+- `track.blade.php`, `_status-badge.blade.php`, `dashboard/index.blade.php` — all cleaned up
+
+### Pending
+
+- **DB migration needed:** Existing `screening_requests` rows with `status = 'prelim'` or `status = 'flagged'` should be backfilled to `in_progress`. No migration written yet.
+- **CLAUDE.md update:** Status values section still lists the old set — should be updated to the new canonical five.

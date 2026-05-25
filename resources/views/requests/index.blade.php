@@ -20,8 +20,9 @@
             <option value="">All statuses</option>
             <option value="new" {{ request('status') === 'new' ? 'selected' : '' }}>New</option>
             <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
-            <option value="flagged" {{ request('status') === 'flagged' ? 'selected' : '' }}>Flagged</option>
+            <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
             <option value="complete" {{ request('status') === 'complete' ? 'selected' : '' }}>Complete</option>
+            <option value="updated" {{ request('status') === 'updated' ? 'selected' : '' }}>Updated</option>
         </select>
 
         <button type="submit" class="nrh-btn nrh-btn-primary">

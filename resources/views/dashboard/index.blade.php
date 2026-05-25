@@ -181,9 +181,9 @@
             <div style="display: flex; flex-direction: column;">
                 @forelse($recentRequests->take(5) as $req)
                 @php
-                    $isFlag = $req->status === 'flagged';
+                    $isFlag = $req->candidates->contains('status', 'flagged');
                     $isNew  = $req->status === 'new';
-                    $isDone = $req->status === 'complete';
+                    $isDone = in_array($req->status, ['complete', 'updated']);
                     $iconBg = $isFlag ? '#fbeeec' : ($isDone ? 'var(--emerald-50)' : 'var(--ink-100)');
                     $iconColor = $isFlag ? 'var(--danger)' : ($isDone ? 'var(--emerald-700)' : 'var(--ink-500)');
                 @endphp
@@ -219,7 +219,7 @@
             <h3 style="color: var(--danger);">Action required</h3>
             <span style="background: var(--danger); color: #fff; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; font-family: 'JetBrains Mono', monospace;">{{ $flaggedRequests->count() }} FLAGGED</span>
         </div>
-        <a href="{{ route('requests.index', ['status' => 'flagged']) }}" style="font-size: 11px; color: var(--danger); font-weight: 600; text-decoration: none;">View all →</a>
+        <a href="{{ route('requests.index', ['status' => 'in_progress']) }}" style="font-size: 11px; color: var(--danger); font-weight: 600; text-decoration: none;">View all →</a>
     </div>
     <table class="nrh-table">
         <thead>
@@ -300,8 +300,8 @@
                         $sc = match($req->status) {
                             'new'         => 'nrh-pill-new',
                             'in_progress' => 'nrh-pill-progress',
-                            'flagged'     => 'nrh-pill-flagged',
                             'complete'    => 'nrh-pill-complete',
+                            'updated'     => 'nrh-pill-complete',
                             default       => 'nrh-pill-new',
                         };
                     @endphp

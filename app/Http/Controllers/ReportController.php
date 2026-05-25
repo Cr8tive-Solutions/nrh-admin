@@ -43,7 +43,7 @@ class ReportController extends Controller
     public function generate(Request $request, ScreeningRequest $screeningRequest)
     {
         $data = $request->validate([
-            'type'              => 'required|in:basic,prelim,full',
+            'type'              => 'required|in:prelim,full',
             'supersedes_id'     => 'nullable|integer|exists:report_versions,id',
             'supersede_reason'  => 'nullable|string|max:1000|required_with:supersedes_id',
         ]);
@@ -57,13 +57,13 @@ class ReportController extends Controller
         // across subsequent generate clicks (otherwise the post-snapshot fill would
         // make every later snapshot look "changed").
         $metaKey = match ($type) {
-            'basic'  => 'completion_basic',
             'prelim' => 'completion_prelim',
             'full'   => 'completion_full',
+            default  => null,
         };
         $meta = $screeningRequest->meta ?? [];
         $completionAutofilled = false;
-        if (empty($meta[$metaKey])) {
+        if ($metaKey && empty($meta[$metaKey])) {
             $meta[$metaKey] = now()->format('Y-m-d');
             $screeningRequest->update(['meta' => $meta]);
             $screeningRequest->refresh();
@@ -148,11 +148,7 @@ class ReportController extends Controller
         // intermediate doc) and don't move the request forward.
         $previousStatus = $screeningRequest->status;
         $statusFlip = null;
-        if ($type === 'prelim' && $previousStatus !== 'complete' && $previousStatus !== 'updated') {
-            $statusFlip = 'prelim';
-        } elseif ($type === 'full') {
-            // Re-issuing a full report after the request was already complete
-            // signals an amendment — surface that to the customer as 'updated'.
+        if ($type === 'full') {
             $statusFlip = in_array($previousStatus, ['complete', 'updated'], true) ? 'updated' : 'complete';
         }
 

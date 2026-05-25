@@ -38,7 +38,7 @@ class ScreeningRequest extends Model
     }
 
     /** Canonical list of every status value the workflow accepts. */
-    public const STATUSES = ['new', 'in_progress', 'rejected', 'prelim', 'complete', 'updated', 'flagged'];
+    public const STATUSES = ['new', 'in_progress', 'rejected', 'complete', 'updated'];
 
     public function customer(): BelongsTo
     {
@@ -66,10 +66,8 @@ class ScreeningRequest extends Model
             'new' => 'badge-blue',
             'in_progress' => 'badge-yellow',
             'rejected' => 'badge-red',
-            'prelim' => 'badge-black',
             'complete' => 'badge-green',
             'updated' => 'badge-green',
-            'flagged' => 'badge-amber',
             default => 'badge-gray',
         };
     }

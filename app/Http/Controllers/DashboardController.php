@@ -14,7 +14,7 @@ class DashboardController extends Controller
         $stats = [
             'total_cleared'   => ScreeningRequest::where('status', 'complete')->count(),
             'active_requests' => ScreeningRequest::whereIn('status', ['new', 'in_progress'])->count(),
-            'flagged_cases'   => ScreeningRequest::where('status', 'flagged')->count(),
+            'flagged_cases'   => ScreeningRequest::whereHas('candidates', fn ($q) => $q->where('status', 'flagged'))->count(),
             'total_customers' => Customer::count(),
             'unpaid_invoices' => Invoice::where('status', 'unpaid')->count(),
         ];
@@ -27,12 +27,12 @@ class DashboardController extends Controller
             ->get();
 
         $flaggedRequests = ScreeningRequest::with(['customer', 'candidates'])
-            ->where('status', 'flagged')
+            ->whereHas('candidates', fn ($q) => $q->where('status', 'flagged'))
             ->latest()
             ->take(5)
             ->get();
 
-        $recentRequests = ScreeningRequest::with('customer')
+        $recentRequests = ScreeningRequest::with(['customer', 'candidates'])
             ->latest()
             ->take(8)
             ->get();

@@ -45,12 +45,14 @@ class ReportVersion extends Model
      */
     public static function types(): array
     {
-        return ['basic', 'prelim', 'full'];
+        return ['prelim', 'full'];
     }
 
     public function label(): string
     {
-        return ucfirst($this->type).' v'.$this->version;
+        $typeLabel = ($this->type === 'full' && $this->supersedes_id) ? 'Updated' : ucfirst($this->type);
+
+        return $typeLabel.' v'.$this->version;
     }
 
     public function shortHash(): string

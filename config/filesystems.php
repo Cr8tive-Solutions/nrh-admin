@@ -47,6 +47,16 @@ return [
             'report' => false,
         ],
 
+        // Client portal's private storage — payment slips uploaded by customers live here.
+        // In development this defaults to the sibling nrh-intelligence project.
+        // In production, set CLIENT_STORAGE_PATH to the shared storage mount.
+        'client_local' => [
+            'driver' => 'local',
+            'root' => env('CLIENT_STORAGE_PATH', realpath(base_path('../nrh-intelligence/storage/app/private')) ?: base_path('../nrh-intelligence/storage/app/private')),
+            'serve' => false,
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

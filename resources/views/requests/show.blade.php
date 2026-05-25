@@ -20,17 +20,15 @@
         'new'         => ['label' => 'New',          'color' => 'var(--ink-500)',           'bg' => 'var(--ink-100)',     'icon' => 'circle'],
         'in_progress' => ['label' => 'In progress',  'color' => 'var(--gold-700, #b8860b)', 'bg' => '#fef3c7',            'icon' => 'clock'],
         'rejected'    => ['label' => 'Rejected',     'color' => 'var(--danger)',            'bg' => '#fbeeec',            'icon' => 'x'],
-        'prelim'      => ['label' => 'Preliminary',  'color' => '#ffffff',                  'bg' => 'var(--ink-900)',     'icon' => 'doc'],
         'complete'    => ['label' => 'Complete',     'color' => 'var(--emerald-700)',       'bg' => 'var(--emerald-50)',  'icon' => 'check'],
         'updated'     => ['label' => 'Updated',      'color' => 'var(--emerald-700)',       'bg' => 'var(--emerald-50)',  'icon' => 'refresh'],
-        'flagged'     => ['label' => 'Flagged',      'color' => '#b45309',                  'bg' => '#fef3c7',            'icon' => 'flag'],
     ];
     $cur = $statusMap[$request->status] ?? $statusMap['new'];
     $progressOrder = ['new', 'in_progress', 'complete'];
     $currentIndex = array_search($request->status, $progressOrder);
     if ($currentIndex === false) {
-        // Side-tracks (rejected / prelim / updated / flagged) — don't anchor the rail forward.
-        $currentIndex = $request->status === 'updated' ? 2 : ($request->status === 'prelim' ? 1 : 0);
+        // Side-tracks (rejected / updated) — don't anchor the rail forward.
+        $currentIndex = $request->status === 'updated' ? 2 : 0;
     }
 @endphp
 
@@ -300,6 +298,43 @@
         color: var(--ink-400); font-size: 14px; padding: 0;
     }
     .rq-record-rm-btn:hover { color: var(--danger); }
+
+    /* Structured findings editor */
+    .rq-findings-sublabel {
+        display: block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em;
+        color: var(--ink-400); font-weight: 600; font-family: 'JetBrains Mono', monospace;
+        margin-bottom: 3px; margin-top: 10px;
+    }
+    .rq-findings-sublabel:first-child { margin-top: 0; }
+    .rq-findings-select, .rq-findings-input {
+        width: 100%; padding: 5px 8px; border: 1px solid var(--line);
+        background: var(--card); border-radius: 5px;
+        font-size: 11px; font-family: inherit; color: var(--ink-900); outline: none; box-sizing: border-box;
+    }
+    .rq-findings-select:focus, .rq-findings-input:focus { border-color: var(--emerald-600); }
+    .rq-findings-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .rq-findings-section {
+        border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px;
+    }
+    .rq-findings-section-head { display: flex; align-items: center; justify-content: space-between; }
+    .rq-rec-card {
+        border: 1px solid var(--line); border-radius: 7px;
+        padding: 10px 12px; margin-top: 8px; background: var(--paper-2);
+    }
+    .rq-rec-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .rq-rec-label { font-size: 10px; font-weight: 700; color: var(--ink-700); font-family: 'JetBrains Mono', monospace; }
+    .rq-rec-rm-btn {
+        font-size: 10px; padding: 2px 8px; border-radius: 4px;
+        border: 1px solid var(--line); background: transparent;
+        color: var(--ink-500); cursor: pointer; font-family: inherit;
+    }
+    .rq-rec-rm-btn:hover { border-color: var(--danger); color: var(--danger); }
+    .rq-add-btn {
+        font-size: 10px; padding: 3px 9px; border-radius: 4px;
+        border: 1px dashed var(--emerald-500); background: transparent;
+        color: var(--emerald-700); cursor: pointer; font-family: inherit; font-weight: 600;
+    }
+    .rq-add-btn:hover { background: rgba(5,150,105,0.06); }
 
     /* Meta editor */
     .rq-meta-grid {
@@ -628,7 +663,7 @@
         @php
             $stepCfg = $statusMap[$stepKey];
             $isCurrent = $stepKey === $request->status;
-            $isDone = $i < $currentIndex && $request->status !== 'flagged';
+            $isDone = $i < $currentIndex;
             $cls = $isCurrent ? 'active' : ($isDone ? 'done' : '');
             $fill = $isCurrent ? '100%' : ($isDone ? '100%' : '0%');
             $fillColor = $isCurrent ? $stepCfg['color'] : ($isDone ? 'var(--emerald-600)' : 'var(--ink-200, var(--ink-300))');
@@ -842,9 +877,19 @@
                     @endphp
                     @php
                         $findings = $pivot->findings ?? [];
-                        $existingComment = $findings['comment'] ?? '';
-                        $existingRecord  = $findings['record'] ?? [];
-                        $hasFindings     = !empty($existingComment) || !empty($existingRecord);
+                        $existingResultType         = $findings['result_type'] ?? 'clean';
+                        $existingRiskLevel          = $findings['risk_level'] ?? 'nil';
+                        $existingRiskStatusText     = $findings['risk_status_text'] ?? '';
+                        $existingImplication        = $findings['implication'] ?? '';
+                        $existingVerificationMethod = $findings['verification_method'] ?? '';
+                        $existingScopeDescription   = $findings['scope_description'] ?? '';
+                        // Convert records: fields {k:v} map → [{key,value}] array for Alpine
+                        $existingRecords = array_map(function ($rec) {
+                            $fa = [];
+                            foreach ($rec['fields'] ?? [] as $k => $v) { $fa[] = ['key' => $k, 'value' => $v]; }
+                            return array_merge($rec, ['fields' => $fa]);
+                        }, $findings['records'] ?? []);
+                        $hasFindings = !empty($findings['result_type']) || !empty($findings['records']) || !empty($findings['comment']);
                     @endphp
                     <div class="rq-scope-wrap {{ $hasFindings ? 'has-findings' : '' }}"
                          x-data="{
@@ -1082,38 +1127,33 @@
             </div>
 
             @allowed('request.update')
+            @php
+                $fPrelim = $reportFreshness['prelim'];
+                $fFull   = $reportFreshness['full'];
+                $latestPrelim = $fPrelim['latest'];
+                $latestFull   = $fFull['latest'];
+            @endphp
             <div class="rq-gen-grid">
-                @foreach(['basic' => 'Basic', 'prelim' => 'Prelim', 'full' => 'Full'] as $type => $label)
-                @php
-                    $f = $reportFreshness[$type];
-                    $latest = $f['latest'];
-                    $disabled = $latest && ! $f['has_changes'];
-                @endphp
+                {{-- PRELIM --}}
                 <form method="POST" action="{{ route('requests.report.generate', $request) }}"
                       x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
                       @submit.prevent="submit($event)">
                     @csrf
-                    <input type="hidden" name="type" value="{{ $type }}">
+                    <input type="hidden" name="type" value="prelim">
+                    @php $prelimDisabled = $latestPrelim && ! $fPrelim['has_changes']; @endphp
                     <button type="submit" class="rq-gen-btn"
                             :class="{ 'is-saving': state === 'saving' }"
-                            {{ $disabled ? 'disabled' : '' }}
+                            {{ $prelimDisabled ? 'disabled' : '' }}
                             :disabled="state === 'saving'"
-                            title="{{ $disabled
-                                ? 'No changes since '.$latest->label().' · '.$latest->generated_at->diffForHumans()
-                                : ($latest ? 'Will issue '.ucfirst($type).' v'.($latest->version + 1) : 'Will issue '.ucfirst($type).' v1') }}">
+                            title="{{ $prelimDisabled
+                                ? 'No changes since '.$latestPrelim->label().' · '.$latestPrelim->generated_at->diffForHumans()
+                                : ($latestPrelim ? 'Will issue Prelim v'.($latestPrelim->version + 1) : 'Will issue Prelim v1') }}">
                         <template x-if="state !== 'saving'">
                             <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                                <span class="rq-gen-btn-label">{{ $label }}</span>
+                                <span class="rq-gen-btn-label">Prelim</span>
                                 <span class="rq-gen-btn-sub">
-                                    @if($latest)
-                                        @if($f['has_changes'])
-                                            Issue v{{ $latest->version + 1 }}
-                                        @else
-                                            On v{{ $latest->version }}
-                                        @endif
-                                    @else
-                                        Issue v1
-                                    @endif
+                                    @if($latestPrelim) @if($fPrelim['has_changes']) Issue v{{ $latestPrelim->version + 1 }} @else On v{{ $latestPrelim->version }} @endif
+                                    @else Issue v1 @endif
                                 </span>
                             </div>
                         </template>
@@ -1125,7 +1165,56 @@
                         </template>
                     </button>
                 </form>
-                @endforeach
+
+                {{-- FULL --}}
+                <form method="POST" action="{{ route('requests.report.generate', $request) }}"
+                      x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
+                      @submit.prevent="submit($event)">
+                    @csrf
+                    <input type="hidden" name="type" value="full">
+                    @php $fullDisabled = $latestFull && ! $fFull['has_changes']; @endphp
+                    <button type="submit" class="rq-gen-btn"
+                            :class="{ 'is-saving': state === 'saving' }"
+                            {{ $fullDisabled ? 'disabled' : '' }}
+                            :disabled="state === 'saving'"
+                            title="{{ $fullDisabled
+                                ? 'No changes since '.$latestFull->label().' · '.$latestFull->generated_at->diffForHumans()
+                                : ($latestFull ? 'Will issue Full v'.($latestFull->version + 1) : 'Will issue Full v1') }}">
+                        <template x-if="state !== 'saving'">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                <span class="rq-gen-btn-label">Full</span>
+                                <span class="rq-gen-btn-sub">
+                                    @if($latestFull) @if($fFull['has_changes']) Issue v{{ $latestFull->version + 1 }} @else On v{{ $latestFull->version }} @endif
+                                    @else Issue v1 @endif
+                                </span>
+                            </div>
+                        </template>
+                        <template x-if="state === 'saving'">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0;">
+                                <div class="rq-gen-spinner"></div>
+                                <span class="rq-gen-btn-sub" style="color: var(--emerald-700);">Generating…</span>
+                            </div>
+                        </template>
+                    </button>
+                </form>
+
+                {{-- UPDATED — supersedes the current full report --}}
+                @php $updatedDisabled = ! $latestFull; @endphp
+                <button type="button" class="rq-gen-btn"
+                        {{ $updatedDisabled ? 'disabled' : '' }}
+                        title="{{ $updatedDisabled
+                            ? 'Issue a Full report first before issuing an Updated version'
+                            : 'Supersede '.$latestFull->label().' with a corrected version' }}"
+                        @if(! $updatedDisabled)
+                        @click="openSupersede({ id: {{ $latestFull->id }}, type: 'full', label: '{{ $latestFull->label() }}' })"
+                        @endif>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                        <span class="rq-gen-btn-label">Updated</span>
+                        <span class="rq-gen-btn-sub">
+                            @if($latestFull) Supersede v{{ $latestFull->version }} @else No full yet @endif
+                        </span>
+                    </div>
+                </button>
             </div>
 
             @if($versions->count())
@@ -1241,14 +1330,10 @@
                         <input type="text" name="po_number" value="{{ data_get($request->meta, 'po_number') }}" placeholder="PO #" class="rq-meta-input mono">
                     </div>
                     <div>
-                        <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">Basic completion</div>
-                        <input type="date" name="completion_basic" value="{{ data_get($request->meta, 'completion_basic') }}" class="rq-meta-input mono">
-                    </div>
-                    <div>
                         <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">Prelim completion</div>
                         <input type="date" name="completion_prelim" value="{{ data_get($request->meta, 'completion_prelim') }}" class="rq-meta-input mono">
                     </div>
-                    <div class="col-2">
+                    <div>
                         <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-500); font-weight: 600; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px;">Full completion</div>
                         <input type="date" name="completion_full" value="{{ data_get($request->meta, 'completion_full') }}" class="rq-meta-input mono">
                     </div>

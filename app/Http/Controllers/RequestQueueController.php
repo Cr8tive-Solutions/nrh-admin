@@ -173,7 +173,7 @@ class RequestQueueController extends Controller
             abort(404);
         }
 
-        $disk = Storage::disk('local');
+        $disk = Storage::disk('client_local');
 
         if (! $disk->exists($screeningRequest->payment_slip_path)) {
             abort(404, 'Slip file is no longer available on disk.');
