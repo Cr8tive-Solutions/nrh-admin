@@ -2,23 +2,27 @@
 
 namespace App\Models;
 
+use App\Traits\HasHashid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Invoice extends Model
 {
+    use HasHashid;
     protected $fillable = [
-        'customer_id', 'number', 'period', 'status',
+        'customer_id', 'number', 'period', 'period_date', 'period_end', 'status',
         'issued_at', 'due_at', 'subtotal', 'tax', 'total',
     ];
 
     protected $casts = [
-        'issued_at' => 'date',
-        'due_at'    => 'date',
-        'subtotal'  => 'decimal:2',
-        'tax'       => 'decimal:2',
-        'total'     => 'decimal:2',
+        'issued_at'   => 'date',
+        'due_at'      => 'date',
+        'period_date' => 'date',
+        'period_end'  => 'date',
+        'subtotal'    => 'decimal:2',
+        'tax'         => 'decimal:2',
+        'total'       => 'decimal:2',
     ];
 
     public function customer(): BelongsTo

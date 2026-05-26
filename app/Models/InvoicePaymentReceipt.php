@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasHashid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class InvoicePaymentReceipt extends Model
 {
+    use HasHashid;
     protected $fillable = [
         'invoice_id', 'uploaded_by_customer_user_id',
         'file_path', 'file_name',

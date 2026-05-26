@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasHashid;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Agreement extends Model
 {
+    use HasHashid;
     protected $fillable = [
         'customer_id', 'type', 'start_date', 'expiry_date',
         'sla_tat', 'billing', 'payment', 'terms',

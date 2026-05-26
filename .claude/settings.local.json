@@ -71,7 +71,16 @@
       "Bash(open *)",
       "Bash(identify /Users/anwarsaad/Herd/nrh-admin/public/images/nrh-logo.png)",
       "Bash(convert /Users/anwarsaad/Herd/nrh-admin/public/images/nrh-logo.png -format \"%[pixel:p{0,0}]\" info:)",
-      "Bash(xargs ls -la)"
+      "Bash(xargs ls -la)",
+      "Bash(xargs ls)",
+      "Bash(grep -v \"^$\")",
+      "Bash(grep -v \"^\\\\s*$\")",
+      "Bash(pip install *)",
+      "Bash(grep -E \"\\\\$[a-z].*->id|, \\\\$[a-z_]+\\\\\\)\")",
+      "Bash(grep -E \"'\\\\s*,\\\\s*\\\\\\\\\\\\$\")",
+      "Bash(grep *)",
+      "Bash(mkdir -p /Users/anwarsaad/Herd/nrh-intelligence/app/Traits)",
+      "Bash(mkdir -p /Users/anwarsaad/Herd/nrh-intelligence/app/Support)"
     ]
   }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasHashid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class ScreeningRequest extends Model
 {
+    use HasHashid;
     protected $fillable = [
         'customer_id', 'customer_user_id', 'invoice_id', 'reference',
         'status', 'type', 'meta', 'rejection_reason',

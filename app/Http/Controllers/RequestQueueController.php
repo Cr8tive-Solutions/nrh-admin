@@ -17,7 +17,11 @@ class RequestQueueController extends Controller
     {
         $query = ScreeningRequest::with('customer')->latest();
 
-        if ($request->filled('status')) {
+        if ($request->input('status') === 'pending_payment') {
+            $query->where('status', 'new')
+                ->whereNotNull('payment_slip_path')
+                ->whereNull('payment_verified_at');
+        } elseif ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
@@ -116,6 +120,12 @@ class RequestQueueController extends Controller
 
         if ($screeningRequest->status !== 'new') {
             return $this->saveResponse($request, 'Payment was already verified for this request.', [], 422);
+        }
+
+        // When a request is linked to an invoice, payment must go through the
+        // invoice receipt verification flow — not the legacy per-request slip path.
+        if ($screeningRequest->invoice_id) {
+            return $this->saveResponse($request, 'This request is linked to an invoice. Verify payment via the invoice receipt page instead.', [], 422);
         }
 
         if (! $screeningRequest->hasPaymentSlip()) {

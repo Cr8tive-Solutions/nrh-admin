@@ -18,6 +18,7 @@
 
         <select name="status" class="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
             <option value="">All statuses</option>
+            <option value="pending_payment" {{ request('status') === 'pending_payment' ? 'selected' : '' }}>Pending Payment</option>
             <option value="new" {{ request('status') === 'new' ? 'selected' : '' }}>New</option>
             <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
             <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>

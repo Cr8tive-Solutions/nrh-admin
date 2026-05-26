@@ -126,7 +126,13 @@ Route::middleware('admin.auth')->group(function () {
     // ── invoice.manage ───────────────────────────────────────────────────────
     Route::middleware('admin.can:invoice.manage')->group(function () {
         Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+        Route::get('/invoices/bulk-generate', [InvoiceController::class, 'bulkGenerate'])->name('invoices.bulk-generate');
+        Route::get('/invoices/bulk-preview', [InvoiceController::class, 'bulkPreview'])->name('invoices.bulk-preview');
+        Route::post('/invoices/bulk-store', [InvoiceController::class, 'bulkStore'])->name('invoices.bulk-store');
+        Route::get('/invoices/preview-items', [InvoiceController::class, 'previewItems'])->name('invoices.preview-items');
         Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('/invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->whereNumber('invoice')->name('invoices.edit');
+        Route::put('/invoices/{invoice}', [InvoiceController::class, 'update'])->whereNumber('invoice')->name('invoices.update');
         Route::patch('/invoices/{invoice}/paid', [InvoiceController::class, 'markPaid'])->whereNumber('invoice')->name('invoices.paid');
     });
 

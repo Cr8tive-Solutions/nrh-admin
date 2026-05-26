@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasHashid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DataSubjectRequest extends Model
 {
+    use HasHashid;
     protected $fillable = [
         'reference', 'request_candidate_id',
         'subject_name', 'subject_email', 'subject_identity_number',

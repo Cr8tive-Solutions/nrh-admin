@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasHashid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ReportVersion extends Model
 {
+    use HasHashid;
     protected $fillable = [
         'screening_request_id', 'type', 'version',
         'generated_at', 'generated_by_admin_id',

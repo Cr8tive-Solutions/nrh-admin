@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasHashid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ConsentRecord extends Model
 {
+    use HasHashid;
     protected $fillable = [
         'request_candidate_id', 'consented_at', 'consent_version',
         'consent_text_snapshot', 'evidence_type', 'evidence_file_path',

@@ -7,6 +7,11 @@
 @section('header-actions')
     <a href="{{ route('invoices.index') }}" class="text-sm text-gray-500 hover:text-gray-700">← Back</a>
     @allowed('invoice.manage')
+    @if($invoice->status === 'unpaid')
+    <a href="{{ route('invoices.edit', $invoice) }}" class="nrh-btn nrh-btn-ghost" style="font-size:12px;">
+        Edit
+    </a>
+    @endif
     @if($invoice->status === 'unpaid' || $invoice->status === 'overdue')
     <form method="POST" action="{{ route('invoices.paid', $invoice) }}">
         @csrf @method('PATCH')

@@ -12,7 +12,11 @@ class RequestCandidate extends Model
 {
     protected $fillable = [
         'screening_request_id', 'identity_type_id',
-        'name', 'identity_number', 'mobile', 'remarks', 'status',
+        'name', 'identity_number', 'nationality', 'date_of_birth', 'mobile', 'remarks', 'status',
+    ];
+
+    protected $casts = [
+        'date_of_birth' => 'date',
     ];
 
     public function screeningRequest(): BelongsTo

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasHashid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ScopeType extends Model
 {
+    use HasHashid;
     protected $fillable = [
         'country_id', 'name', 'category', 'turnaround', 'turnaround_hours',
         'price', 'price_on_request', 'description', 'requires_signed_consent',

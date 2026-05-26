@@ -119,6 +119,65 @@ The report template (`reports/screening.blade.php`) supports both a new structur
 }
 ```
 
+**Employment validation findings (use for employment/work history scopes):**
+```json
+{
+  "employer": "ABC Technologies Sdn Bhd",
+  "verifier": "HR Department – Ms. Nur Aisyah (HR Officer)",
+  "validation": [
+    { "aspect": "EMPLOYER", "provided": "ABC Sdn Bhd", "verified": "ABC Technology Sdn Bhd", "match": "match", "risk": "low", "interpretation": "Verified. Safe to proceed." },
+    { "aspect": "JOB TITLE", "provided": "Software Engineer", "verified": "Software Engineer", "match": "match", "risk": "low", "interpretation": "Verified. Safe to proceed." },
+    { "aspect": "DATES OF EMPLOYMENT", "provided": "Jan 2018 – Dec 2021", "verified": "Feb 2018 – Nov 2021", "match": "partial", "risk": "moderate", "interpretation": "Minor variation. Acceptable with caution." },
+    { "aspect": "SALARY/BENEFITS", "provided": "RM 5,000/month", "verified": null, "match": "no_record", "risk": "high", "interpretation": "Missing record. Needs additional document." }
+  ],
+  "overall_risk": "moderate",
+  "overall_action": "Minor variation. Acceptable with caution. Suggest pay slip."
+}
+```
+`match` values: `match` | `partial` | `no_record` | `discrepancy`. `risk` values: `low` | `moderate` | `high` | `critical`.
+
+**Academic credential findings (use for academic/education/qualification scopes):**
+```json
+{
+  "institution": "University Kebangsaan Malaysia (UKM)",
+  "validation": [
+    { "aspect": "LEVEL", "verified": "Undergraduate", "match": "match", "risk": "low", "interpretation": "Verified. Safe to proceed." },
+    { "aspect": "FIELD", "verified": "Bachelor of Science", "match": "match", "risk": "low", "interpretation": "Verified. Safe to proceed." },
+    { "aspect": "DATES OF ATTENDANCE", "verified": "2003", "match": "partial", "risk": "moderate", "interpretation": "Minor variation. Acceptable with caution." },
+    { "aspect": "GRADES", "verified": "No Record", "match": "no_record", "risk": "high", "interpretation": "Missing record, needs clarification." }
+  ],
+  "recognition": {
+    "scenario": "REAL + ACCREDITED",
+    "institution_recognition": "Recognized by MOHE/MQA",
+    "program_accreditation": "Program accredited",
+    "risk_level": "low"
+  },
+  "overall_risk": "moderate",
+  "overall_action": "Request transcript / certified degree copy to mitigate risk."
+}
+```
+
+**Referee interview findings (use for referee/reference scopes):**
+```json
+{
+  "affiliated_org": "ABC Technologies Sdn Bhd",
+  "referee_name": "Dato Sri Wan Ahmad",
+  "designation": "CEO",
+  "relationship": "Ex-Superior",
+  "contact_established": "successful",
+  "consent": "consented",
+  "independent": true,
+  "credibility_weight": 5,
+  "questions": [
+    { "category": "RELATIONSHIP, ROLE & RESPONSIBILITIES", "rating": 5, "reply": "Candidate served as Software Engineer from Feb 2018 to Nov 2021..." },
+    { "category": "WORK QUALITY", "rating": 3, "reply": "Generally met expectations with occasional delays." }
+  ],
+  "overall_strong": ["Relationship, Role & Responsibilities"],
+  "overall_moderate": ["Work Quality", "Technical Competence", "Communication Skills"],
+  "overall_weak": ["Leadership Potential"]
+}
+```
+
 If `result_type` is absent, it is inferred from `pivot.status` (`complete`→`clean`, `flagged`→`record_identified`, others→`not_requested`). If `risk_level` is absent, it defaults to `low` for complete and `high` for flagged.
 
 ### Audit Logging
@@ -223,7 +282,8 @@ Status values: `new | in_progress | rejected | prelim | complete | updated | fla
 ### `request_candidates`
 ```
 id, screening_request_id, identity_type_id,
-name, identity_number, mobile (nullable), remarks (nullable),
+name, identity_number, nationality (nullable), date_of_birth (date, nullable),
+mobile (nullable), remarks (nullable),
 status (new|in_progress|flagged|complete), created_at, updated_at
 ```
 

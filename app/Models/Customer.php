@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\HasHashid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Customer extends Model
 {
+    use HasHashid;
     protected $fillable = [
         'name', 'registration_no', 'address', 'country',
         'industry', 'contact_name', 'contact_email', 'contact_phone', 'balance',

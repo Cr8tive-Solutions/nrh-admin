@@ -17,6 +17,7 @@ use App\Models\ScopeType;
 use App\Models\ScreeningRequest;
 use App\Models\Transaction;
 use App\Observers\AuditObserver;
+use Hashids\Hashids;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->singleton('hashids', fn () => new Hashids(config('app.key'), 8));
     }
 
     public function boot(): void

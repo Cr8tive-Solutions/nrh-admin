@@ -5,8 +5,11 @@
 
 @section('header-actions')
     @allowed('invoice.manage')
-    <a href="{{ route('invoices.create') }}"
-       class="nrh-btn nrh-btn-primary">
+    <a href="{{ route('invoices.bulk-generate') }}" class="nrh-btn nrh-btn-ghost" style="font-size:12px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Generate Monthly Invoices
+    </a>
+    <a href="{{ route('invoices.create') }}" class="nrh-btn nrh-btn-primary">
         + New Invoice
     </a>
     @endallowed
