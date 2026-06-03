@@ -21,6 +21,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestQueueController;
 use App\Http\Controllers\ScopePricingController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,11 @@ Route::middleware('admin.auth')->group(function () {
 
     // Dashboard — any authenticated admin
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
     // Account / profile + security — every admin manages their own
     Route::get('/account', fn () => redirect()->route('account.profile'));
@@ -72,13 +78,13 @@ Route::middleware('admin.auth')->group(function () {
         ->name('requests.report.view');
 
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
-    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->whereNumber('customer')->name('customers.show');
+    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
 
     Route::get('/pricing', [ScopePricingController::class, 'index'])->name('pricing.index');
     Route::get('/pricing/{customer}/scopes', [ScopePricingController::class, 'scopesJson'])->name('pricing.scopes-json');
 
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->whereNumber('invoice')->name('invoices.show');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 

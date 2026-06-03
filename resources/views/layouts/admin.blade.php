@@ -477,12 +477,12 @@
                     <svg x-show="dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
                 </button>
 
-                <button class="topbar-icon-btn" title="Notifications">
+                <a href="{{ route('notifications.index') }}" class="topbar-icon-btn {{ request()->routeIs('notifications.*') ? 'active' : '' }}" title="Notifications" style="text-decoration:none;position:relative;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a7 7 0 0 0-7 7v4l-2 3h18l-2-3V9a7 7 0 0 0-7-7z"/><path d="M9 19a3 3 0 0 0 6 0"/></svg>
-                    @if(isset($stats) && ($stats['flagged_cases'] ?? 0) > 0)
+                    @if(isset($unreadNotificationCount) && $unreadNotificationCount > 0)
                     <span class="badge-dot"></span>
                     @endif
-                </button>
+                </a>
 
                 <div class="topbar-divider"></div>
 

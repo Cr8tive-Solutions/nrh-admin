@@ -20,3 +20,9 @@ Schedule::command('holidays:sync')
     ->cron('0 3 5 1 *')
     ->timezone('Asia/Kuala_Lumpur')
     ->onOneServer();
+
+// Daily system alert notifications: TAT overdue, expiring agreements, overdue invoices.
+Schedule::command('notifications:generate')
+    ->dailyAt('08:00')
+    ->timezone('Asia/Kuala_Lumpur')
+    ->onOneServer();
