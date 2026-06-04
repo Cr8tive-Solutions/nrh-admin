@@ -12,10 +12,11 @@ body { font-family: 'Courier Prime', 'Courier', monospace; font-size: 8.5pt; col
 .ph { position: fixed; top: -68px; left: 0; right: 0; height: 58px; border-bottom: 2px solid #023527; }
 .ph table { width: 100%; height: 55px; border-collapse: collapse; }
 .ph td { border: none; vertical-align: bottom; padding: 0; }
-.ph .ph-ref { font-size: 7.5pt; color: #555; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
-.ph .ph-logo { text-align: center; vertical-align: top; }
+.ph .ph-cand { vertical-align: top; font-family: 'Oswald', sans-serif; line-height: 1.25; }
+.ph .ph-cand-name { font-size: 9pt; font-weight: bold; color: #023527; letter-spacing: 0.03em; }
+.ph .ph-cand-id { font-size: 7.5pt; color: #555; letter-spacing: 0.04em; }
+.ph .ph-logo { text-align: right; vertical-align: top; }
 .ph .ph-logo img { height: 46px; }
-.ph .ph-conf { text-align: right; font-size: 7pt; color: #888; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
 
 /* ── Persistent footer ── */
 .pf { position: fixed; bottom: -38px; left: 0; right: 0; height: 22px;
@@ -203,7 +204,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             'clean'            => 'CLEAN RESULT',
             'record_identified'=> 'RECORD IDENTIFIED',
             'adverse'          => 'ADVERSE RESULT',
-            'not_requested'    => 'SCREENING NOT REQUESTED',
+            'not_requested'    => 'AWAITING SCREENING',
             'in_progress'      => 'IN PROGRESS',
             default            => 'PENDING',
         };
@@ -221,7 +222,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         if (!empty($f['risk_status_text'])) return $f['risk_status_text'];
         return match(true) {
             $t === 'clean'         => 'Low Risk – Candidate cleared for compliance integrity.',
-            $t === 'not_requested' => 'Nil – Screening not requested for this scope.',
+            $t === 'not_requested' => 'Nil – Screening not yet started for this scope.',
             $t === 'in_progress'   => 'Investigation in progress. Findings will appear in the final report.',
             $lv === 'high'         => 'High – Adverse record identified. Enhanced due diligence required.',
             $lv === 'medium'       => 'Moderate – Record identified. Further review recommended.',
@@ -232,7 +233,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         if (!empty($f['implication'])) return $f['implication'];
         return match($t) {
             'clean'            => 'No Issues Found',
-            'not_requested'    => 'Not Screened',
+            'not_requested'    => 'Awaiting Screening',
             'in_progress'      => 'Pending',
             'record_identified'=> 'Record Found',
             'adverse'          => 'Adverse Finding',
@@ -299,14 +300,19 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 @endphp
 
 {{-- ══ Persistent header & footer ══ --}}
+@php $hdrCand = $candidates->first(); @endphp
 <div class="ph">
     <table><tr>
-        <td class="ph-ref" style="width:35%;">REP NO: {{ $reference }}</td>
-        <td class="ph-logo" style="width:30%;"><img src="{{ $logoSrc }}" alt="NRH Intelligence"></td>
-        <td class="ph-conf" style="width:35%;">PRIVATE &amp; CONFIDENTIAL</td>
+        <td class="ph-cand" style="width:65%;">
+            @if($hdrCand)
+            <span class="ph-cand-name">{{ strtoupper($hdrCand->name) }}</span><br>
+            <span class="ph-cand-id">{{ $hdrCand->identityType ? strtoupper($hdrCand->identityType->name).': ' : '' }}{{ $hdrCand->identity_number }}</span>
+            @endif
+        </td>
+        <td class="ph-logo" style="width:35%;"><img src="{{ $logoSrc }}" alt="NRH Intelligence"></td>
     </tr></table>
 </div>
-<div class="pf">NRH Intelligence Sdn. Bhd. &nbsp;·&nbsp; Integrity With Intelligence &nbsp;·&nbsp; {{ $reference }}</div>
+<div class="pf">REP NO: {{ $reference }} &nbsp;·&nbsp; PRIVATE &amp; CONFIDENTIAL &nbsp;·&nbsp; NRH Intelligence Sdn. Bhd.</div>
 
 {{-- ══════════════════════════════════════════
      PAGE 1 — REPORT PROFILE
@@ -379,7 +385,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     <tr><th class="lbl" style="width:30%;">CLEAN RESULT</th>          <td class="val">No records or adverse findings identified.</td></tr>
     <tr><th class="lbl">ADVERSE RESULT</th>                            <td class="val">Negative findings detected.</td></tr>
     <tr><th class="lbl">RECORD IDENTIFIED</th>                         <td class="val">Record found in screening.</td></tr>
-    <tr><th class="lbl">SCREENING NOT REQUESTED</th>                   <td class="val">This scope was not included in the screening order.</td></tr>
+    <tr><th class="lbl">AWAITING SCREENING</th>                       <td class="val">This scope has been ordered but screening has not started yet.</td></tr>
 </table>
 <table class="rt" style="margin-top:0;">
     <tr>
@@ -637,7 +643,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         </div>
     @elseif($rType === 'not_requested')
         <div style="padding:5px 10px; background:#f0f4f8; border:1px solid #cdd9e5; margin:4px 0; font-size:8.5pt; color:#4a5568;">
-            This scope was not requested. No screening was conducted.
+            This scope has been ordered but screening has not started yet.
         </div>
     @endif
 
@@ -750,68 +756,92 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         $aF = $aScope->pivot->findings ?? [];
         $aSt = $aScope->pivot->status ?? 'new';
         $aT  = $getResultType($aSt, $aF);
-        $aValidation  = $aF['validation']  ?? null;
-        $aInstitution = $aF['institution'] ?? $aScope->name;
-        $aRecognition = $aF['recognition'] ?? null;
-        $aOverallRisk = $aF['overall_risk'] ?? null;
-        $aOverallAct  = $aF['overall_action'] ?? null;
-        $aComment     = $aF['comment'] ?? null;
+        $aComment = $aF['comment'] ?? null;
+        // New: array of credentials. Legacy: single credential from top-level fields.
+        $aCredentials = $aF['credentials'] ?? null;
+        if ($aCredentials === null && (!empty($aF['validation']) || !empty($aF['institution']) || !empty($aF['recognition']))) {
+            $aCredentials = [[
+                'institution'    => $aF['institution'] ?? null,
+                'validation'     => $aF['validation'] ?? null,
+                'recognition'    => $aF['recognition'] ?? null,
+                'overall_risk'   => $aF['overall_risk'] ?? null,
+                'overall_action' => $aF['overall_action'] ?? null,
+            ]];
+        }
     @endphp
     <div class="sh-erm" style="margin-top:8px;">ACADEMIC CREDENTIAL VALIDATION</div>
-    <div style="padding:5px 12px; background:#f5f5f0; border:1px solid #ccc; font-weight:bold; font-size:8.5pt; margin-bottom:0;">
-        {{ strtoupper($aInstitution) }}
-    </div>
 
-    @if($aValidation)
-    <div class="sh-erm" style="font-size:7.5pt; margin-top:4px;">ACADEMIC CREDENTIAL VALIDATION MATRIX</div>
-    <table class="cmt">
-        <tr>
-            <th style="width:20%;">ASPECT</th>
-            <th style="width:30%;">VERIFIED INFORMATION</th>
-            <th style="width:18%; text-align:center;">TERM</th>
-            <th style="width:12%; text-align:center;">ERM RISK</th>
-            <th style="width:20%;">INTERPRETATION</th>
-        </tr>
-        @foreach($aValidation as $av)
+    @if(!empty($aCredentials))
+        @foreach($aCredentials as $aCredIdx => $cred)
         @php
-            $avMatch = strtolower($av['match'] ?? 'match');
-            $avRisk  = strtolower($av['risk'] ?? 'low');
-            $matchClass = match($avMatch) { 'match'=>'match-M', 'partial'=>'match-PM', 'no_record'=>'match-NR', 'discrepancy'=>'match-D', default=>'' };
+            $aValidation  = $cred['validation']  ?? null;
+            $aInstitution = $cred['institution'] ?? $aScope->name;
+            $aRecognition = $cred['recognition'] ?? null;
+            $aOverallRisk = $cred['overall_risk'] ?? null;
+            $aOverallAct  = $cred['overall_action'] ?? null;
         @endphp
-        <tr>
-            <td class="cm-aspect">{{ strtoupper($av['aspect'] ?? '') }}</td>
-            <td>{{ $av['verified'] ?? '—' }}</td>
-            <td style="text-align:center;" class="{{ $matchClass }}">{!! $matchBadge($avMatch) !!}</td>
-            <td style="text-align:center;">{!! $riskLabel($avRisk) !!}</td>
-            <td class="small">{{ $av['interpretation'] ?? '' }}</td>
-        </tr>
+        <div style="padding:5px 12px; background:#f5f5f0; border:1px solid #ccc; font-weight:bold; font-size:8.5pt; margin:{{ $aCredIdx === 0 ? '0' : '8px 0 0' }};">
+            {{ strtoupper($aInstitution) }}
+        </div>
+
+        @if($aValidation)
+        <div class="sh-erm" style="font-size:7.5pt; margin-top:4px;">ACADEMIC CREDENTIAL VALIDATION MATRIX</div>
+        <table class="cmt">
+            <tr>
+                <th style="width:20%;">ASPECT</th>
+                <th style="width:30%;">VERIFIED INFORMATION</th>
+                <th style="width:18%; text-align:center;">TERM</th>
+                <th style="width:12%; text-align:center;">ERM RISK</th>
+                <th style="width:20%;">INTERPRETATION</th>
+            </tr>
+            @foreach($aValidation as $av)
+            @php
+                $avMatch = strtolower($av['match'] ?? 'match');
+                $avRisk  = strtolower($av['risk'] ?? 'low');
+                $matchClass = match($avMatch) { 'match'=>'match-M', 'partial'=>'match-PM', 'no_record'=>'match-NR', 'discrepancy'=>'match-D', default=>'' };
+            @endphp
+            <tr>
+                <td class="cm-aspect">{{ strtoupper($av['aspect'] ?? '') }}</td>
+                <td>{{ $av['verified'] ?? '—' }}</td>
+                <td style="text-align:center;" class="{{ $matchClass }}">{!! $matchBadge($avMatch) !!}</td>
+                <td style="text-align:center;">{!! $riskLabel($avRisk) !!}</td>
+                <td class="small">{{ $av['interpretation'] ?? '' }}</td>
+            </tr>
+            @endforeach
+        </table>
+        @endif
+
+        @if($aRecognition)
+        <div class="sh-erm" style="font-size:7.5pt; margin-top:4px;">RISK MATRIX FOR RECOGNITION + ACCREDITATION</div>
+        <table class="rct">
+            <tr>
+                <th style="width:28%;">SCENARIO</th>
+                <th style="width:30%;">INSTITUTION RECOGNITION</th>
+                <th style="width:30%;">PROGRAM ACCREDITATION</th>
+                <th style="width:12%; text-align:center;">RISK LEVEL</th>
+            </tr>
+            <tr>
+                <td class="bold">{{ $aRecognition['scenario'] ?? '—' }}</td>
+                <td>{{ $aRecognition['institution_recognition'] ?? '—' }}</td>
+                <td>{{ $aRecognition['program_accreditation'] ?? '—' }}</td>
+                <td style="text-align:center;">{!! $riskBadge(strtolower($aRecognition['risk_level'] ?? 'low')) !!}</td>
+            </tr>
+        </table>
+        @endif
+
+        @if($aOverallRisk)
+        <div class="erm-overall {{ strtolower($aOverallRisk) }}">
+            <strong>OVERALL ERM RISK:</strong> {!! $riskLabel(strtolower($aOverallRisk)) !!}
+            @if($aOverallAct) &nbsp;—&nbsp; {{ $aOverallAct }}@endif
+        </div>
+        @endif
+
+        @if(!$aValidation && !$aRecognition && !$aOverallRisk)
+        <table class="rt" style="margin-top:4px;">
+            <tr><th class="lbl" style="width:22%;">NOTE</th><td class="val muted ital small">Verification details will be reported upon completion with the institution.</td></tr>
+        </table>
+        @endif
         @endforeach
-    </table>
-
-    @if($aRecognition)
-    <div class="sh-erm" style="font-size:7.5pt; margin-top:4px;">RISK MATRIX FOR RECOGNITION + ACCREDITATION</div>
-    <table class="rct">
-        <tr>
-            <th style="width:28%;">SCENARIO</th>
-            <th style="width:30%;">INSTITUTION RECOGNITION</th>
-            <th style="width:30%;">PROGRAM ACCREDITATION</th>
-            <th style="width:12%; text-align:center;">RISK LEVEL</th>
-        </tr>
-        <tr>
-            <td class="bold">{{ $aRecognition['scenario'] ?? '—' }}</td>
-            <td>{{ $aRecognition['institution_recognition'] ?? '—' }}</td>
-            <td>{{ $aRecognition['program_accreditation'] ?? '—' }}</td>
-            <td style="text-align:center;">{!! $riskBadge(strtolower($aRecognition['risk_level'] ?? 'low')) !!}</td>
-        </tr>
-    </table>
-    @endif
-
-    @if($aOverallRisk)
-    <div class="erm-overall {{ strtolower($aOverallRisk) }}">
-        <strong>OVERALL ERM RISK:</strong> {!! $riskLabel(strtolower($aOverallRisk)) !!}
-        @if($aOverallAct) &nbsp;—&nbsp; {{ $aOverallAct }}@endif
-    </div>
-    @endif
 
     @elseif($aComment)
     <table class="rt" style="margin-top:4px;">
@@ -1018,89 +1048,102 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 @php
     $rF  = $refScope->pivot->findings ?? [];
     $rSt = $refScope->pivot->status ?? 'new';
+    // New: array of referees. Legacy: single referee from top-level fields.
+    $referees = $rF['referees'] ?? null;
+    if ($referees === null && (!empty($rF['referee_name']) || !empty($rF['questions']) || !empty($rF['relationship']))) {
+        $referees = [$rF];
+    }
 @endphp
 
 <div class="shs" style="margin-top:8px;">{{ strtoupper($candidate->name) }} — REFEREE INTERVIEW REPORT</div>
 
-{{-- Credibility Validation --}}
-<div class="sh-erm" style="margin-top:4px;">REFEREE CREDIBILITY VALIDATION</div>
-<table class="ref-t" style="margin-top:4px;">
-    <tr><th colspan="3">VALIDATION</th></tr>
-    <tr>
-        <td class="ref-lbl">AFFILIATED ORGANISATION</td>
-        <td colspan="2">{{ $rF['affiliated_org'] ?? '—' }}</td>
-    </tr>
-    <tr>
-        <td class="ref-lbl">REFEREE NAME</td>
-        <td colspan="2">{{ $rF['referee_name'] ?? '—' }}</td>
-    </tr>
-    <tr>
-        <td class="ref-lbl">DESIGNATION</td>
-        <td colspan="2">{{ $rF['designation'] ?? '—' }}</td>
-    </tr>
-    <tr>
-        <td class="ref-lbl">RELATIONSHIP</td>
-        <td colspan="2">{{ strtoupper($rF['relationship'] ?? '—') }}</td>
-    </tr>
-    <tr>
-        <td class="ref-lbl">CONTACT ESTABLISHED</td>
-        <td colspan="2">
-            @if(isset($rF['contact_established']))
-                {{ strtolower($rF['contact_established']) === 'successful' || $rF['contact_established'] === true ? 'SUCCESSFUL CONTACT' : 'UNSUCCESSFUL CONTACT' }}
-            @else —
-            @endif
-        </td>
-    </tr>
-    <tr>
-        <td class="ref-lbl">CONSENT TO REVIEW</td>
-        <td colspan="2">
-            @if(isset($rF['consent']))
-                {{ strtolower($rF['consent']) === 'consented' ? 'REFEREE CONSENTED FOR REVIEW' : 'REFEREE REFUSED REVIEW' }}
-            @else —
-            @endif
-        </td>
-    </tr>
-    <tr>
-        <td class="ref-lbl">INDEPENDENT / BIAS REVIEW</td>
-        <td colspan="2">{{ !empty($rF['independent']) ? 'INDEPENDENT REVIEW' : 'POTENTIAL BIAS – FURTHER EVALUATION RECOMMENDED' }}</td>
-    </tr>
-    @if(isset($rF['credibility_weight']))
-    <tr>
-        <td class="ref-lbl bold">REFEREE CREDIBILITY WEIGHT</td>
-        <td colspan="2" class="bold">
-            {!! str_repeat('&#9733;', (int)$rF['credibility_weight']) . str_repeat('&#9734;', max(0, 5 - (int)$rF['credibility_weight'])) !!}
-            ({{ $rF['credibility_weight'] }}/5)
-        </td>
-    </tr>
+@if(!empty($referees))
+    @foreach($referees as $refIdx => $ref)
+    {{-- Credibility Validation --}}
+    <div class="sh-erm" style="margin-top:6px;">REFEREE CREDIBILITY VALIDATION @if(count($referees) > 1)— REFEREE {{ $refIdx + 1 }}@endif</div>
+    <table class="ref-t" style="margin-top:4px;">
+        <tr><th colspan="3">VALIDATION</th></tr>
+        <tr>
+            <td class="ref-lbl">AFFILIATED ORGANISATION</td>
+            <td colspan="2">{{ $ref['affiliated_org'] ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td class="ref-lbl">REFEREE NAME</td>
+            <td colspan="2">{{ $ref['referee_name'] ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td class="ref-lbl">DESIGNATION</td>
+            <td colspan="2">{{ $ref['designation'] ?? '—' }}</td>
+        </tr>
+        <tr>
+            <td class="ref-lbl">RELATIONSHIP</td>
+            <td colspan="2">{{ strtoupper($ref['relationship'] ?? '—') }}</td>
+        </tr>
+        <tr>
+            <td class="ref-lbl">CONTACT ESTABLISHED</td>
+            <td colspan="2">
+                @if(isset($ref['contact_established']))
+                    {{ strtolower($ref['contact_established']) === 'successful' || $ref['contact_established'] === true ? 'SUCCESSFUL CONTACT' : 'UNSUCCESSFUL CONTACT' }}
+                @else —
+                @endif
+            </td>
+        </tr>
+        <tr>
+            <td class="ref-lbl">CONSENT TO REVIEW</td>
+            <td colspan="2">
+                @if(isset($ref['consent']))
+                    {{ strtolower($ref['consent']) === 'consented' ? 'REFEREE CONSENTED FOR REVIEW' : 'REFEREE REFUSED REVIEW' }}
+                @else —
+                @endif
+            </td>
+        </tr>
+        <tr>
+            <td class="ref-lbl">INDEPENDENT / BIAS REVIEW</td>
+            <td colspan="2">{{ !empty($ref['independent']) ? 'INDEPENDENT REVIEW' : 'POTENTIAL BIAS – FURTHER EVALUATION RECOMMENDED' }}</td>
+        </tr>
+        @if(isset($ref['credibility_weight']))
+        <tr>
+            <td class="ref-lbl bold">REFEREE CREDIBILITY WEIGHT</td>
+            <td colspan="2" class="bold">
+                {!! str_repeat('&#9733;', (int)$ref['credibility_weight']) . str_repeat('&#9734;', max(0, 5 - (int)$ref['credibility_weight'])) !!}
+                ({{ $ref['credibility_weight'] }}/5)
+            </td>
+        </tr>
+        @endif
+    </table>
+
+    {{-- Q&A --}}
+    @if(!empty($ref['questions']))
+    <div class="sh-erm" style="margin-top:6px;">REFEREE INTERVIEW QUESTION AND REPLY</div>
+    @foreach($ref['questions'] as $qa)
+    <div class="qa-category">
+        {{ strtoupper($qa['category'] ?? 'QUESTION') }}
+        @if(isset($qa['rating']))
+        &nbsp;&nbsp;{!! str_repeat('&#9733;', (int)$qa['rating']) . str_repeat('&#9734;', max(0, 5 - (int)$qa['rating'])) !!} ({{ $qa['rating'] }}/5)
+        @endif
+    </div>
+    <div class="qa-reply">{{ $qa['reply'] ?? '—' }}</div>
+    @endforeach
     @endif
+
+    {{-- Overall ERM Risk Analysis --}}
+    @if(!empty($ref['overall_strong']) || !empty($ref['overall_moderate']) || !empty($ref['overall_weak']))
+    <div class="sh-erm" style="margin-top:6px;">OVERALL ERM RISK ANALYSIS</div>
+    @if(!empty($ref['overall_strong']))
+    <div class="erm-area-strong"><strong>STRONG AREAS (LOW RISK):</strong> {{ implode(', ', $ref['overall_strong']) }}</div>
+    @endif
+    @if(!empty($ref['overall_moderate']))
+    <div class="erm-area-moderate"><strong>MODERATE AREAS:</strong> {{ implode(', ', $ref['overall_moderate']) }}</div>
+    @endif
+    @if(!empty($ref['overall_weak']))
+    <div class="erm-area-weak"><strong>WEAK AREAS (HIGH RISK):</strong> {{ implode(', ', $ref['overall_weak']) }}</div>
+    @endif
+    @endif
+    @endforeach
+@else
+<table class="rt" style="margin-top:4px;">
+    <tr><th class="lbl" style="width:22%;">NOTE</th><td class="val muted ital small">Referee interview details will be reported upon completion.</td></tr>
 </table>
-
-{{-- Q&A --}}
-@if(!empty($rF['questions']))
-<div class="sh-erm" style="margin-top:6px;">REFEREE INTERVIEW QUESTION AND REPLY</div>
-@foreach($rF['questions'] as $qa)
-<div class="qa-category">
-    {{ strtoupper($qa['category'] ?? 'QUESTION') }}
-    @if(isset($qa['rating']))
-    &nbsp;&nbsp;{!! str_repeat('&#9733;', (int)$qa['rating']) . str_repeat('&#9734;', max(0, 5 - (int)$qa['rating'])) !!} ({{ $qa['rating'] }}/5)
-    @endif
-</div>
-<div class="qa-reply">{{ $qa['reply'] ?? '—' }}</div>
-@endforeach
-@endif
-
-{{-- Overall ERM Risk Analysis --}}
-@if(!empty($rF['overall_strong']) || !empty($rF['overall_moderate']) || !empty($rF['overall_weak']))
-<div class="sh-erm" style="margin-top:6px;">OVERALL ERM RISK ANALYSIS</div>
-@if(!empty($rF['overall_strong']))
-<div class="erm-area-strong"><strong>STRONG AREAS (LOW RISK):</strong> {{ implode(', ', $rF['overall_strong']) }}</div>
-@endif
-@if(!empty($rF['overall_moderate']))
-<div class="erm-area-moderate"><strong>MODERATE AREAS:</strong> {{ implode(', ', $rF['overall_moderate']) }}</div>
-@endif
-@if(!empty($rF['overall_weak']))
-<div class="erm-area-weak"><strong>WEAK AREAS (HIGH RISK):</strong> {{ implode(', ', $rF['overall_weak']) }}</div>
-@endif
 @endif
 
 @endforeach

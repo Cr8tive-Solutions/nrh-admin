@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AdminAuditLog;
 use App\Models\ReportVersion;
+use App\Models\ScopeType;
 use App\Models\ScreeningRequest;
 use App\Models\Transaction;
 use App\Services\ReportSnapshot;
@@ -328,6 +329,7 @@ class RequestQueueController extends Controller
             'verification_method' => 'nullable|string|max:4000',
             'scope_description'   => 'nullable|string|max:4000',
             'records_json'        => 'nullable|string|max:65535',
+            'structured_json'     => 'nullable|string|max:200000',
         ]);
 
         $candidate = $screeningRequest->candidates()->findOrFail($candidateId);
@@ -393,6 +395,17 @@ class RequestQueueController extends Controller
             }
         }
 
+        // Parse structured findings (employment / academic / referee).
+        // Scope kind is detected server-side from the scope type, not trusted from the client.
+        if (! empty($data['structured_json'])) {
+            $structured = json_decode($data['structured_json'], true);
+            if (is_array($structured) && ! empty($structured)) {
+                $scopeType = ScopeType::find($scopeTypeId);
+                $kind = $this->scopeFindingsKind(strtolower(($scopeType->name ?? '').' '.($scopeType->category ?? '')));
+                $payload = array_merge($payload, $this->normaliseStructuredFindings($kind, $structured));
+            }
+        }
+
         DB::table('candidate_scope_type')
             ->where('request_candidate_id', $candidate->id)
             ->where('scope_type_id', $scopeTypeId)
@@ -413,6 +426,156 @@ class RequestQueueController extends Controller
             'scope_type_id' => $scopeTypeId,
             'has_findings'  => ! empty($payload),
         ]);
+    }
+
+    /**
+     * Detect which structured findings form a scope uses, from its name/category.
+     * Mirrors the keyword matching in reports/screening.blade.php.
+     */
+    private function scopeFindingsKind(string $hay): string
+    {
+        $has = fn (array $kw) => \Illuminate\Support\Str::contains($hay, $kw);
+
+        if ($has(['referee', 'reference'])) {
+            return 'referee';
+        }
+        if ($has(['employment', 'work history'])) {
+            return 'employment';
+        }
+        if ($has(['academic', 'qualification', 'credential', 'education', 'degree', 'certificate', 'certification'])) {
+            return 'academic';
+        }
+
+        return 'generic';
+    }
+
+    /**
+     * Sanitise and shape the structured employment/academic/referee findings
+     * into the exact JSON the report template consumes.
+     */
+    private function normaliseStructuredFindings(string $kind, array $s): array
+    {
+        $matchVals = ['match', 'partial', 'no_record', 'discrepancy'];
+        $riskVals  = ['low', 'moderate', 'high', 'critical'];
+        $str       = fn ($v) => trim((string) ($v ?? ''));
+        $enum      = fn ($v, array $allowed, string $default) => in_array($v, $allowed, true) ? $v : $default;
+        $splitList = fn ($v) => collect(explode(',', (string) $v))->map(fn ($x) => trim($x))->filter()->values()->all();
+
+        $validation = function (array $items, bool $withProvided) use ($str, $enum, $matchVals, $riskVals) {
+            $out = [];
+            foreach ($items as $v) {
+                $aspect = $str($v['aspect'] ?? '');
+                if ($aspect === '') {
+                    continue;
+                }
+                $row = ['aspect' => $aspect];
+                if ($withProvided && $str($v['provided'] ?? '') !== '') {
+                    $row['provided'] = $str($v['provided']);
+                }
+                if ($str($v['verified'] ?? '') !== '') {
+                    $row['verified'] = $str($v['verified']);
+                }
+                $row['match'] = $enum($v['match'] ?? '', $matchVals, 'match');
+                $row['risk']  = $enum($v['risk'] ?? '', $riskVals, 'low');
+                if ($str($v['interpretation'] ?? '') !== '') {
+                    $row['interpretation'] = $str($v['interpretation']);
+                }
+                $out[] = $row;
+            }
+
+            return $out;
+        };
+
+        $overall = function (array $src) use ($str, $riskVals) {
+            $o = [];
+            if (in_array($src['overall_risk'] ?? '', $riskVals, true)) {
+                $o['overall_risk'] = $src['overall_risk'];
+            }
+            if ($str($src['overall_action'] ?? '') !== '') {
+                $o['overall_action'] = $str($src['overall_action']);
+            }
+
+            return $o;
+        };
+
+        $out = [];
+
+        if ($kind === 'employment') {
+            // Single employer entry per scope.
+            if ($str($s['employer'] ?? '') !== '')  $out['employer'] = $str($s['employer']);
+            if ($str($s['verifier'] ?? '') !== '')  $out['verifier'] = $str($s['verifier']);
+            $rows = $validation($s['validation'] ?? [], true);
+            if (! empty($rows)) $out['validation'] = $rows;
+            $out = array_merge($out, $overall($s));
+        } elseif ($kind === 'academic') {
+            // Multiple credentials per scope.
+            $credentials = [];
+            foreach ($s['credentials'] ?? [] as $c) {
+                $cred = [];
+                if ($str($c['institution'] ?? '') !== '') $cred['institution'] = $str($c['institution']);
+                $rows = $validation($c['validation'] ?? [], false);
+                if (! empty($rows)) $cred['validation'] = $rows;
+                $rec = $c['recognition'] ?? [];
+                if ($str($rec['scenario'] ?? '') !== '') {
+                    $cred['recognition'] = [
+                        'scenario'                => $str($rec['scenario']),
+                        'institution_recognition' => $str($rec['institution_recognition'] ?? ''),
+                        'program_accreditation'   => $str($rec['program_accreditation'] ?? ''),
+                        'risk_level'              => $enum($rec['risk_level'] ?? '', $riskVals, 'low'),
+                    ];
+                }
+                $cred = array_merge($cred, $overall($c));
+                if (! empty($cred)) $credentials[] = $cred;
+            }
+            if (! empty($credentials)) $out['credentials'] = $credentials;
+        } elseif ($kind === 'referee') {
+            // Multiple referees per scope.
+            $referees = [];
+            foreach ($s['referees'] ?? [] as $r) {
+                $ref = [];
+                foreach (['referee_name', 'designation', 'relationship', 'affiliated_org'] as $f) {
+                    if ($str($r[$f] ?? '') !== '') $ref[$f] = $str($r[$f]);
+                }
+                if (in_array($r['contact_established'] ?? '', ['successful', 'unsuccessful'], true)) {
+                    $ref['contact_established'] = $r['contact_established'];
+                }
+                if (in_array($r['consent'] ?? '', ['consented', 'refused'], true)) {
+                    $ref['consent'] = $r['consent'];
+                }
+                $ref['independent'] = filter_var($r['independent'] ?? true, FILTER_VALIDATE_BOOLEAN);
+                $weight = (int) ($r['credibility_weight'] ?? 0);
+                if ($weight >= 1 && $weight <= 5) $ref['credibility_weight'] = $weight;
+
+                $questions = [];
+                foreach ($r['questions'] ?? [] as $q) {
+                    $cat = $str($q['category'] ?? '');
+                    if ($cat === '') {
+                        continue;
+                    }
+                    $rating = (int) ($q['rating'] ?? 0);
+                    $questions[] = [
+                        'category' => $cat,
+                        'rating'   => ($rating >= 1 && $rating <= 5) ? $rating : 3,
+                        'reply'    => $str($q['reply'] ?? ''),
+                    ];
+                }
+                if (! empty($questions)) $ref['questions'] = $questions;
+
+                foreach (['overall_strong', 'overall_moderate', 'overall_weak'] as $f) {
+                    $list = $splitList($r[$f] ?? '');
+                    if (! empty($list)) $ref[$f] = $list;
+                }
+
+                // Keep a referee only if it has at least a name or some content.
+                if ($str($r['referee_name'] ?? '') !== '' || ! empty($questions)
+                    || $str($r['relationship'] ?? '') !== '' || $str($r['designation'] ?? '') !== '') {
+                    $referees[] = $ref;
+                }
+            }
+            if (! empty($referees)) $out['referees'] = $referees;
+        }
+
+        return $out;
     }
 
     /**

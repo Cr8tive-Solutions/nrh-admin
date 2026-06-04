@@ -137,46 +137,60 @@ The report template (`reports/screening.blade.php`) supports both a new structur
 `match` values: `match` | `partial` | `no_record` | `discrepancy`. `risk` values: `low` | `moderate` | `high` | `critical`.
 
 **Academic credential findings (use for academic/education/qualification scopes):**
+A single scope holds **multiple credentials** under a `credentials` array (one entry per institution/qualification). The admin editor defaults to one credential with a "+ Add Credential" button.
 ```json
 {
-  "institution": "University Kebangsaan Malaysia (UKM)",
-  "validation": [
-    { "aspect": "LEVEL", "verified": "Undergraduate", "match": "match", "risk": "low", "interpretation": "Verified. Safe to proceed." },
-    { "aspect": "FIELD", "verified": "Bachelor of Science", "match": "match", "risk": "low", "interpretation": "Verified. Safe to proceed." },
-    { "aspect": "DATES OF ATTENDANCE", "verified": "2003", "match": "partial", "risk": "moderate", "interpretation": "Minor variation. Acceptable with caution." },
-    { "aspect": "GRADES", "verified": "No Record", "match": "no_record", "risk": "high", "interpretation": "Missing record, needs clarification." }
-  ],
-  "recognition": {
-    "scenario": "REAL + ACCREDITED",
-    "institution_recognition": "Recognized by MOHE/MQA",
-    "program_accreditation": "Program accredited",
-    "risk_level": "low"
-  },
-  "overall_risk": "moderate",
-  "overall_action": "Request transcript / certified degree copy to mitigate risk."
+  "credentials": [
+    {
+      "institution": "University Kebangsaan Malaysia (UKM)",
+      "validation": [
+        { "aspect": "LEVEL", "verified": "Undergraduate", "match": "match", "risk": "low", "interpretation": "Verified. Safe to proceed." },
+        { "aspect": "FIELD", "verified": "Bachelor of Science", "match": "match", "risk": "low", "interpretation": "Verified. Safe to proceed." },
+        { "aspect": "DATES OF ATTENDANCE", "verified": "2003", "match": "partial", "risk": "moderate", "interpretation": "Minor variation. Acceptable with caution." },
+        { "aspect": "GRADES", "verified": "No Record", "match": "no_record", "risk": "high", "interpretation": "Missing record, needs clarification." }
+      ],
+      "recognition": {
+        "scenario": "REAL + ACCREDITED",
+        "institution_recognition": "Recognized by MOHE/MQA",
+        "program_accreditation": "Program accredited",
+        "risk_level": "low"
+      },
+      "overall_risk": "moderate",
+      "overall_action": "Request transcript / certified degree copy to mitigate risk."
+    }
+  ]
 }
 ```
+> Legacy single-object academic findings (top-level `institution`/`validation`/`recognition`) are still rendered — the report treats them as a one-element `credentials` array, and the next save migrates them to the array shape.
 
 **Referee interview findings (use for referee/reference scopes):**
+A single scope holds **multiple referees** under a `referees` array (one entry per referee). The admin editor defaults to one referee with a "+ Add Referee" button.
 ```json
 {
-  "affiliated_org": "ABC Technologies Sdn Bhd",
-  "referee_name": "Dato Sri Wan Ahmad",
-  "designation": "CEO",
-  "relationship": "Ex-Superior",
-  "contact_established": "successful",
-  "consent": "consented",
-  "independent": true,
-  "credibility_weight": 5,
-  "questions": [
-    { "category": "RELATIONSHIP, ROLE & RESPONSIBILITIES", "rating": 5, "reply": "Candidate served as Software Engineer from Feb 2018 to Nov 2021..." },
-    { "category": "WORK QUALITY", "rating": 3, "reply": "Generally met expectations with occasional delays." }
-  ],
-  "overall_strong": ["Relationship, Role & Responsibilities"],
-  "overall_moderate": ["Work Quality", "Technical Competence", "Communication Skills"],
-  "overall_weak": ["Leadership Potential"]
+  "referees": [
+    {
+      "affiliated_org": "ABC Technologies Sdn Bhd",
+      "referee_name": "Dato Sri Wan Ahmad",
+      "designation": "CEO",
+      "relationship": "Ex-Superior",
+      "contact_established": "successful",
+      "consent": "consented",
+      "independent": true,
+      "credibility_weight": 5,
+      "questions": [
+        { "category": "RELATIONSHIP, ROLE & RESPONSIBILITIES", "rating": 5, "reply": "Candidate served as Software Engineer from Feb 2018 to Nov 2021..." },
+        { "category": "WORK QUALITY", "rating": 3, "reply": "Generally met expectations with occasional delays." }
+      ],
+      "overall_strong": ["Relationship, Role & Responsibilities"],
+      "overall_moderate": ["Work Quality", "Technical Competence", "Communication Skills"],
+      "overall_weak": ["Leadership Potential"]
+    }
+  ]
 }
 ```
+> Legacy single-object referee findings (top-level `referee_name`/`questions`) are still rendered as a one-element `referees` array and migrate on next save. Employment findings remain a **single** entry per scope (top-level `employer`/`validation`), not an array.
+
+The admin findings editor (`requests/show.blade.php`) detects the scope kind (`generic` | `employment` | `academic` | `referee`) from the scope name/category keywords and shows the matching structured sub-form. `RequestQueueController::updateScopeFindings` re-detects the kind server-side (`scopeFindingsKind()`) and sanitises the payload (`normaliseStructuredFindings()`) — it never trusts the client's kind.
 
 If `result_type` is absent, it is inferred from `pivot.status` (`complete`→`clean`, `flagged`→`record_identified`, others→`not_requested`). If `risk_level` is absent, it defaults to `low` for complete and `high` for flagged.
 

@@ -889,11 +889,104 @@
                             foreach ($rec['fields'] ?? [] as $k => $v) { $fa[] = ['key' => $k, 'value' => $v]; }
                             return array_merge($rec, ['fields' => $fa]);
                         }, $findings['records'] ?? []);
-                        $hasFindings = !empty($findings['result_type']) || !empty($findings['records']) || !empty($findings['comment']);
+
+                        // ── Detect scope kind (mirrors report template keyword matching) ──
+                        $scopeHay     = strtolower($scope->name.' '.($scope->category ?? ''));
+                        $isReferee    = \Illuminate\Support\Str::contains($scopeHay, ['referee', 'reference']);
+                        $isEmployment = \Illuminate\Support\Str::contains($scopeHay, ['employment', 'work history']);
+                        $isAcademic   = !$isReferee && !$isEmployment
+                            && \Illuminate\Support\Str::contains($scopeHay, ['academic', 'qualification', 'credential', 'education', 'degree', 'certificate', 'certification']);
+                        $scopeKind = $isReferee ? 'referee' : ($isEmployment ? 'employment' : ($isAcademic ? 'academic' : 'generic'));
+
+                        // ── Existing structured findings (employment / academic / referee) ──
+                        $mapValidation = fn ($items) => array_map(fn ($v) => [
+                            'aspect'         => $v['aspect'] ?? '',
+                            'provided'       => $v['provided'] ?? '',
+                            'verified'       => $v['verified'] ?? '',
+                            'match'          => $v['match'] ?? 'match',
+                            'risk'           => $v['risk'] ?? 'low',
+                            'interpretation' => $v['interpretation'] ?? '',
+                        ], $items ?? []);
+                        $mapRecognition = fn ($r) => [
+                            'scenario'                => $r['scenario'] ?? '',
+                            'institution_recognition' => $r['institution_recognition'] ?? '',
+                            'program_accreditation'   => $r['program_accreditation'] ?? '',
+                            'risk_level'              => $r['risk_level'] ?? 'low',
+                        ];
+
+                        // Employment (single entry per scope)
+                        $exEmployer        = $findings['employer'] ?? '';
+                        $exVerifier        = $findings['verifier'] ?? '';
+                        $exEmpValidation   = $mapValidation($findings['validation'] ?? []);
+                        $exEmpOverallRisk  = $findings['overall_risk'] ?? '';
+                        $exEmpOverallAction= $findings['overall_action'] ?? '';
+
+                        // Academic (array of credentials) — back-compat from legacy single top-level fields
+                        $rawCredentials = $findings['credentials'] ?? null;
+                        if ($rawCredentials === null && $scopeKind === 'academic'
+                            && (!empty($findings['institution']) || !empty($findings['validation']) || !empty($findings['recognition']))) {
+                            $rawCredentials = [[
+                                'institution'    => $findings['institution'] ?? '',
+                                'validation'     => $findings['validation'] ?? [],
+                                'recognition'    => $findings['recognition'] ?? [],
+                                'overall_risk'   => $findings['overall_risk'] ?? '',
+                                'overall_action' => $findings['overall_action'] ?? '',
+                            ]];
+                        }
+                        $exCredentials = array_map(fn ($c) => [
+                            'institution'    => $c['institution'] ?? '',
+                            'validation'     => $mapValidation($c['validation'] ?? []),
+                            'recognition'    => $mapRecognition($c['recognition'] ?? []),
+                            'overall_risk'   => $c['overall_risk'] ?? '',
+                            'overall_action' => $c['overall_action'] ?? '',
+                        ], $rawCredentials ?? []);
+                        if ($scopeKind === 'academic' && empty($exCredentials)) {
+                            $exCredentials = [[
+                                'institution' => '', 'validation' => [], 'recognition' => $mapRecognition([]),
+                                'overall_risk' => '', 'overall_action' => '',
+                            ]];
+                        }
+
+                        // Referee (array of referees) — back-compat from legacy single top-level fields
+                        $rawReferees = $findings['referees'] ?? null;
+                        if ($rawReferees === null && $scopeKind === 'referee'
+                            && (!empty($findings['referee_name']) || !empty($findings['questions']) || !empty($findings['relationship']))) {
+                            $rawReferees = [$findings];
+                        }
+                        $exReferees = array_map(fn ($r) => [
+                            'referee_name'       => $r['referee_name'] ?? '',
+                            'designation'        => $r['designation'] ?? '',
+                            'relationship'       => $r['relationship'] ?? '',
+                            'affiliated_org'     => $r['affiliated_org'] ?? '',
+                            'contact_established'=> $r['contact_established'] ?? '',
+                            'consent'            => $r['consent'] ?? '',
+                            'independent'        => array_key_exists('independent', $r) ? (bool) $r['independent'] : true,
+                            'credibility_weight' => (int) ($r['credibility_weight'] ?? 5),
+                            'questions'          => array_map(fn ($q) => [
+                                'category' => $q['category'] ?? '',
+                                'rating'   => (int) ($q['rating'] ?? 3),
+                                'reply'    => $q['reply'] ?? '',
+                            ], $r['questions'] ?? []),
+                            'overall_strong'     => implode(', ', $r['overall_strong'] ?? []),
+                            'overall_moderate'   => implode(', ', $r['overall_moderate'] ?? []),
+                            'overall_weak'       => implode(', ', $r['overall_weak'] ?? []),
+                        ], $rawReferees ?? []);
+                        if ($scopeKind === 'referee' && empty($exReferees)) {
+                            $exReferees = [[
+                                'referee_name' => '', 'designation' => '', 'relationship' => '', 'affiliated_org' => '',
+                                'contact_established' => '', 'consent' => '', 'independent' => true, 'credibility_weight' => 5,
+                                'questions' => [], 'overall_strong' => '', 'overall_moderate' => '', 'overall_weak' => '',
+                            ]];
+                        }
+
+                        $hasFindings = !empty($findings['result_type']) || !empty($findings['records']) || !empty($findings['comment'])
+                            || !empty($findings['validation']) || !empty($findings['questions'])
+                            || !empty($findings['credentials']) || !empty($findings['referees']);
                     @endphp
                     <div class="rq-scope-wrap {{ $hasFindings ? 'has-findings' : '' }}"
                          x-data="{
                             open: false,
+                            scopeKind: @js($scopeKind),
                             result_type: @js($existingResultType),
                             risk_level: @js($existingRiskLevel),
                             risk_status_text: @js($existingRiskStatusText),
@@ -901,12 +994,50 @@
                             verification_method: @js($existingVerificationMethod),
                             scope_description: @js($existingScopeDescription),
                             records: @js($existingRecords),
+                            /* employment (single entry per scope) */
+                            employer: @js($exEmployer),
+                            verifier: @js($exVerifier),
+                            empValidation: @js($exEmpValidation),
+                            empOverallRisk: @js($exEmpOverallRisk),
+                            empOverallAction: @js($exEmpOverallAction),
+                            /* academic (multiple credentials) */
+                            credentials: @js($exCredentials),
+                            /* referee (multiple referees) */
+                            referees: @js($exReferees),
                             addRecord() {
                                 this.records.push({ title: '', act: '', section: '', description: '', penalty: '', fields: [], verdict: 'CONVICTED', risk_level: 'high', risk_text: '' });
                             },
                             removeRecord(idx) { this.records.splice(idx, 1); },
                             addField(idx) { this.records[idx].fields.push({ key: '', value: '' }); },
                             removeField(idx, fIdx) { this.records[idx].fields.splice(fIdx, 1); },
+                            blankValidationRow() { return { aspect: '', provided: '', verified: '', match: 'match', risk: 'low', interpretation: '' }; },
+                            /* employment validation matrix */
+                            addEmpValidation() { this.empValidation.push(this.blankValidationRow()); },
+                            removeEmpValidation(idx) { this.empValidation.splice(idx, 1); },
+                            loadEmploymentAspects() {
+                                if (this.empValidation.length && !confirm('Replace the current rows with the standard aspects?')) return;
+                                this.empValidation = ['EMPLOYER','JOB TITLE','DATES OF EMPLOYMENT','REASON FOR LEAVING','SALARY/BENEFITS','PERFORMANCE & CONDUCT'].map(a => ({ ...this.blankValidationRow(), aspect: a }));
+                            },
+                            /* academic credentials */
+                            blankCredential() { return { institution: '', validation: [], recognition: { scenario: '', institution_recognition: '', program_accreditation: '', risk_level: 'low' }, overall_risk: '', overall_action: '' }; },
+                            addCredential() { this.credentials.push(this.blankCredential()); },
+                            removeCredential(ci) { this.credentials.splice(ci, 1); },
+                            addAcaAspect(ci) { this.credentials[ci].validation.push(this.blankValidationRow()); },
+                            removeAcaAspect(ci, vi) { this.credentials[ci].validation.splice(vi, 1); },
+                            loadAcademicAspects(ci) {
+                                if (this.credentials[ci].validation.length && !confirm('Replace the current rows with the standard aspects?')) return;
+                                this.credentials[ci].validation = ['LEVEL','FIELD','DATES OF ATTENDANCE','GRADES'].map(a => ({ ...this.blankValidationRow(), aspect: a }));
+                            },
+                            /* referees */
+                            blankReferee() { return { referee_name: '', designation: '', relationship: '', affiliated_org: '', contact_established: '', consent: '', independent: true, credibility_weight: 5, questions: [], overall_strong: '', overall_moderate: '', overall_weak: '' }; },
+                            addReferee() { this.referees.push(this.blankReferee()); },
+                            removeReferee(ri) { this.referees.splice(ri, 1); },
+                            addQuestion(ri) { this.referees[ri].questions.push({ category: '', rating: 3, reply: '' }); },
+                            removeQuestion(ri, qi) { this.referees[ri].questions.splice(qi, 1); },
+                            loadStandardQuestions(ri) {
+                                if (this.referees[ri].questions.length && !confirm('Replace the current questions with the standard set?')) return;
+                                this.referees[ri].questions = ['RELATIONSHIP, ROLE & RESPONSIBILITIES','WORK QUALITY','TECHNICAL COMPETENCE','PROBLEM-SOLVING & INITIATIVE','TEAMWORK & COLLABORATION','LEADERSHIP POTENTIAL','COMMUNICATION SKILLS','RELIABILITY & INTEGRITY','ADAPTABILITY & GROWTH','STRENGTHS & WEAKNESSES','EXIT CIRCUMSTANCES','CLIENT/STAKEHOLDER MANAGEMENT','CONFLICT RESOLUTION','CAREER GROWTH POTENTIAL','RECOMMENDATION','REHIRE'].map(c => ({ category: c, rating: 3, reply: '' }));
+                            },
                             onResultTypeChange() {
                                 const isClean = this.result_type === 'clean' || this.result_type === 'not_requested';
                                 if (isClean && this.risk_level !== 'nil') this.risk_level = 'nil';
@@ -999,9 +1130,9 @@
                                           placeholder="e.g. Screening conducted against the Royal Malaysia Police criminal records database…"
                                           class="rq-findings-textarea" style="min-height:56px;"></textarea>
 
-                                {{-- ── Adverse Records (only when applicable) ──────── --}}
+                                {{-- ── Adverse Records (generic scopes only) ──────── --}}
                                 <div class="rq-findings-section"
-                                     x-show="result_type === 'record_identified' || result_type === 'adverse'">
+                                     x-show="scopeKind === 'generic' && (result_type === 'record_identified' || result_type === 'adverse')">
                                     <div class="rq-findings-section-head">
                                         <div class="rq-findings-label" style="margin:0;">Adverse Records</div>
                                         <button type="button" @click="addRecord()" class="rq-add-btn">+ Add Record</button>
@@ -1093,8 +1224,315 @@
                                     </template>
                                 </div>
 
-                                {{-- Serialise records array as JSON for submission --}}
+                                {{-- ══ EMPLOYMENT VALIDATION (single entry) ══ --}}
+                                <div class="rq-findings-section" x-show="scopeKind === 'employment'" x-cloak>
+                                    <div class="rq-findings-label" style="margin:0 0 6px;">Employment Validation</div>
+                                    <div class="rq-findings-grid-2">
+                                        <div>
+                                            <span class="rq-findings-sublabel" style="margin-top:0;">Employer</span>
+                                            <input type="text" x-model="employer" placeholder="e.g. ABC Technologies Sdn Bhd" class="rq-findings-input">
+                                        </div>
+                                        <div>
+                                            <span class="rq-findings-sublabel" style="margin-top:0;">Verifier</span>
+                                            <input type="text" x-model="verifier" placeholder="e.g. HR Dept – Ms. Nur Aisyah (HR Officer)" class="rq-findings-input">
+                                        </div>
+                                    </div>
+
+                                    <div class="rq-findings-section-head" style="margin-top:10px;">
+                                        <span class="rq-findings-sublabel" style="margin:0;">Validation Matrix</span>
+                                        <span style="display:inline-flex;gap:6px;">
+                                            <button type="button" @click="loadEmploymentAspects()" class="rq-add-btn">Standard aspects</button>
+                                            <button type="button" @click="addEmpValidation()" class="rq-add-btn">+ Aspect</button>
+                                        </span>
+                                    </div>
+                                    <template x-if="empValidation.length === 0">
+                                        <p style="font-size:11px;color:var(--ink-400);font-style:italic;margin:8px 0 0;">No aspects added yet.</p>
+                                    </template>
+                                    <template x-for="(v, vIdx) in empValidation" :key="vIdx">
+                                        <div class="rq-rec-card">
+                                            <div class="rq-rec-card-head">
+                                                <input type="text" x-model="v.aspect" placeholder="ASPECT (e.g. JOB TITLE)" class="rq-findings-input" style="max-width:60%;">
+                                                <button type="button" @click="removeEmpValidation(vIdx)" class="rq-rec-rm-btn">× Remove</button>
+                                            </div>
+                                            <div class="rq-findings-grid-2">
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Candidate Provided</span>
+                                                    <input type="text" x-model="v.provided" class="rq-findings-input">
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">NRH Verified</span>
+                                                    <input type="text" x-model="v.verified" class="rq-findings-input">
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Match</span>
+                                                    <select x-model="v.match" class="rq-findings-select">
+                                                        <option value="match">Match</option>
+                                                        <option value="partial">Partial Match</option>
+                                                        <option value="no_record">No Record</option>
+                                                        <option value="discrepancy">Discrepancy</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Risk</span>
+                                                    <select x-model="v.risk" class="rq-findings-select">
+                                                        <option value="low">Low</option>
+                                                        <option value="moderate">Moderate</option>
+                                                        <option value="high">High</option>
+                                                        <option value="critical">Critical</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <span class="rq-findings-sublabel">Interpretation</span>
+                                            <input type="text" x-model="v.interpretation" placeholder="e.g. Verified. Safe to proceed." class="rq-findings-input">
+                                        </div>
+                                    </template>
+
+                                    <div class="rq-findings-grid-2" style="margin-top:8px;">
+                                        <div>
+                                            <span class="rq-findings-sublabel">Overall ERM Risk</span>
+                                            <select x-model="empOverallRisk" class="rq-findings-select">
+                                                <option value="">—</option>
+                                                <option value="low">Low</option>
+                                                <option value="moderate">Moderate</option>
+                                                <option value="high">High</option>
+                                                <option value="critical">Critical</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <span class="rq-findings-sublabel">Overall Action</span>
+                                            <input type="text" x-model="empOverallAction" placeholder="e.g. Acceptable with caution. Suggest pay slip." class="rq-findings-input">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- ══ ACADEMIC CREDENTIALS (multiple) ══ --}}
+                                <div class="rq-findings-section" x-show="scopeKind === 'academic'" x-cloak>
+                                    <div class="rq-findings-section-head">
+                                        <div class="rq-findings-label" style="margin:0;">Academic Credentials</div>
+                                        <button type="button" @click="addCredential()" class="rq-add-btn">+ Add Credential</button>
+                                    </div>
+
+                                    <template x-for="(cred, ci) in credentials" :key="ci">
+                                        <div class="rq-rec-card" style="border-left:3px solid var(--brand, #0a5);">
+                                            <div class="rq-rec-card-head">
+                                                <span class="rq-rec-label" x-text="`Credential ${ci + 1}`"></span>
+                                                <button type="button" @click="removeCredential(ci)" class="rq-rec-rm-btn" x-show="credentials.length > 1">× Remove</button>
+                                            </div>
+
+                                            <span class="rq-findings-sublabel" style="margin-top:0;">Institution</span>
+                                            <input type="text" x-model="cred.institution" placeholder="e.g. University Kebangsaan Malaysia (UKM)" class="rq-findings-input">
+
+                                            <div class="rq-findings-section-head" style="margin-top:10px;">
+                                                <span class="rq-findings-sublabel" style="margin:0;">Validation Matrix</span>
+                                                <span style="display:inline-flex;gap:6px;">
+                                                    <button type="button" @click="loadAcademicAspects(ci)" class="rq-add-btn">Standard aspects</button>
+                                                    <button type="button" @click="addAcaAspect(ci)" class="rq-add-btn">+ Aspect</button>
+                                                </span>
+                                            </div>
+                                            <template x-if="cred.validation.length === 0">
+                                                <p style="font-size:11px;color:var(--ink-400);font-style:italic;margin:8px 0 0;">No aspects added yet.</p>
+                                            </template>
+                                            <template x-for="(v, vIdx) in cred.validation" :key="vIdx">
+                                                <div class="rq-rec-card">
+                                                    <div class="rq-rec-card-head">
+                                                        <input type="text" x-model="v.aspect" placeholder="ASPECT (e.g. LEVEL)" class="rq-findings-input" style="max-width:60%;">
+                                                        <button type="button" @click="removeAcaAspect(ci, vIdx)" class="rq-rec-rm-btn">× Remove</button>
+                                                    </div>
+                                                    <span class="rq-findings-sublabel">NRH Verified Information</span>
+                                                    <input type="text" x-model="v.verified" placeholder="e.g. Undergraduate" class="rq-findings-input">
+                                                    <div class="rq-findings-grid-2">
+                                                        <div>
+                                                            <span class="rq-findings-sublabel">Match</span>
+                                                            <select x-model="v.match" class="rq-findings-select">
+                                                                <option value="match">Match</option>
+                                                                <option value="partial">Partial Match</option>
+                                                                <option value="no_record">No Record</option>
+                                                                <option value="discrepancy">Discrepancy</option>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <span class="rq-findings-sublabel">Risk</span>
+                                                            <select x-model="v.risk" class="rq-findings-select">
+                                                                <option value="low">Low</option>
+                                                                <option value="moderate">Moderate</option>
+                                                                <option value="high">High</option>
+                                                                <option value="critical">Critical</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <span class="rq-findings-sublabel">Interpretation</span>
+                                                    <input type="text" x-model="v.interpretation" placeholder="e.g. Verified. Safe to proceed." class="rq-findings-input">
+                                                </div>
+                                            </template>
+
+                                            <div class="rq-findings-label" style="margin:12px 0 6px; font-size:11px;">Recognition + Accreditation</div>
+                                            <div class="rq-findings-grid-2">
+                                                <div>
+                                                    <span class="rq-findings-sublabel" style="margin-top:0;">Scenario</span>
+                                                    <select x-model="cred.recognition.scenario" class="rq-findings-select">
+                                                        <option value="">—</option>
+                                                        <option value="REAL + ACCREDITED">Real + Accredited</option>
+                                                        <option value="REAL + NOT ACCREDITED">Real + Not Accredited</option>
+                                                        <option value="FAKE VIRTUAL UNIVERSITY">Fake / Virtual University</option>
+                                                        <option value="RECOGNIZED ABROAD ONLY">Recognized Abroad Only</option>
+                                                        <option value="RECOGNIZED VIRTUAL UNIVERSITY">Recognized Virtual University</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel" style="margin-top:0;">Recognition Risk Level</span>
+                                                    <select x-model="cred.recognition.risk_level" class="rq-findings-select">
+                                                        <option value="low">Low</option>
+                                                        <option value="moderate">Moderate</option>
+                                                        <option value="high">High</option>
+                                                        <option value="critical">Critical</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Institution Recognition</span>
+                                                    <input type="text" x-model="cred.recognition.institution_recognition" placeholder="e.g. Recognized by MOHE/MQA" class="rq-findings-input">
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Program Accreditation</span>
+                                                    <input type="text" x-model="cred.recognition.program_accreditation" placeholder="e.g. Program accredited" class="rq-findings-input">
+                                                </div>
+                                            </div>
+
+                                            <div class="rq-findings-grid-2" style="margin-top:8px;">
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Overall ERM Risk</span>
+                                                    <select x-model="cred.overall_risk" class="rq-findings-select">
+                                                        <option value="">—</option>
+                                                        <option value="low">Low</option>
+                                                        <option value="moderate">Moderate</option>
+                                                        <option value="high">High</option>
+                                                        <option value="critical">Critical</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Overall Action</span>
+                                                    <input type="text" x-model="cred.overall_action" placeholder="e.g. Request certified transcript to mitigate risk." class="rq-findings-input">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                {{-- ══ REFEREE INTERVIEWS (multiple) ══ --}}
+                                <div class="rq-findings-section" x-show="scopeKind === 'referee'" x-cloak>
+                                    <div class="rq-findings-section-head">
+                                        <div class="rq-findings-label" style="margin:0;">Referee Interviews</div>
+                                        <button type="button" @click="addReferee()" class="rq-add-btn">+ Add Referee</button>
+                                    </div>
+
+                                    <template x-for="(ref, ri) in referees" :key="ri">
+                                        <div class="rq-rec-card" style="border-left:3px solid var(--brand, #0a5);">
+                                            <div class="rq-rec-card-head">
+                                                <span class="rq-rec-label" x-text="`Referee ${ri + 1}`"></span>
+                                                <button type="button" @click="removeReferee(ri)" class="rq-rec-rm-btn" x-show="referees.length > 1">× Remove</button>
+                                            </div>
+
+                                            <div class="rq-findings-grid-2">
+                                                <div>
+                                                    <span class="rq-findings-sublabel" style="margin-top:0;">Referee Name</span>
+                                                    <input type="text" x-model="ref.referee_name" class="rq-findings-input">
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel" style="margin-top:0;">Designation</span>
+                                                    <input type="text" x-model="ref.designation" placeholder="e.g. CEO" class="rq-findings-input">
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Relationship</span>
+                                                    <input type="text" x-model="ref.relationship" placeholder="e.g. Ex-Superior" class="rq-findings-input">
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Affiliated Organisation</span>
+                                                    <input type="text" x-model="ref.affiliated_org" class="rq-findings-input">
+                                                </div>
+                                            </div>
+                                            <div class="rq-findings-grid-2" style="margin-top:6px;">
+                                                <div>
+                                                    <span class="rq-findings-sublabel" style="margin-top:0;">Contact Established</span>
+                                                    <select x-model="ref.contact_established" class="rq-findings-select">
+                                                        <option value="">—</option>
+                                                        <option value="successful">Successful</option>
+                                                        <option value="unsuccessful">Unsuccessful</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel" style="margin-top:0;">Consent to Review</span>
+                                                    <select x-model="ref.consent" class="rq-findings-select">
+                                                        <option value="">—</option>
+                                                        <option value="consented">Consented</option>
+                                                        <option value="refused">Refused</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Independent / Bias</span>
+                                                    <select x-model="ref.independent" class="rq-findings-select">
+                                                        <option :value="true">Independent Review</option>
+                                                        <option :value="false">Potential Bias</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Credibility Weight</span>
+                                                    <select x-model.number="ref.credibility_weight" class="rq-findings-select">
+                                                        <option :value="5">★★★★★ (5/5)</option>
+                                                        <option :value="4">★★★★ (4/5)</option>
+                                                        <option :value="3">★★★ (3/5)</option>
+                                                        <option :value="2">★★ (2/5)</option>
+                                                        <option :value="1">★ (1/5)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="rq-findings-section-head" style="margin-top:10px;">
+                                                <span class="rq-findings-sublabel" style="margin:0;">Questions &amp; Replies</span>
+                                                <span style="display:inline-flex;gap:6px;">
+                                                    <button type="button" @click="loadStandardQuestions(ri)" class="rq-add-btn">Standard set</button>
+                                                    <button type="button" @click="addQuestion(ri)" class="rq-add-btn">+ Question</button>
+                                                </span>
+                                            </div>
+                                            <template x-if="ref.questions.length === 0">
+                                                <p style="font-size:11px;color:var(--ink-400);font-style:italic;margin:8px 0 0;">No questions added yet.</p>
+                                            </template>
+                                            <template x-for="(q, qIdx) in ref.questions" :key="qIdx">
+                                                <div class="rq-rec-card">
+                                                    <div class="rq-rec-card-head">
+                                                        <input type="text" x-model="q.category" placeholder="CATEGORY (e.g. WORK QUALITY)" class="rq-findings-input" style="max-width:55%;">
+                                                        <span style="display:inline-flex;align-items:center;gap:6px;">
+                                                            <select x-model.number="q.rating" class="rq-findings-select" style="width:auto;">
+                                                                <option :value="5">★★★★★</option>
+                                                                <option :value="4">★★★★</option>
+                                                                <option :value="3">★★★</option>
+                                                                <option :value="2">★★</option>
+                                                                <option :value="1">★</option>
+                                                            </select>
+                                                            <button type="button" @click="removeQuestion(ri, qIdx)" class="rq-rec-rm-btn">×</button>
+                                                        </span>
+                                                    </div>
+                                                    <textarea x-model="q.reply" placeholder="Referee's reply…" class="rq-findings-textarea" style="min-height:44px;"></textarea>
+                                                </div>
+                                            </template>
+
+                                            <div class="rq-findings-label" style="margin:12px 0 6px; font-size:11px;">Overall ERM Risk Analysis</div>
+                                            <span class="rq-findings-sublabel" style="margin-top:0;">Strong Areas (Low Risk)</span>
+                                            <input type="text" x-model="ref.overall_strong" placeholder="comma-separated, e.g. Work Quality, Reliability" class="rq-findings-input">
+                                            <span class="rq-findings-sublabel">Moderate Areas (Medium Risk)</span>
+                                            <input type="text" x-model="ref.overall_moderate" placeholder="comma-separated" class="rq-findings-input">
+                                            <span class="rq-findings-sublabel">Weak Areas (High Risk)</span>
+                                            <input type="text" x-model="ref.overall_weak" placeholder="comma-separated" class="rq-findings-input">
+                                        </div>
+                                    </template>
+                                </div>
+
+                                {{-- Serialise arrays as JSON for submission --}}
                                 <input type="hidden" name="records_json" :value="JSON.stringify(records)">
+                                <input type="hidden" name="structured_json" :value="JSON.stringify(
+                                    scopeKind === 'employment' ? { employer, verifier, validation: empValidation, overall_risk: empOverallRisk, overall_action: empOverallAction } :
+                                    scopeKind === 'academic'   ? { credentials } :
+                                    scopeKind === 'referee'    ? { referees } :
+                                    {}
+                                )">
 
                                 {{-- ── Actions ─────────────────────────────────────── --}}
                                 <div class="rq-findings-actions">

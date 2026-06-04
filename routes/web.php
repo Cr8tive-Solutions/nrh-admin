@@ -65,16 +65,15 @@ Route::middleware('admin.auth')->group(function () {
     Route::get('/requests/{screeningRequest}', [RequestQueueController::class, 'show'])->name('requests.show');
     // Live preview — never persists. Anyone with read access can see it.
     Route::get('/requests/{screeningRequest}/report/preview', [ReportController::class, 'preview'])
-        ->whereNumber('screeningRequest')
         ->name('requests.report.preview');
 
     // Re-download a persisted version's exact bytes.
     Route::get('/requests/{screeningRequest}/report/versions/{version}/download', [ReportController::class, 'download'])
-        ->whereNumber('screeningRequest')->whereNumber('version')
+        ->whereNumber('version')
         ->name('requests.report.download');
 
     Route::get('/requests/{screeningRequest}/report/versions/{version}/view', [ReportController::class, 'view'])
-        ->whereNumber('screeningRequest')->whereNumber('version')
+        ->whereNumber('version')
         ->name('requests.report.view');
 
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
@@ -98,7 +97,6 @@ Route::middleware('admin.auth')->group(function () {
 
         // Issue a new persisted version (Basic / Prelim / Full).
         Route::post('/requests/{screeningRequest}/report/generate', [ReportController::class, 'generate'])
-            ->whereNumber('screeningRequest')
             ->name('requests.report.generate');
     });
 
@@ -151,12 +149,10 @@ Route::middleware('admin.auth')->group(function () {
         // to be present. Records a transactions row, flips request status to
         // in_progress, and writes an audit entry — all in one DB transaction.
         Route::post('/requests/{screeningRequest}/verify-payment', [RequestQueueController::class, 'verifyPaymentSlip'])
-            ->whereNumber('screeningRequest')
             ->name('requests.verify-payment');
 
         // Stream the customer-uploaded payment slip file privately to admins.
         Route::get('/requests/{screeningRequest}/payment-slip', [RequestQueueController::class, 'downloadPaymentSlip'])
-            ->whereNumber('screeningRequest')
             ->name('requests.payment-slip.download');
 
         // Customer-uploaded payment receipts — admin verify/reject + view file.
@@ -207,7 +203,7 @@ Route::middleware('admin.auth')->group(function () {
     // ── pdpa.consent — record candidate consent ──────────────────────────────
     Route::middleware('admin.can:pdpa.consent')->group(function () {
         Route::post('/requests/{screeningRequest}/candidates/{candidateId}/consent', [ConsentController::class, 'store'])
-            ->whereNumber('screeningRequest')->whereNumber('candidateId')
+            ->whereNumber('candidateId')
             ->name('compliance.consent.store');
         Route::get('/compliance/consent/{consent}/evidence', [ConsentController::class, 'downloadEvidence'])
             ->whereNumber('consent')
