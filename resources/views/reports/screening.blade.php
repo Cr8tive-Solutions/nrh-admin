@@ -389,19 +389,17 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 </table>
 <table class="rt" style="margin-top:0;">
     <tr>
-        <th class="lbl" style="width:30%;">RISK MATRIX INTERPRETATION</th>
+        <th class="lbl" style="width:30%;" rowspan="3">RISK MATRIX INTERPRETATION</th>
         <td style="background:#c4453a; color:#fff; font-weight:bold; width:5%; text-align:center; border:1px solid #2a2a2a;">&#9679;</td>
         <td style="width:15%; font-weight:bold; border:1px solid #2a2a2a; padding:5px 8px;">HIGH</td>
         <td style="border:1px solid #2a2a2a; padding:5px 8px; font-size:8pt;">Significant risk. Immediate attention and enhanced due diligence required.</td>
     </tr>
     <tr>
-        <td class="lbl"></td>
         <td style="background:#d97706; color:#fff; font-weight:bold; text-align:center; border:1px solid #2a2a2a;">&#9679;</td>
         <td style="font-weight:bold; border:1px solid #2a2a2a; padding:5px 8px;">MODERATE</td>
         <td style="border:1px solid #2a2a2a; padding:5px 8px; font-size:8pt;">Moderate risk. Further review and monitoring recommended.</td>
     </tr>
     <tr>
-        <td class="lbl"></td>
         <td style="background:#046c4e; color:#fff; font-weight:bold; text-align:center; border:1px solid #2a2a2a;">&#9679;</td>
         <td style="font-weight:bold; border:1px solid #2a2a2a; padding:5px 8px;">LOW</td>
         <td style="border:1px solid #2a2a2a; padding:5px 8px; font-size:8pt;">No significant risk. Candidate cleared for compliance integrity.</td>
@@ -418,6 +416,23 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div class="sh">CANDIDATE {{ $candidateIndex + 1 }} — {{ strtoupper($candidate->name) }}</div>
 
 {{-- ── Candidate Info ── --}}
+@php
+    // Locate the candidate's Name & ID screening scope to surface its result here.
+    $nameIdScope = $candidate->scopeTypes->first(function ($s) {
+        $h = strtolower($s->name.' '.($s->category ?? ''));
+        return str_contains($h, 'name & id') || str_contains($h, 'name and id') || str_contains($h, 'name/id')
+            || str_contains($h, 'identity') || str_contains($h, 'mykad') || str_contains($h, 'my kad')
+            || str_contains($h, 'personal data') || str_contains($h, 'nric')
+            || (str_contains($h, 'name') && (str_contains($h, ' id') || str_contains($h, 'i/c') || str_contains($h, ' ic')));
+    });
+    $nidF     = $nameIdScope ? ($nameIdScope->pivot->findings ?? []) : [];
+    $nidSt    = $nameIdScope ? ($nameIdScope->pivot->status ?? 'new') : 'new';
+    $nidT     = $getResultType($nidSt, $nidF);
+    $nidLv    = $getRiskLevel($nidSt, $nidF);
+    $nidStat  = $riskStatusText($nidLv, $nidT, $nidF);
+    $nidVer   = $nidF['verification_method']
+        ?? "Verification was conducted using the candidate's Name and ID against the official keeper of identity records (National Registration Department of Malaysia – NRD).";
+@endphp
 <div class="shs">CANDIDATE INFO</div>
 <table class="rt">
     <tr>
@@ -434,12 +449,16 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     @if($candidate->date_of_birth)
     <tr><th class="lbl">DATE OF BIRTH</th><td class="val">{{ $candidate->date_of_birth->format('jS F Y') }}</td></tr>
     @endif
-    @if($candidate->mobile)
-    <tr><th class="lbl">CONTACT</th><td class="val">{{ $candidate->mobile }}</td></tr>
-    @endif
     <tr>
-        <th class="lbl">CANDIDATE STATUS</th>
-        <td class="val bold">{{ strtoupper(str_replace('_', ' ', $candidate->status)) }}</td>
+        <th class="lbl" rowspan="2">NAME &amp; ID SCREENING RESULT</th>
+        <td class="val {{ $resultCss($nidT) }} bold">{{ $resultLabel($nidT) }}</td>
+    </tr>
+    <tr>
+        <td class="val">{!! $riskBadge($nidLv) !!}&nbsp; {{ $nidStat }}</td>
+    </tr>
+    <tr>
+        <th class="lbl" style="background:#1a3a2a;">VERIFICATION METHOD</th>
+        <td class="val small">{{ $nidVer }}</td>
     </tr>
     @php $cn = $candidate->latestConsent; @endphp
     @if($cn)
@@ -548,6 +567,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 </div>
 
 @foreach($candidate->scopeTypes as $scope)
+@continue($nameIdScope && $scope->id === $nameIdScope->id)
 @php
     $pSt      = $scope->pivot->status ?? 'new';
     $findings = $scope->pivot->findings ?? [];
