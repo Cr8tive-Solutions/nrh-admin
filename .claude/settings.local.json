@@ -80,7 +80,8 @@
       "Bash(grep -E \"'\\\\s*,\\\\s*\\\\\\\\\\\\$\")",
       "Bash(grep *)",
       "Bash(mkdir -p /Users/anwarsaad/Herd/nrh-intelligence/app/Traits)",
-      "Bash(mkdir -p /Users/anwarsaad/Herd/nrh-intelligence/app/Support)"
+      "Bash(mkdir -p /Users/anwarsaad/Herd/nrh-intelligence/app/Support)",
+      "Bash(git *)"
     ]
   }
 }

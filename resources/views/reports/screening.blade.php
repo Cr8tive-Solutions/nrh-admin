@@ -48,6 +48,31 @@ table.rt td.val { background: #fff; }
 table.rt tr.div td { background: #d4af37; color: #1a1a1a; font-weight: bold; padding: 5px 10px;
                      font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
 
+/* ── Word-exact profile tables (Page 1: REPORT PROFILE / NRH INTERNAL) ── */
+.sh-pt { background: #053827; color: #fff; padding: 7px 12px; font-weight: bold;
+         font-size: 9.5pt; margin-top: 12px; margin-bottom: 0; letter-spacing: 0.08em;
+         font-family: 'Oswald', sans-serif; text-align: center; }
+table.pt { width: 100%; margin-bottom: 8px; page-break-inside: avoid; }
+table.pt th, table.pt td { border: 1px solid #000; padding: 7px 8px; vertical-align: middle;
+                           text-align: left; font-size: 8.5pt; }
+table.pt th.pt-lbl { background: #fff; color: #000; font-weight: bold;
+                     font-family: 'Oswald', sans-serif; letter-spacing: 0.03em; }
+table.pt td.pt-val { background: #fff; color: #000; }
+
+/* ── Word-exact black section bars + plain content (Page 2) ── */
+.sh-blk { background: #000; color: #fff; padding: 7px 12px; font-weight: bold;
+          font-size: 9.5pt; margin-top: 12px; margin-bottom: 6px; letter-spacing: 0.08em;
+          font-family: 'Oswald', sans-serif; text-align: left; }
+.body-p { font-size: 8.5pt; line-height: 1.6; margin: 0 0 10px; text-align: left; }
+ul.body-ul { padding-left: 18px; margin: 0 0 10px; font-size: 8.5pt; line-height: 1.6; }
+ul.body-ul li { margin-bottom: 3px; }
+table.lgt { width: 100%; margin: 0 0 10px; page-break-inside: avoid; }
+table.lgt td { border: 1px solid #000; padding: 6px 8px; vertical-align: middle;
+               font-size: 8.5pt; text-align: left; }
+table.lgt td.lg-lbl { color: #0070C0; font-weight: bold; font-family: 'Oswald', sans-serif; width: 30%; }
+table.lgt td.lg-dot { text-align: center; width: 10%; font-size: 12pt; line-height: 1; }
+table.lgt td.lg-lvl { width: 60%; font-weight: bold; }
+
 /* ── Risk indicators ── */
 .ri-h { color: #c4453a; font-weight: bold; }
 .ri-m { color: #d97706; font-weight: bold; }
@@ -322,26 +347,26 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div class="cov-title">NRH INTELLIGENCE</div>
 <div class="cov-sub">Compliance Screening Report &nbsp;—&nbsp; Private &amp; Confidential</div>
 
-<div class="sh" style="margin-top:4px;">REPORT PROFILE</div>
-<table class="rt">
-    <tr><th class="lbl" style="width:38%;">REPORT REF NO</th>        <td class="val bold">{{ $reference }}</td></tr>
-    <tr><th class="lbl">ENGAGING COMPANY</th>                          <td class="val">{{ $customer->name ?? '—' }}</td></tr>
-    <tr><th class="lbl">REQUEST DATE</th>                              <td class="val">{{ $request->created_at->format('d F Y') }}</td></tr>
-    <tr><th class="lbl">INFO TYPE</th>                                 <td class="val">{{ strtoupper($request->type ?? 'DATA & SKILL SCREENING') }}</td></tr>
-    <tr><th class="lbl">AUTHORIZED REQUESTOR</th>                     <td class="val">{{ $customer->contact_name ?? '—' }}</td></tr>
-    <tr><th class="lbl">REQUESTOR EMAIL</th>                           <td class="val">{{ $customer->contact_email ?? '—' }}</td></tr>
-    <tr><th class="lbl">REQUESTOR CONTACT</th>                        <td class="val">{{ $customer->contact_phone ?? '—' }}</td></tr>
-    <tr><th class="lbl">NEW ADD-ON (If Any) DATE</th>                 <td class="val">{{ data_get($request->meta, 'addon_date') ?: 'NIL' }}</td></tr>
+<div class="sh-pt" style="margin-top:4px;">REPORT PROFILE</div>
+<table class="pt">
+    <tr><th class="pt-lbl" style="width:38%;">REPORT REF NO</th>      <td class="pt-val bold">{{ $reference }}</td></tr>
+    <tr><th class="pt-lbl">ENGAGING COMPANY</th>                       <td class="pt-val">{{ $customer->name ?? '—' }}</td></tr>
+    <tr><th class="pt-lbl">REQUEST DATE</th>                           <td class="pt-val">{{ $request->created_at->format('d F Y') }}</td></tr>
+    <tr><th class="pt-lbl">INFO TYPE</th>                              <td class="pt-val">{{ strtoupper($request->type ?? 'DATA & SKILL SCREENING') }}</td></tr>
+    <tr><th class="pt-lbl">AUTHORIZED REQUESTOR</th>                  <td class="pt-val">{{ $customer->contact_name ?? '—' }}</td></tr>
+    <tr><th class="pt-lbl">REQUESTOR EMAIL</th>                        <td class="pt-val">{{ $customer->contact_email ?? '—' }}</td></tr>
+    <tr><th class="pt-lbl">REQUESTOR CONTACT</th>                     <td class="pt-val">{{ $customer->contact_phone ?? '—' }}</td></tr>
+    <tr><th class="pt-lbl">NEW ADD-ON (If Any) DATE</th>              <td class="pt-val">{{ data_get($request->meta, 'addon_date') ?: 'NIL' }}</td></tr>
 </table>
 
-<div class="shs">NRH INTERNAL</div>
-<table class="rt">
-    <tr><th class="lbl" style="width:38%;">NRH RESEARCH OFFICER</th>  <td class="val">{{ data_get($request->meta, 'analyst') ?: '—' }}</td></tr>
-    <tr><th class="lbl">COMPLIANCE EDITOR</th>                         <td class="val">{{ data_get($request->meta, 'editor') ?: '—' }}</td></tr>
-    <tr><th class="lbl">INTERIM REP 1 DATE: (If Any)</th>             <td class="val">{{ $completionBasic ?? '—' }}</td></tr>
-    <tr><th class="lbl">INTERIM REP 2 DATE: (If Any)</th>             <td class="val">{{ $completionPrelim ?? '—' }}</td></tr>
-    <tr><th class="lbl">FULL REP DATE</th>                             <td class="val">{{ $completionFull ?? '—' }}</td></tr>
-    <tr><th class="lbl">REVISED REP DATE</th>                          <td class="val">{{ data_get($request->meta, 'revised_date') ?: '—' }}</td></tr>
+<div class="sh-pt">NRH INTERNAL</div>
+<table class="pt">
+    <tr><th class="pt-lbl" style="width:38%;">NRH RESEARCH OFFICER</th> <td class="pt-val">{{ data_get($request->meta, 'analyst') ?: '—' }}</td></tr>
+    <tr><th class="pt-lbl">COMPLIANCE EDITOR</th>                      <td class="pt-val">{{ data_get($request->meta, 'editor') ?: '—' }}</td></tr>
+    <tr><th class="pt-lbl">INTERIM REP 1 DATE: (If Any)</th>          <td class="pt-val">{{ $completionBasic ?? '—' }}</td></tr>
+    <tr><th class="pt-lbl">INTERIM REP 2 DATE: (If Any)</th>          <td class="pt-val">{{ $completionPrelim ?? '—' }}</td></tr>
+    <tr><th class="pt-lbl">FULL REP DATE</th>                          <td class="pt-val">{{ $completionFull ?? '—' }}</td></tr>
+    <tr><th class="pt-lbl">REVISED REP DATE</th>                       <td class="pt-val">{{ data_get($request->meta, 'revised_date') ?: '—' }}</td></tr>
 </table>
 
 @if(! empty($reportType))
@@ -353,56 +378,48 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 </div>
 @endif
 
-<div class="clause-box">
-    <div class="ct">COMPLIANCE CLAUSE</div>
+<div class="pb"></div>
+
+<div class="sh-blk">COMPLIANCE CLAUSE</div>
+<p class="body-p">
     This report confirms that valid consent has been obtained from the data subject. All personal data has been
     collected, processed, and safeguarded in compliance with the Personal Data Protection Act 2010 (Act 709),
     as amended by the Personal Data Protection (Amendment) Act 2024 and international standards (ISO 27001 / ISO 31000).
-    @if($consentedCount > 0)
-    Consent records on file for {{ $consentedCount }} of {{ $totalCandidates }} candidate(s).
-    @endif
-</div>
+    @if($consentedCount > 0) Consent records on file for {{ $consentedCount }} of {{ $totalCandidates }} candidate(s).@endif
+</p>
 
-<div class="disc-box">
-    <div class="ct">LEGAL DISCLAIMER</div>
-    <ul>
-        <li><strong>Permitted Use:</strong> Legitimate business purposes only.</li>
-        <li><strong>Prohibited Use:</strong> Fraud, stalking, identity theft, or illegal activity.</li>
-        <li><strong>Consumer Report Limitation:</strong> NRH is not a consumer reporting agency.</li>
-        <li><strong>Confidentiality:</strong> Information must not be disclosed to unauthorised parties.</li>
-        <li><strong>Source of Records:</strong> Records are obtained directly from the keeper of records. If such records are not updated or contain inaccuracies, NRH excludes liability for reliance on them.</li>
-    </ul>
-</div>
+<div class="sh-blk">LEGAL DISCLAIMER</div>
+<ul class="body-ul">
+    <li><strong>Permitted Use:</strong> Legitimate business purposes only.</li>
+    <li><strong>Prohibited Use:</strong> Fraud, stalking, identity theft, or illegal activity.</li>
+    <li><strong>Consumer-Report Limitation:</strong> NRH is not a consumer-reporting agency.</li>
+    <li><strong>Confidentiality:</strong> Information must not be disclosed to unauthorized parties.</li>
+    <li><strong>Source of Records:</strong> Records are obtained directly from the keeper of records. If such records are not updated or contain inaccuracies, NRH excludes liability for reliance on them.</li>
+</ul>
 
-<div class="sh-erm">ERM COMPLIANCE &amp; AUDIT-READY REPORTING</div>
-<div style="padding:7px 12px; border:1px solid #c8ddd4; background:#f4faf7; font-size:8.5pt; line-height:1.6; margin-bottom:8px;">
+<div class="sh-blk">ERM COMPLIANCE &amp; AUDIT-READY REPORTING</div>
+<p class="body-p">
     ERM mapping ensures NRH&rsquo;s professional reporting is standardized (ISO&nbsp;27001 / ISO&nbsp;31000) and audit-ready,
     allowing HR and compliance teams to interpret results with consistency and confidence.
-</div>
+</p>
 
-<div class="sh">DATA REPORT LEGEND</div>
-<table class="rt" style="margin-bottom:0;">
-    <tr><th class="lbl" style="width:30%;">CLEAN RESULT</th>          <td class="val">No records or adverse findings identified.</td></tr>
-    <tr><th class="lbl">ADVERSE RESULT</th>                            <td class="val">Negative findings detected.</td></tr>
-    <tr><th class="lbl">RECORD IDENTIFIED</th>                         <td class="val">Record found in screening.</td></tr>
-    <tr><th class="lbl">AWAITING SCREENING</th>                       <td class="val">This scope has been ordered but screening has not started yet.</td></tr>
-</table>
-<table class="rt" style="margin-top:0;">
+<div class="sh-blk" style="margin-bottom:0;">DATA REPORT LEGEND</div>
+<table class="lgt">
+    <tr><td class="lg-lbl">CLEAN RESULT</td><td colspan="2">No records or adverse findings identified.</td></tr>
+    <tr><td class="lg-lbl">ADVERSE RESULT</td><td colspan="2">Negative findings detected.</td></tr>
+    <tr><td class="lg-lbl">RECORD IDENTIFIED</td><td colspan="2">Record found in screening.</td></tr>
     <tr>
-        <th class="lbl" style="width:30%;" rowspan="3">RISK MATRIX INTERPRETATION</th>
-        <td style="background:#c4453a; color:#fff; font-weight:bold; width:5%; text-align:center; border:1px solid #2a2a2a;">&#9679;</td>
-        <td style="width:15%; font-weight:bold; border:1px solid #2a2a2a; padding:5px 8px;">HIGH</td>
-        <td style="border:1px solid #2a2a2a; padding:5px 8px; font-size:8pt;">Significant risk. Immediate attention and enhanced due diligence required.</td>
+        <td class="lg-lbl" rowspan="3">RISK MATRIX INTERPRETATION</td>
+        <td class="lg-dot"><span style="display:inline-block; width:12px; height:12px; border-radius:6px; background:#CC0000;"></span></td>
+        <td class="lg-lvl">High</td>
     </tr>
     <tr>
-        <td style="background:#d97706; color:#fff; font-weight:bold; text-align:center; border:1px solid #2a2a2a;">&#9679;</td>
-        <td style="font-weight:bold; border:1px solid #2a2a2a; padding:5px 8px;">MODERATE</td>
-        <td style="border:1px solid #2a2a2a; padding:5px 8px; font-size:8pt;">Moderate risk. Further review and monitoring recommended.</td>
+        <td class="lg-dot"><span style="display:inline-block; width:12px; height:12px; border-radius:6px; background:#FFC000;"></span></td>
+        <td class="lg-lvl">Moderate</td>
     </tr>
     <tr>
-        <td style="background:#046c4e; color:#fff; font-weight:bold; text-align:center; border:1px solid #2a2a2a;">&#9679;</td>
-        <td style="font-weight:bold; border:1px solid #2a2a2a; padding:5px 8px;">LOW</td>
-        <td style="border:1px solid #2a2a2a; padding:5px 8px; font-size:8pt;">No significant risk. Candidate cleared for compliance integrity.</td>
+        <td class="lg-dot"><span style="display:inline-block; width:12px; height:12px; border-radius:6px; background:#00B050;"></span></td>
+        <td class="lg-lvl">Low</td>
     </tr>
 </table>
 
