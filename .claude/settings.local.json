@@ -81,7 +81,12 @@
       "Bash(grep *)",
       "Bash(mkdir -p /Users/anwarsaad/Herd/nrh-intelligence/app/Traits)",
       "Bash(mkdir -p /Users/anwarsaad/Herd/nrh-intelligence/app/Support)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(perl -0pi -e 's/ background:#1a3a2a;//g' resources/views/reports/screening.blade.php)",
+      "Bash(perl -0pi -e 's/ style=\"background:#1a3a2a;\"//g' resources/views/reports/screening.blade.php)",
+      "Bash(perl -i -pe ' *)",
+      "Bash(perl -0pi -e ' *)",
+      "Bash(./vendor/bin/pint --test resources/views)"
     ]
   }
 }

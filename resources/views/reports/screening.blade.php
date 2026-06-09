@@ -24,25 +24,39 @@ body { font-family: 'Courier Prime', 'Courier', monospace; font-size: 8.5pt; col
       font-size: 7pt; color: #888; text-align: center;
       font-family: 'Oswald', sans-serif; letter-spacing: 0.03em; }
 
-/* ── Section headers ── */
-.sh  { background: #023527; color: #d4af37; padding: 7px 12px; font-weight: bold;
-       font-size: 9.5pt; margin-top: 12px; margin-bottom: 0; letter-spacing: 0.1em;
+/* ── Section headers (Word palette) ── */
+/* .sh = black top-level section bar */
+.sh  { background: #000; color: #fff; padding: 6px 12px; font-weight: bold;
+       font-size: 9.5pt; margin-top: 12px; margin-bottom: 0; letter-spacing: 0.08em;
        font-family: 'Oswald', sans-serif; }
-.sh-erm { background: #1a3a2a; color: #d4af37; padding: 6px 12px; font-weight: bold;
-          font-size: 9pt; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.08em;
-          font-family: 'Oswald', sans-serif; border-left: 4px solid #d4af37; }
-.shs { background: #d4af37; color: #1a1a1a; padding: 5px 10px; font-weight: bold;
+/* gold sub-title / divider bar (#C5A82D) */
+.sh-gld { background: #C5A82D; color: #000; padding: 5px 12px; font-weight: bold;
+          font-size: 9pt; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.05em;
+          font-family: 'Oswald', sans-serif; }
+/* cream terminology / index header bar (#DDD9C3) */
+.sh-crm { background: #DDD9C3; color: #000; padding: 5px 12px; font-weight: bold;
+          font-size: 9pt; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.05em;
+          font-family: 'Oswald', sans-serif; }
+/* olive header bar (#76923C) */
+.sh-olv { background: #76923C; color: #fff; padding: 5px 12px; font-weight: bold;
+          font-size: 9pt; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.05em;
+          font-family: 'Oswald', sans-serif; }
+/* legacy alias — kept dark green for any unconverted usage */
+.sh-erm { background: #053827; color: #fff; padding: 6px 12px; font-weight: bold;
+          font-size: 9pt; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.06em;
+          font-family: 'Oswald', sans-serif; }
+.shs { background: #C5A82D; color: #000; padding: 5px 10px; font-weight: bold;
        font-size: 9pt; margin-top: 0; margin-bottom: 0;
        font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
-.shd { background: #1a3a2a; color: #d4af37; padding: 4px 10px; font-size: 8pt;
-       font-weight: bold; letter-spacing: 0.14em; margin-top: 10px; margin-bottom: 0;
+.shd { background: #053827; color: #fff; padding: 5px 10px; font-size: 8.5pt;
+       font-weight: bold; letter-spacing: 0.08em; margin-top: 10px; margin-bottom: 0;
        font-family: 'Oswald', sans-serif; }
 
 /* ── Tables ── */
 table { border-collapse: collapse; }
 table.rt { width: 100%; margin-bottom: 8px; page-break-inside: avoid; }
 table.rt td, table.rt th { border: 1px solid #2a2a2a; padding: 5px 8px; vertical-align: top; }
-table.rt th.lbl { background: #023527; color: #d4af37; font-weight: bold; text-align: left;
+table.rt th.lbl { background: #76923C; color: #fff; font-weight: bold; text-align: left;
                   font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; font-size: 8.5pt; }
 table.rt td.val { background: #fff; }
 table.rt tr.div td { background: #d4af37; color: #1a1a1a; font-weight: bold; padding: 5px 10px;
@@ -60,9 +74,10 @@ table.pt th.pt-lbl { background: #fff; color: #000; font-weight: bold;
 table.pt td.pt-val { background: #fff; color: #000; }
 
 /* ── Word-exact black section bars + plain content (Page 2) ── */
-.sh-blk { background: #000; color: #fff; padding: 7px 12px; font-weight: bold;
-          font-size: 9.5pt; margin-top: 12px; margin-bottom: 6px; letter-spacing: 0.08em;
-          font-family: 'Oswald', sans-serif; text-align: left; }
+table.sh-blk { width: 100%; margin: 12px 0 6px; border-collapse: collapse; page-break-inside: avoid; }
+table.sh-blk td { background: #000; color: #fff; height: 28px; padding: 4px 12px;
+                  font-weight: bold; font-size: 9.5pt; letter-spacing: 0.08em;
+                  font-family: 'Oswald', sans-serif; text-align: left; vertical-align: middle; }
 .body-p { font-size: 8.5pt; line-height: 1.6; margin: 0 0 10px; text-align: left; }
 ul.body-ul { padding-left: 18px; margin: 0 0 10px; font-size: 8.5pt; line-height: 1.6; }
 ul.body-ul li { margin-bottom: 3px; }
@@ -109,35 +124,37 @@ table.lgt td.lg-lvl { width: 60%; font-weight: bold; }
 
 /* ── Risk matrix summary table (per candidate) ── */
 table.rmt { width: 100%; margin-bottom: 10px; }
-table.rmt th { background: #023527; color: #d4af37; font-weight: bold; padding: 5px 8px;
-               border: 1px solid #111; font-size: 8.5pt; text-align: left;
+table.rmt th { background: #C5A82D; color: #000; font-weight: bold; padding: 5px 8px;
+               border: 1px solid #000; font-size: 8.5pt; text-align: left;
                font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
-table.rmt td { border: 1px solid #ccc; padding: 5px 8px; font-size: 8pt; vertical-align: middle; }
+table.rmt td { border: 1px solid #000; padding: 5px 8px; font-size: 8pt; vertical-align: middle; }
+table.rmt td.rmt-scope { background: #76923C; color: #fff; font-weight: bold;
+               font-family: 'Oswald', sans-serif; }
 
 /* ── Compliance Risk Heatmap ── */
 table.hmt { width: 100%; margin-bottom: 10px; }
-table.hmt th { background: #1a3a2a; color: #d4af37; font-weight: bold; padding: 5px 8px;
-               border: 1px solid #2a2a2a; font-size: 8pt;
+table.hmt th { background: #C5A82D; color: #000; font-weight: bold; padding: 5px 8px;
+               border: 1px solid #000; font-size: 8pt;
                font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
-table.hmt td { border: 1px solid #ccc; padding: 5px 8px; font-size: 7.5pt; vertical-align: middle; }
+table.hmt td { border: 1px solid #000; padding: 5px 8px; font-size: 7.5pt; vertical-align: middle; }
 table.hmt td.hm-domain { font-weight: bold; font-family: 'Oswald', sans-serif;
-                          font-size: 8pt; letter-spacing: 0.04em; background: #f5f5f0; }
+                          font-size: 8pt; letter-spacing: 0.04em; background: #76923C; color: #fff; }
 
 /* ── DATA REPORT record entries ── */
-.rec-entry { border: 1px solid #ddd; margin: 6px 0; page-break-inside: avoid; }
-.rec-head  { background: #c4453a; color: #fff; padding: 4px 10px; font-weight: bold; font-size: 8.5pt;
+.rec-entry { border: 1px solid #000; margin: 6px 0; page-break-inside: avoid; }
+.rec-head  { background: #DDD9C3; color: #002060; padding: 4px 10px; font-weight: bold; font-size: 8.5pt;
              font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
 .rec-body  { padding: 6px 10px; }
 table.rf   { width: 100%; }
-table.rf td { border: 1px solid #eee; padding: 4px 8px; font-size: 8pt; }
-table.rf td.rfl { background: #f5f5f0; font-weight: bold; width: 32%; }
+table.rf td { border: 1px solid #000; padding: 4px 8px; font-size: 8pt; }
+table.rf td.rfl { background: #fff; color: #C00000; font-weight: bold; width: 32%; }
 
 /* ── Credential / Employment validation matrix ── */
 table.cmt { width: 100%; margin: 6px 0 10px; }
-table.cmt th { background: #023527; color: #d4af37; padding: 4px 8px; border: 1px solid #2a2a2a;
+table.cmt th { background: #76923C; color: #fff; padding: 4px 8px; border: 1px solid #000;
                font-size: 8pt; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
-table.cmt td { border: 1px solid #ccc; padding: 4px 8px; font-size: 8pt; vertical-align: middle; }
-table.cmt td.cm-aspect { font-weight: bold; background: #f5f5f0; width: 20%; }
+table.cmt td { border: 1px solid #000; padding: 4px 8px; font-size: 8pt; vertical-align: middle; }
+table.cmt td.cm-aspect { font-weight: bold; background: #fff; color: #000; width: 20%; }
 .match-M  { background: #ecfdf5; color: #023527; font-weight: bold; }
 .match-PM { background: #fffbeb; color: #92400e; font-weight: bold; }
 .match-NR { background: #fff7ed; color: #c2410c; font-weight: bold; }
@@ -149,9 +166,9 @@ table.cmt td.cm-aspect { font-weight: bold; background: #f5f5f0; width: 20%; }
 
 /* ── Recognition matrix ── */
 table.rct { width: 100%; margin: 6px 0 10px; }
-table.rct th { background: #1a3a2a; color: #d4af37; padding: 4px 8px; border: 1px solid #2a2a2a;
+table.rct th { background: #76923C; color: #fff; padding: 4px 8px; border: 1px solid #000;
                font-size: 8pt; font-family: 'Oswald', sans-serif; }
-table.rct td { border: 1px solid #ccc; padding: 4px 8px; font-size: 8pt; }
+table.rct td { border: 1px solid #000; padding: 4px 8px; font-size: 8pt; }
 
 /* ── Overall ERM risk box ── */
 .erm-overall { padding: 7px 12px; margin: 6px 0; border: 1px solid #2a2a2a; font-size: 8.5pt; }
@@ -162,12 +179,13 @@ table.rct td { border: 1px solid #ccc; padding: 4px 8px; font-size: 8pt; }
 
 /* ── Referee section ── */
 table.ref-t { width: 100%; margin: 6px 0; }
-table.ref-t th { background: #023527; color: #d4af37; padding: 4px 8px; border: 1px solid #2a2a2a;
+table.ref-t th { background: #76923C; color: #fff; padding: 4px 8px; border: 1px solid #000;
                  font-size: 8pt; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
-table.ref-t td { border: 1px solid #ccc; padding: 4px 8px; font-size: 8pt; vertical-align: top; }
-table.ref-t td.ref-lbl { background: #f5f5f0; font-weight: bold; width: 32%; }
-.stars { color: #d4af37; font-size: 9pt; }
-.qa-category { background: #1a3a2a; color: #d4af37; padding: 3px 8px; font-weight: bold;
+table.ref-t td { border: 1px solid #000; padding: 4px 8px; font-size: 8pt; vertical-align: top; }
+table.ref-t td.ref-lbl { background: #76923C; color: #fff; font-weight: bold; width: 32%;
+                         font-family: 'Oswald', sans-serif; }
+.stars { color: #C5A82D; font-size: 9.5pt; font-family: 'DejaVu Sans', sans-serif; letter-spacing: 0.5px; }
+.qa-category { background: #76923C; color: #fff; padding: 3px 8px; font-weight: bold;
                font-size: 8pt; font-family: 'Oswald', sans-serif; margin-top: 6px; }
 .qa-reply { padding: 5px 8px; border: 1px solid #ddd; font-size: 8pt; background: #fafafa;
             min-height: 20px; }
@@ -177,10 +195,10 @@ table.ref-t td.ref-lbl { background: #f5f5f0; font-weight: bold; width: 32%; }
 
 /* ── Master Index ── */
 table.mi { width: 100%; margin-bottom: 10px; }
-table.mi th { background: #023527; color: #d4af37; padding: 5px 8px; border: 1px solid #2a2a2a;
+table.mi th { background: #DDD9C3; color: #000; padding: 5px 8px; border: 1px solid #000;
               font-size: 8pt; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
-table.mi td { border: 1px solid #ccc; padding: 5px 8px; font-size: 8pt; vertical-align: top; }
-table.mi td.mi-lbl { background: #f5f5f0; font-weight: bold; }
+table.mi td { border: 1px solid #000; padding: 5px 8px; font-size: 8pt; vertical-align: top; }
+table.mi td.mi-lbl { background: #DDD9C3; color: #000; font-weight: bold; }
 
 /* ── Helpers ── */
 .pb   { page-break-after: always; }
@@ -215,13 +233,14 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         if (!empty($f['risk_level'])) return $f['risk_level'];
         return match($st) { 'complete' => 'low', 'flagged' => 'high', default => 'nil' };
     };
-    $riskBadge = function(string $lv): string {
+    $dot = fn(string $c): string => '<span style="font-family:\'DejaVu Sans\', sans-serif; color:'.$c.'; font-size:8pt;">&#9679;</span>';
+    $riskBadge = function(string $lv) use ($dot): string {
         return match($lv) {
-            'high'     => '<span class="ri-h">&#9679; HIGH</span>',
-            'medium'   => '<span class="ri-m">&#9679; MODERATE</span>',
-            'low'      => '<span class="ri-l">&#9679; LOW</span>',
-            'critical' => '<span class="ri-c">&#9679; CRITICAL</span>',
-            default    => '<span class="ri-n">&#9679; NIL</span>',
+            'high'     => $dot('#CC0000').' <span class="bold">High</span>',
+            'medium'   => $dot('#FFC000').' <span class="bold">Moderate</span>',
+            'low'      => $dot('#00B050').' <span class="bold">Low</span>',
+            'critical' => $dot('#7C3AED').' <span class="bold">Critical</span>',
+            default    => $dot('#BFBFBF').' <span class="bold">Nil</span>',
         };
     };
     $resultLabel = function(string $t): string {
@@ -229,7 +248,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             'clean'            => 'CLEAN RESULT',
             'record_identified'=> 'RECORD IDENTIFIED',
             'adverse'          => 'ADVERSE RESULT',
-            'not_requested'    => 'AWAITING SCREENING',
+            'not_requested'    => 'PENDING',
             'in_progress'      => 'IN PROGRESS',
             default            => 'PENDING',
         };
@@ -258,7 +277,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         if (!empty($f['implication'])) return $f['implication'];
         return match($t) {
             'clean'            => 'No Issues Found',
-            'not_requested'    => 'Awaiting Screening',
+            'not_requested'    => 'Pending',
             'in_progress'      => 'Pending',
             'record_identified'=> 'Record Found',
             'adverse'          => 'Adverse Finding',
@@ -380,7 +399,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 
 <div class="pb"></div>
 
-<div class="sh-blk">COMPLIANCE CLAUSE</div>
+<table class="sh-blk"><tr><td>COMPLIANCE CLAUSE</td></tr></table>
 <p class="body-p">
     This report confirms that valid consent has been obtained from the data subject. All personal data has been
     collected, processed, and safeguarded in compliance with the Personal Data Protection Act 2010 (Act 709),
@@ -388,7 +407,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     @if($consentedCount > 0) Consent records on file for {{ $consentedCount }} of {{ $totalCandidates }} candidate(s).@endif
 </p>
 
-<div class="sh-blk">LEGAL DISCLAIMER</div>
+<table class="sh-blk"><tr><td>LEGAL DISCLAIMER</td></tr></table>
 <ul class="body-ul">
     <li><strong>Permitted Use:</strong> Legitimate business purposes only.</li>
     <li><strong>Prohibited Use:</strong> Fraud, stalking, identity theft, or illegal activity.</li>
@@ -397,16 +416,15 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     <li><strong>Source of Records:</strong> Records are obtained directly from the keeper of records. If such records are not updated or contain inaccuracies, NRH excludes liability for reliance on them.</li>
 </ul>
 
-<div class="sh-blk">ERM COMPLIANCE &amp; AUDIT-READY REPORTING</div>
+<table class="sh-blk"><tr><td>ERM COMPLIANCE &amp; AUDIT-READY REPORTING</td></tr></table>
 <p class="body-p">
     ERM mapping ensures NRH&rsquo;s professional reporting is standardized (ISO&nbsp;27001 / ISO&nbsp;31000) and audit-ready,
     allowing HR and compliance teams to interpret results with consistency and confidence.
 </p>
 
-<div class="sh-blk" style="margin-bottom:0;">DATA REPORT LEGEND</div>
+<table class="sh-blk" style="margin-bottom:0;"><tr><td>DATA REPORT LEGEND</td></tr></table>
 <table class="lgt">
     <tr><td class="lg-lbl">CLEAN RESULT</td><td colspan="2">No records or adverse findings identified.</td></tr>
-    <tr><td class="lg-lbl">ADVERSE RESULT</td><td colspan="2">Negative findings detected.</td></tr>
     <tr><td class="lg-lbl">RECORD IDENTIFIED</td><td colspan="2">Record found in screening.</td></tr>
     <tr>
         <td class="lg-lbl" rowspan="3">RISK MATRIX INTERPRETATION</td>
@@ -430,8 +448,6 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 ═══════════════════════════════════════════ --}}
 @foreach($candidates as $candidateIndex => $candidate)
 
-<div class="sh">CANDIDATE {{ $candidateIndex + 1 }} — {{ strtoupper($candidate->name) }}</div>
-
 {{-- ── Candidate Info ── --}}
 @php
     // Locate the candidate's Name & ID screening scope to surface its result here.
@@ -450,7 +466,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $nidVer   = $nidF['verification_method']
         ?? "Verification was conducted using the candidate's Name and ID against the official keeper of identity records (National Registration Department of Malaysia – NRD).";
 @endphp
-<div class="shs">CANDIDATE INFO</div>
+<div class="shd">CANDIDATE INFO</div>
 <table class="rt">
     <tr>
         <th class="lbl" style="width:38%;">CANDIDATE NAME</th>
@@ -474,7 +490,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         <td class="val">{!! $riskBadge($nidLv) !!}&nbsp; {{ $nidStat }}</td>
     </tr>
     <tr>
-        <th class="lbl" style="background:#1a3a2a;">VERIFICATION METHOD</th>
+        <th class="lbl">VERIFICATION METHOD</th>
         <td class="val small">{{ $nidVer }}</td>
     </tr>
     @php $cn = $candidate->latestConsent; @endphp
@@ -491,7 +507,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 </table>
 
 {{-- ── Risk Matrix Summary ── --}}
-<div class="sh">RISK MATRIX – COMPLIANCE SCREENING DATA REPORT SUMMARY</div>
+<div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:9.5pt; letter-spacing:0.08em; color:#000; margin:12px 0 4px;">RISK MATRIX – COMPLIANCE SCREENING DATA REPORT SUMMARY</div>
 <table class="rmt">
     <tr>
         <th style="width:36%;">SCOPE</th>
@@ -508,9 +524,8 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         $pIm = $getImplication($pT, $pF);
     @endphp
     <tr>
-        <td>
+        <td class="rmt-scope">
             {{ $scope->name }}
-            @if($scope->category)<br><span class="muted small">{{ $scope->category }}</span>@endif
         </td>
         <td class="{{ match($pT) { 'clean','not_requested' => 'ri-l', 'record_identified','adverse' => 'ri-h', default => 'muted' } }} bold">
             {{ $resultLabel($pT) }}
@@ -538,7 +553,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $domainOrder = ['LEGAL RISK','INTERNATIONAL RISK','FINANCIAL RISK','POLITICAL RISK','REPUTATIONAL RISK','REGULATORY RISK','OTHER'];
 @endphp
 @if(count($heatmapRows))
-<div class="sh" style="margin-top:8px;">COMPLIANCE RISK HEATMAP</div>
+<div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:9.5pt; letter-spacing:0.08em; color:#000; margin:12px 0 4px;">COMPLIANCE RISK HEATMAP</div>
 <table class="hmt">
     <tr>
         <th style="width:22%;">DOMAIN</th>
@@ -573,9 +588,10 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div class="pb"></div>
 
 {{-- ── DATA REPORT blocks ── --}}
-<div class="sh">COMPLIANCE SCREENING DATA REPORT — {{ strtoupper($candidate->name) }}</div>
+<div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:9.5pt; letter-spacing:0.08em; color:#000; text-align:center; margin:12px 0 4px;">COMPLIANCE SCREENING DATA REPORT</div>
 
-<div style="margin:6px 0 8px; font-size:8.5pt; line-height:1.6; color:#333;">
+<div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:8.5pt; letter-spacing:0.05em; color:#000; margin:6px 0 2px;">DATA REPORT SCREENING:</div>
+<div style="margin:0 0 8px; font-size:8.5pt; line-height:1.6; color:#333;">
     The compliance screening framework evaluates exposures across six key domains: legal, international, financial,
     political, reputational, and regulatory risk. It encompasses checks such as crime integrity, corruption records,
     global sanctions, AML/CTF, PEPs, civil and financial defaults, directorship and shareholding risks, and
@@ -606,25 +622,21 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     <table class="rt" style="margin-bottom:0;">
         <tr>
             <th class="lbl" style="width:22%;">SCOPE</th>
-            <td class="val">
+            <td class="val" style="background:#C5A82D; color:#000;">
                 <span class="bold">{{ strtoupper($scope->name) }}</span>
-                @if($scope->category)<span class="muted small"> — {{ $scope->category }}</span>@endif
-                @if($scopeDesc && $scopeDesc !== $scope->name)
-                <br><span class="small" style="color:#444; display:block; margin-top:2px;">{{ $scopeDesc }}</span>
-                @endif
             </td>
         </tr>
         <tr>
             <th class="lbl">RESULT</th>
-            <td class="val {{ $rCss }}">{{ $rLabel }}</td>
+            <td class="val bold" style="background:#DDD9C3; color:#002060;">{{ $rLabel }}</td>
         </tr>
         <tr>
-            <th class="lbl" style="background:#1a3a2a;">RISK STATUS</th>
+            <th class="lbl">RISK STATUS</th>
             <td class="val">{!! $riskBadge($rLevel) !!}&nbsp; {{ $rStat }}</td>
         </tr>
         @if($comment)
         <tr>
-            <th class="lbl" style="background:#1a3a2a;">NOTES</th>
+            <th class="lbl">NOTES</th>
             <td class="val">{!! nl2br(e($comment)) !!}</td>
         </tr>
         @endif
@@ -673,20 +685,11 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             </div>
         </div>
 
-    {{-- Auto-generated clean/not-requested description --}}
-    @elseif($rType === 'clean')
-        <div style="padding:5px 10px; background:#ecfdf5; border:1px solid #b7f2d4; margin:4px 0; font-size:8.5pt; color:#023527;">
-            No risk match identified based on the identity details provided within this scope of screening.
-        </div>
-    @elseif($rType === 'not_requested')
-        <div style="padding:5px 10px; background:#f0f4f8; border:1px solid #cdd9e5; margin:4px 0; font-size:8.5pt; color:#4a5568;">
-            This scope has been ordered but screening has not started yet.
-        </div>
     @endif
 
     <table class="rt" style="margin-top:4px; margin-bottom:0;">
         <tr>
-            <th class="lbl" style="width:22%; background:#1a3a2a;">VERIFICATION METHOD</th>
+            <th class="lbl" style="width:22%;">VERIFICATION METHOD</th>
             <td class="val small">
                 @if($verMethod){{ $verMethod }}@else
                 Verification was conducted using the candidate's Name and ID against authoritative databases and declared information.
@@ -696,7 +699,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         </tr>
         @if($scope->turnaround_hours)
         <tr>
-            <th class="lbl" style="background:#1a3a2a;">SLA / TAT</th>
+            <th class="lbl">SLA / TAT</th>
             <td class="val small">
                 Target: {{ $scope->turnaround_hours }}h.
                 @if($scope->pivot->assigned_at)
@@ -724,7 +727,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 ═══════════════════════════════════════════ --}}
 <div class="sh">PROFESSIONAL COMPETENCY VALIDATION REPORT</div>
 
-<div class="sh-erm" style="margin-top:6px;">REPORT TERMINOLOGY</div>
+<div class="sh-crm" style="margin-top:6px;">REPORT TERMINOLOGY</div>
 <table class="cmt" style="margin-top:4px;">
     <tr>
         <th style="width:20%;">SCORES PER ASPECT</th>
@@ -735,28 +738,28 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     </tr>
     <tr>
         <td class="match-M bold">MATCH</td>
-        <td style="text-align:center; background:#ecfdf5;">&#9679;</td>
+        <td style="text-align:center;">{!! $dot('#00B050') !!}</td>
         <td class="risk-low bold">LOW</td>
         <td>Provided info consistent with verified records.</td>
         <td>Verified. Safe to proceed.</td>
     </tr>
     <tr>
         <td class="match-PM bold">PARTIAL MATCH</td>
-        <td style="text-align:center; background:#fffbeb;">&#9679;</td>
+        <td style="text-align:center;">{!! $dot('#00B050') !!}</td>
         <td class="risk-moderate bold">MODERATE</td>
         <td>Record mostly consistent but not exact.</td>
         <td>Minor variation. Acceptable with caution.</td>
     </tr>
     <tr>
         <td class="match-NR bold">NO RECORD</td>
-        <td style="text-align:center; background:#fff7ed;">&#9679;</td>
+        <td style="text-align:center;">{!! $dot('#FFC000') !!}</td>
         <td class="risk-high bold">HIGH</td>
         <td>No official record exists.</td>
         <td>Missing record. Needs additional document.</td>
     </tr>
     <tr>
         <td class="match-D bold">DISCREPANCY</td>
-        <td style="text-align:center; background:#fef2f2;">&#9679;</td>
+        <td style="text-align:center;">{!! $dot('#CC0000') !!}</td>
         <td class="risk-critical bold">CRITICAL</td>
         <td>Information differs significantly or is false.</td>
         <td>Potential fraud. Serious concern for credibility.</td>
@@ -806,7 +809,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             ]];
         }
     @endphp
-    <div class="sh-erm" style="margin-top:8px;">ACADEMIC CREDENTIAL VALIDATION</div>
+    <div class="sh" style="margin-top:8px;">ACADEMIC CREDENTIAL VALIDATION</div>
 
     @if(!empty($aCredentials))
         @foreach($aCredentials as $aCredIdx => $cred)
@@ -817,12 +820,12 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             $aOverallRisk = $cred['overall_risk'] ?? null;
             $aOverallAct  = $cred['overall_action'] ?? null;
         @endphp
-        <div style="padding:5px 12px; background:#f5f5f0; border:1px solid #ccc; font-weight:bold; font-size:8.5pt; margin:{{ $aCredIdx === 0 ? '0' : '8px 0 0' }};">
+        <div style="padding:5px 12px; background:#C5A82D; color:#000; border:1px solid #000; font-weight:bold; font-size:8.5pt; font-family:'Oswald',sans-serif; margin:{{ $aCredIdx === 0 ? '0' : '8px 0 0' }};">
             {{ strtoupper($aInstitution) }}
         </div>
 
         @if($aValidation)
-        <div class="sh-erm" style="font-size:7.5pt; margin-top:4px;">ACADEMIC CREDENTIAL VALIDATION MATRIX</div>
+        <div class="sh-gld" style="font-size:7.5pt; margin-top:4px;">ACADEMIC CREDENTIAL VALIDATION MATRIX</div>
         <table class="cmt">
             <tr>
                 <th style="width:20%;">ASPECT</th>
@@ -849,7 +852,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         @endif
 
         @if($aRecognition)
-        <div class="sh-erm" style="font-size:7.5pt; margin-top:4px;">RISK MATRIX FOR RECOGNITION + ACCREDITATION</div>
+        <div class="sh-gld" style="font-size:7.5pt; margin-top:4px;">RISK MATRIX FOR RECOGNITION + ACCREDITATION</div>
         <table class="rct">
             <tr>
                 <th style="width:28%;">SCENARIO</th>
@@ -897,7 +900,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     @endforeach
 
 @elseif(!$hasCompetency)
-<div class="sh-erm" style="margin-top:8px;">ACADEMIC CREDENTIAL VERIFICATION</div>
+<div class="sh" style="margin-top:8px;">ACADEMIC CREDENTIAL VERIFICATION</div>
 <table class="rt" style="margin-top:4px;">
     <tr>
         <th class="lbl" style="width:38%;">PROVIDED INFORMATION</th>
@@ -919,13 +922,13 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $eOverallAct  = $eF['overall_action'] ?? null;
     $eComment     = $eF['comment'] ?? null;
 @endphp
-<div class="sh-erm" style="margin-top:8px;">EMPLOYMENT VALIDATION</div>
-<div style="padding:5px 12px; background:#f5f5f0; border:1px solid #ccc; font-weight:bold; font-size:8.5pt; margin-bottom:0;">
+<div class="sh" style="margin-top:8px;">EMPLOYMENT VALIDATION</div>
+<div style="padding:5px 12px; background:#C5A82D; color:#000; border:1px solid #000; font-weight:bold; font-size:8.5pt; font-family:'Oswald',sans-serif; margin-bottom:0;">
     {{ strtoupper($eEmployer) }}
 </div>
 
 @if($eValidation)
-<div class="sh-erm" style="font-size:7.5pt; margin-top:4px;">EMPLOYMENT VALIDATION MATRIX</div>
+<div class="sh-gld" style="font-size:7.5pt; margin-top:4px;">EMPLOYMENT VALIDATION MATRIX</div>
 <table class="cmt">
     <tr>
         <th style="width:22%;">ASPECT</th>
@@ -994,7 +997,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div class="sh">REFEREE INTERVIEW REPORT</div>
 
 {{-- Terminology --}}
-<div class="sh-erm" style="margin-top:6px;">REFEREE CREDIBILITY HIERARCHY RATING (ERM MATRIX)</div>
+<div class="sh-crm" style="margin-top:6px;">REFEREE CREDIBILITY HIERARCHY RATING (ERM MATRIX)</div>
 <table class="ref-t" style="margin-top:4px; margin-bottom:8px;">
     <tr>
         <th style="width:26%;">REFEREE TYPE</th>
@@ -1005,36 +1008,36 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     <tr>
         <td class="ref-lbl bold">DIRECT SUPERVISOR</td>
         <td>Highest – direct oversight of candidate's work</td>
-        <td style="text-align:center;">{!! str_repeat('&#9733;', 5) !!} (5/5)</td>
+        <td style="text-align:center;">{!! $stars(5) !!} (5/5)</td>
         <td class="small">Strongest validation</td>
     </tr>
     <tr>
         <td class="ref-lbl bold">LECTURER / FACULTY PROFESSOR</td>
         <td>High – academic oversight, authority in education</td>
-        <td style="text-align:center;">{!! str_repeat('&#9733;', 4) !!}&#9734; (4/5)</td>
+        <td style="text-align:center;">{!! $stars(4) !!} (4/5)</td>
         <td class="small">Reliable for academic performance.</td>
     </tr>
     <tr>
         <td class="ref-lbl bold">SENIOR COLLEAGUE</td>
         <td>Moderate – peer-level observation</td>
-        <td style="text-align:center;">{!! str_repeat('&#9733;', 3) !!}{!! str_repeat('&#9734;', 2) !!} (3/5)</td>
+        <td style="text-align:center;">{!! $stars(3) !!} (3/5)</td>
         <td class="small">Useful for teamwork and soft skills.</td>
     </tr>
     <tr>
         <td class="ref-lbl bold">COLLEAGUE</td>
         <td>Lower – peer without authority</td>
-        <td style="text-align:center;">{!! str_repeat('&#9733;', 2) !!}{!! str_repeat('&#9734;', 3) !!} (2/5)</td>
+        <td style="text-align:center;">{!! $stars(2) !!} (2/5)</td>
         <td class="small">Insights into daily behaviour.</td>
     </tr>
     <tr>
         <td class="ref-lbl bold">FAMILY MEMBER / ACQUAINTANCE</td>
         <td>Lowest – personal relationship only</td>
-        <td style="text-align:center;">&#9733;{!! str_repeat('&#9734;', 4) !!} (1/5)</td>
+        <td style="text-align:center;">{!! $stars(1) !!} (1/5)</td>
         <td class="small">Highly biased. Minimal credibility.</td>
     </tr>
 </table>
 
-<div class="sh-erm" style="margin-top:4px;">QUESTION RELIABILITY RATING (ERM MATRIX)</div>
+<div class="sh-crm" style="margin-top:4px;">QUESTION RELIABILITY RATING (ERM MATRIX)</div>
 <table class="ref-t" style="margin-top:4px; margin-bottom:10px;">
     <tr>
         <th style="width:18%; text-align:center;">CREDIBILITY</th>
@@ -1043,31 +1046,31 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         <th style="width:44%;">MEANING</th>
     </tr>
     <tr>
-        <td style="text-align:center;">{!! str_repeat('&#9733;', 5) !!} (5/5)</td>
+        <td style="text-align:center;">{!! $stars(5) !!} (5/5)</td>
         <td class="risk-low bold">Fully reliable. Low Risk</td>
         <td class="bold">OUTSTANDING</td>
         <td class="small">Candidate excelled in all areas. Very strong endorsement.</td>
     </tr>
     <tr>
-        <td style="text-align:center;">{!! str_repeat('&#9733;', 4) !!}&#9734; (4/5)</td>
+        <td style="text-align:center;">{!! $stars(4) !!} (4/5)</td>
         <td class="risk-moderate bold">Strong. Moderate Risk</td>
         <td class="bold">STRONG PERFORMANCE</td>
         <td class="small">Consistently met or exceeded expectations. Positive credibility.</td>
     </tr>
     <tr>
-        <td style="text-align:center;">{!! str_repeat('&#9733;', 3) !!}{!! str_repeat('&#9734;', 2) !!} (3/5)</td>
+        <td style="text-align:center;">{!! $stars(3) !!} (3/5)</td>
         <td class="risk-moderate bold">Moderate Risk</td>
         <td class="bold">ACCEPTABLE / COMPETENT</td>
         <td class="small">Generally met expectations with some inconsistencies. Neutral credibility.</td>
     </tr>
     <tr>
-        <td style="text-align:center;">{!! str_repeat('&#9733;', 2) !!}{!! str_repeat('&#9734;', 3) !!} (2/5)</td>
+        <td style="text-align:center;">{!! $stars(2) !!} (2/5)</td>
         <td class="risk-high bold">Weak. High Risk</td>
         <td class="bold">BELOW AVERAGE</td>
         <td class="small">Showed gaps. Needs supervision. Moderate risk.</td>
     </tr>
     <tr>
-        <td style="text-align:center;">&#9733;{!! str_repeat('&#9734;', 4) !!} (1/5)</td>
+        <td style="text-align:center;">{!! $stars(1) !!} (1/5)</td>
         <td class="risk-critical bold">Very low. Critical Risk</td>
         <td class="bold">VERY WEAK</td>
         <td class="small">Frequently failed to meet expectations. High risk signal.</td>
@@ -1097,7 +1100,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 @if(!empty($referees))
     @foreach($referees as $refIdx => $ref)
     {{-- Credibility Validation --}}
-    <div class="sh-erm" style="margin-top:6px;">REFEREE CREDIBILITY VALIDATION @if(count($referees) > 1)— REFEREE {{ $refIdx + 1 }}@endif</div>
+    <div class="sh-gld" style="margin-top:6px;">REFEREE CREDIBILITY VALIDATION @if(count($referees) > 1)— REFEREE {{ $refIdx + 1 }}@endif</div>
     <table class="ref-t" style="margin-top:4px;">
         <tr><th colspan="3">VALIDATION</th></tr>
         <tr>
@@ -1142,7 +1145,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         <tr>
             <td class="ref-lbl bold">REFEREE CREDIBILITY WEIGHT</td>
             <td colspan="2" class="bold">
-                {!! str_repeat('&#9733;', (int)$ref['credibility_weight']) . str_repeat('&#9734;', max(0, 5 - (int)$ref['credibility_weight'])) !!}
+                {!! $stars((int)$ref['credibility_weight']) !!}
                 ({{ $ref['credibility_weight'] }}/5)
             </td>
         </tr>
@@ -1151,12 +1154,12 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 
     {{-- Q&A --}}
     @if(!empty($ref['questions']))
-    <div class="sh-erm" style="margin-top:6px;">REFEREE INTERVIEW QUESTION AND REPLY</div>
+    <div class="sh-gld" style="margin-top:6px;">REFEREE INTERVIEW QUESTION AND REPLY</div>
     @foreach($ref['questions'] as $qa)
     <div class="qa-category">
         {{ strtoupper($qa['category'] ?? 'QUESTION') }}
         @if(isset($qa['rating']))
-        &nbsp;&nbsp;{!! str_repeat('&#9733;', (int)$qa['rating']) . str_repeat('&#9734;', max(0, 5 - (int)$qa['rating'])) !!} ({{ $qa['rating'] }}/5)
+        &nbsp;&nbsp;{!! $stars((int)$qa['rating']) !!} ({{ $qa['rating'] }}/5)
         @endif
     </div>
     <div class="qa-reply">{{ $qa['reply'] ?? '—' }}</div>
@@ -1165,7 +1168,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 
     {{-- Overall ERM Risk Analysis --}}
     @if(!empty($ref['overall_strong']) || !empty($ref['overall_moderate']) || !empty($ref['overall_weak']))
-    <div class="sh-erm" style="margin-top:6px;">OVERALL ERM RISK ANALYSIS</div>
+    <div class="sh-gld" style="margin-top:6px;">OVERALL ERM RISK ANALYSIS</div>
     @if(!empty($ref['overall_strong']))
     <div class="erm-area-strong"><strong>STRONG AREAS (LOW RISK):</strong> {{ implode(', ', $ref['overall_strong']) }}</div>
     @endif
@@ -1201,7 +1204,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 ═══════════════════════════════════════════ --}}
 <div class="sh">MASTER INDEX OF COMPETENCY &amp; RISK FRAMEWORKS</div>
 
-<div class="sh-erm" style="margin-top:8px;">EDUCATION LEVEL HIERARCHY</div>
+<div class="sh-crm" style="margin-top:8px;">EDUCATION LEVEL HIERARCHY</div>
 <table class="mi" style="margin-top:4px;">
     <tr>
         <th style="width:36%;">LEVEL</th>
@@ -1218,7 +1221,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     <tr><td class="mi-lbl">PROFESSIONAL QUALIFYING CERTIFICATE</td><td>Licensing/qualifying credentials for practice (e.g., CLP, Chartered Accountant, Medical Board exams)</td></tr>
 </table>
 
-<div class="sh-erm" style="margin-top:10px;">RECOGNIZED VS. ACCREDITED DEGREES – COMPARISON MATRIX</div>
+<div class="sh-crm" style="margin-top:10px;">RECOGNIZED VS. ACCREDITED DEGREES – COMPARISON MATRIX</div>
 <table class="mi" style="margin-top:4px;">
     <tr>
         <th style="width:18%;">ASPECT</th>
@@ -1242,12 +1245,12 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     </tr>
     <tr>
         <td class="mi-lbl">Risk Level (ERM)</td>
-        <td><span class="risk-low bold">&#9679; Low Risk</span> if recognized. &nbsp; <span class="risk-high bold">&#9679; High Risk</span> if not recognized.</td>
-        <td><span class="risk-moderate bold">&#9679; Moderate Risk</span> if accredited but not recognized locally. &nbsp; <span class="risk-low bold">&#9679; Low Risk</span> if both.</td>
+        <td><span class="bold">{!! $dot("#00B050") !!} Low Risk</span> if recognized. &nbsp; <span class="bold">{!! $dot("#FFC000") !!} High Risk</span> if not recognized.</td>
+        <td><span class="bold">{!! $dot("#00B0F0") !!} Moderate Risk</span> if accredited but not recognized locally. &nbsp; <span class="bold">{!! $dot("#00B050") !!} Low Risk</span> if both.</td>
     </tr>
 </table>
 
-<div class="sh-erm" style="margin-top:10px;">RISK MATRIX FOR FAKE VS. REAL UNIVERSITIES</div>
+<div class="sh-crm" style="margin-top:10px;">RISK MATRIX FOR FAKE VS. REAL UNIVERSITIES</div>
 <table class="mi" style="margin-top:4px;">
     <tr>
         <th style="width:24%;">SCENARIO</th>
@@ -1259,29 +1262,29 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         <td class="mi-lbl">Real + Accredited</td>
         <td>Recognized by MOHE/MQA</td>
         <td>Program accredited</td>
-        <td style="text-align:center;" class="risk-low bold">&#9679; Low</td>
+        <td style="text-align:center;" class="bold">{!! $dot("#00B050") !!} Low</td>
     </tr>
     <tr>
         <td class="mi-lbl">Real + Not Accredited</td>
         <td>Recognized institution</td>
         <td>Program not accredited</td>
-        <td style="text-align:center;" class="risk-high bold">&#9679; High</td>
+        <td style="text-align:center;" class="bold">{!! $dot("#FFC000") !!} High</td>
     </tr>
     <tr>
         <td class="mi-lbl">Fake / Virtual</td>
         <td>Not recognized</td>
         <td>No accreditation</td>
-        <td style="text-align:center;" class="risk-critical bold">&#9679; Critical</td>
+        <td style="text-align:center;" class="bold">{!! $dot("#CC0000") !!} Critical</td>
     </tr>
     <tr>
         <td class="mi-lbl">Recognized Abroad Only</td>
         <td>Recognized overseas, not by MQA</td>
         <td>Accreditation varies</td>
-        <td style="text-align:center;" class="risk-moderate bold">&#9679; Moderate</td>
+        <td style="text-align:center;" class="bold">{!! $dot("#00B0F0") !!} Moderate</td>
     </tr>
 </table>
 
-<div class="sh-erm" style="margin-top:10px;">OVERALL PRACTICAL / ERM HIRING RISK DECISION FRAMEWORK</div>
+<div class="sh-olv" style="margin-top:10px;">OVERALL PRACTICAL / ERM HIRING RISK DECISION FRAMEWORK</div>
 <table class="mi" style="margin-top:4px;">
     <tr>
         <th style="width:16%;">SCENARIO</th>
@@ -1292,25 +1295,25 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     <tr>
         <td class="mi-lbl risk-low bold">Low Risk</td>
         <td>All aspects verified. Minor variations only in non-critical fields.</td>
-        <td style="text-align:center;" class="risk-low bold">&#9679; Low Risk</td>
+        <td style="text-align:center;" class="bold">{!! $dot("#00B050") !!} Low Risk</td>
         <td>Safe to proceed with hiring.</td>
     </tr>
     <tr>
         <td class="mi-lbl risk-moderate bold">Moderate Risk</td>
         <td>One or two aspects show Partial Match (e.g., dates slightly off, salary variation). No critical discrepancies.</td>
-        <td style="text-align:center;" class="risk-moderate bold">&#9679; Moderate Risk</td>
+        <td style="text-align:center;" class="bold">{!! $dot("#00B0F0") !!} Moderate Risk</td>
         <td>Proceed with caution; request clarification from candidate.</td>
     </tr>
     <tr>
         <td class="mi-lbl risk-high bold">High Risk</td>
         <td>At least one critical aspect shows No Record (e.g., grades missing, employment unverifiable). Other fields verified.</td>
-        <td style="text-align:center;" class="risk-high bold">&#9679; High Risk</td>
+        <td style="text-align:center;" class="bold">{!! $dot("#FFC000") !!} High Risk</td>
         <td>Require secondary evidence (transcripts, pay slips, references) before proceeding.</td>
     </tr>
     <tr>
         <td class="mi-lbl risk-critical bold">Critical Risk</td>
         <td>Any aspect shows Discrepancy (false or significantly different information).</td>
-        <td style="text-align:center;" class="risk-critical bold">&#9679; Critical Risk</td>
+        <td style="text-align:center;" class="bold">{!! $dot("#CC0000") !!} Critical Risk</td>
         <td>Serious concern for credibility. Strong recommendation not to proceed.</td>
     </tr>
 </table>
