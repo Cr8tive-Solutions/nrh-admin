@@ -493,17 +493,6 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         <th class="lbl">VERIFICATION METHOD</th>
         <td class="val small">{{ $nidVer }}</td>
     </tr>
-    @php $cn = $candidate->latestConsent; @endphp
-    @if($cn)
-    <tr>
-        <th class="lbl">CONSENT ON FILE</th>
-        <td class="val small">
-            {{ $cn->consented_at->format('d M Y, H:i') }} &nbsp;·&nbsp;
-            {{ \App\Models\ConsentRecord::evidenceTypes()[$cn->evidence_type] ?? $cn->evidence_type }}
-            <span class="muted">&nbsp;·&nbsp; v{{ $cn->consent_version }}</span>
-        </td>
-    </tr>
-    @endif
 </table>
 
 {{-- ── Risk Matrix Summary ── --}}
@@ -612,7 +601,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $comment  = $findings['comment'] ?? null;
     $records  = $findings['records'] ?? [];
     $legacyRec= $findings['record']  ?? [];
-    $verMethod= $findings['verification_method'] ?? ($scope->description ?? null);
+    $verMethod= $findings['verification_method'] ?? $scope->verification_method ?? ($scope->description ?? null);
     $scopeDesc= $findings['scope_description'] ?? ($scope->description ?? null);
     $tatHours = $scope->pivot->tatHours();
     $finished = in_array($pSt, ['complete', 'flagged']);
