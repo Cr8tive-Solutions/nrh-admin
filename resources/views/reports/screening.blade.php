@@ -624,6 +624,9 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             <th class="lbl" style="width:22%;">SCOPE</th>
             <td class="val" style="background:#C5A82D; color:#000;">
                 <span class="bold">{{ strtoupper($scope->name) }}</span>
+                @if($scopeDesc && $scopeDesc !== $scope->name)
+                <br><span class="small" style="display:block; margin-top:2px;">{{ $scopeDesc }}</span>
+                @endif
             </td>
         </tr>
         <tr>
@@ -687,7 +690,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 
     @endif
 
-    <table class="rt" style="margin-top:4px; margin-bottom:0;">
+    <table class="rt" style="margin-top:-1px; margin-bottom:0;">
         <tr>
             <th class="lbl" style="width:22%;">VERIFICATION METHOD</th>
             <td class="val small">
