@@ -104,7 +104,11 @@
       "Bash(echo \"rc=$?\")",
       "Bash(kill 25033 27053 27951)",
       "Bash(rm -f v2-*.png)",
-      "Bash(pdftoppm -png -r 60 req25_full_report_test.pdf v2)"
+      "Bash(pdftoppm -png -r 60 req25_full_report_test.pdf v2)",
+      "Bash(rm -f v6-*.png)",
+      "Bash(pdftoppm -png -r 60 req25_full_report_test.pdf v6)",
+      "Bash(rm -f v7-*.png)",
+      "Bash(pdftoppm -png -r 60 req25_full_report_test.pdf v7)"
     ]
   }
 }

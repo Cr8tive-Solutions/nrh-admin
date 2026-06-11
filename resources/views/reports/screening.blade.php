@@ -145,6 +145,7 @@ table.drt { width: 100%; margin-bottom: 8px; }
 table.drt td, table.drt th { border: 1px solid #000; padding: 5px 8px; vertical-align: top; font-size: 8.5pt; }
 table.drt th.dr-lbl { background: #76923C; color: #fff; font-weight: bold; text-align: left;
                       font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; width: 24%; }
+table.drt th.dr-lbl-c { vertical-align: middle; }
 table.drt td.dr-scope { background: #C5A82D; color: #000; }
 table.drt td.dr-res   { background: #DDD9C3; color: #002060; font-weight: bold;
                         font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
@@ -669,7 +670,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 @endphp
 <div class="mb8">
     <div class="shd">DATA REPORT</div>
-    <table class="drt" style="margin-bottom:0;">
+    <table class="drt pi" style="margin-bottom:0;">
         <tr>
             <th class="dr-lbl">SCOPE</th>
             <td class="dr-scope" colspan="2">
@@ -679,17 +680,27 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
                 @endif
             </td>
         </tr>
+    </table>
 
-        {{-- Structured record entries (Word: each record opens with a RESULT row) --}}
-        @if(!empty($records))
-            @foreach($records as $ri => $rec)
+    {{-- Structured record entries (Word: each record opens with a RESULT row).
+         Each record is its own sub-table so the RESULT rowspan never splits across pages. --}}
+    @if(!empty($records))
+        @foreach($records as $ri => $rec)
+        @php
+            $recRows = 1
+                + (!empty($rec['title']) ? 1 : 0)
+                + ((!empty($rec['section']) || !empty($rec['description']) || !empty($rec['penalty'])) ? 1 : 0)
+                + count($rec['fields'] ?? [])
+                + (!empty($rec['verdict']) ? 1 : 0)
+                + (!empty($rec['risk_text']) ? 1 : 0);
+        @endphp
+        <table class="drt pi" style="margin-bottom:0; margin-top:-1px;">
             <tr>
-                <th class="dr-lbl">RESULT</th>
+                <th class="dr-lbl dr-lbl-c" rowspan="{{ $recRows }}">RESULT</th>
                 <td class="dr-res" colspan="2">RECORD {{ count($records) > 1 ? $numWord($ri + 1).' ' : '' }}IDENTIFIED</td>
             </tr>
             @if(!empty($rec['title']))
             <tr>
-                <th class="dr-lbl"></th>
                 <td colspan="2">
                     <span class="t-red">{{ strtoupper($rec['title']) }}</span>
                     @if(!empty($rec['act']))<br><span class="small muted">{{ strtoupper($rec['act']) }}</span>@endif
@@ -698,7 +709,6 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             @endif
             @if(!empty($rec['section']) || !empty($rec['description']) || !empty($rec['penalty']))
             <tr>
-                <th class="dr-lbl"></th>
                 @if(!empty($rec['section']))
                 <td style="width:27%;"><span class="t-blue">{{ $rec['section'] }}</span></td>
                 <td>
@@ -717,7 +727,6 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             @if(!empty($rec['fields']))
                 @foreach($rec['fields'] as $fk => $fv)
                 <tr>
-                    <th class="dr-lbl"></th>
                     <td style="width:27%;" class="t-red">{{ $fk }}</td>
                     <td>{{ $fv }}</td>
                 </tr>
@@ -725,7 +734,6 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             @endif
             @if(!empty($rec['verdict']))
             <tr>
-                <th class="dr-lbl"></th>
                 <td style="width:27%;" class="t-blue">Verdict</td>
                 <td class="bold">{{ strtoupper($rec['verdict']) }}</td>
             </tr>
@@ -733,38 +741,41 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             @if(!empty($rec['risk_text']))
             @php $recLv = $rec['risk_level'] ?? $rLevel; @endphp
             <tr>
-                <th class="dr-lbl"></th>
                 <td colspan="2">{!! $lvDot($recLv) !!} <span class="{{ $recLv === 'high' ? 't-risk' : 'bold' }}">Risk Level: {{ $rec['risk_text'] }}</span></td>
             </tr>
             @endif
-            @endforeach
+        </table>
+        @endforeach
 
-        {{-- Legacy key-value record (backwards compatible) --}}
-        @elseif(!empty($legacyRec))
+    {{-- Legacy key-value record (backwards compatible) --}}
+    @elseif(!empty($legacyRec))
+        <table class="drt pi" style="margin-bottom:0; margin-top:-1px;">
             <tr>
-                <th class="dr-lbl">RESULT</th>
+                <th class="dr-lbl dr-lbl-c" rowspan="{{ 1 + count($legacyRec) }}">RESULT</th>
                 <td class="dr-res" colspan="2">RECORD IDENTIFIED</td>
             </tr>
             @foreach($legacyRec as $rk => $rv)
             <tr>
-                <th class="dr-lbl"></th>
                 <td style="width:27%;" class="t-red">{{ $rk }}</td>
                 <td>{{ $rv }}</td>
             </tr>
             @endforeach
+        </table>
 
-        {{-- Clean / pending result --}}
-        @else
+    {{-- Clean / pending result --}}
+    @else
+        <table class="drt pi" style="margin-bottom:0; margin-top:-1px;">
             <tr>
-                <th class="dr-lbl">RESULT</th>
+                <th class="dr-lbl dr-lbl-c" rowspan="2">RESULT</th>
                 <td class="dr-res" colspan="2">{{ $rLabel }}</td>
             </tr>
             <tr>
-                <th class="dr-lbl"></th>
                 <td colspan="2" class="bold">{!! $lvDot($rLevel) !!} Status: {{ $rStat }}</td>
             </tr>
-        @endif
+        </table>
+    @endif
 
+    <table class="drt pi" style="margin-bottom:0; margin-top:-1px;">
         @if($comment)
         <tr>
             <th class="dr-lbl">NOTES</th>
