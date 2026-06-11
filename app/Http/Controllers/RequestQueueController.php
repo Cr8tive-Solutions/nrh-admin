@@ -11,6 +11,7 @@ use App\Services\ReportSnapshot;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class RequestQueueController extends Controller
 {
@@ -322,14 +323,14 @@ class RequestQueueController extends Controller
     public function updateScopeFindings(Request $request, ScreeningRequest $screeningRequest, int $candidateId, int $scopeTypeId)
     {
         $data = $request->validate([
-            'result_type'         => 'nullable|in:clean,record_identified,adverse,not_requested',
-            'risk_level'          => 'nullable|in:high,medium,low,nil',
-            'risk_status_text'    => 'nullable|string|max:500',
-            'implication'         => 'nullable|string|max:500',
+            'result_type' => 'nullable|in:clean,record_identified,adverse,not_requested',
+            'risk_level' => 'nullable|in:high,medium,low,nil',
+            'risk_status_text' => 'nullable|string|max:500',
+            'implication' => 'nullable|string|max:500',
             'verification_method' => 'nullable|string|max:4000',
-            'scope_description'   => 'nullable|string|max:4000',
-            'records_json'        => 'nullable|string|max:65535',
-            'structured_json'     => 'nullable|string|max:200000',
+            'scope_description' => 'nullable|string|max:4000',
+            'records_json' => 'nullable|string|max:65535',
+            'structured_json' => 'nullable|string|max:200000',
         ]);
 
         $candidate = $screeningRequest->candidates()->findOrFail($candidateId);
@@ -401,7 +402,7 @@ class RequestQueueController extends Controller
             $structured = json_decode($data['structured_json'], true);
             if (is_array($structured) && ! empty($structured)) {
                 $scopeType = ScopeType::find($scopeTypeId);
-                $kind = $this->scopeFindingsKind(strtolower(($scopeType->name ?? '').' '.($scopeType->category ?? '')));
+                $kind = $this->scopeFindingsKind($scopeType->name ?? '', $scopeType->category ?? '');
                 $payload = array_merge($payload, $this->normaliseStructuredFindings($kind, $structured));
             }
         }
@@ -412,19 +413,19 @@ class RequestQueueController extends Controller
             ->update(['findings' => empty($payload) ? null : json_encode($payload)]);
 
         AdminAuditLog::record('scope_findings.updated', null, [
-            'request_id'    => $screeningRequest->id,
-            'reference'     => $screeningRequest->reference,
-            'candidate_id'  => $candidate->id,
+            'request_id' => $screeningRequest->id,
+            'reference' => $screeningRequest->reference,
+            'candidate_id' => $candidate->id,
             'scope_type_id' => $scopeTypeId,
-            'result_type'   => $payload['result_type'] ?? null,
-            'risk_level'    => $payload['risk_level'] ?? null,
-            'record_count'  => count($payload['records'] ?? []),
+            'result_type' => $payload['result_type'] ?? null,
+            'risk_level' => $payload['risk_level'] ?? null,
+            'record_count' => count($payload['records'] ?? []),
         ]);
 
         return $this->saveResponse($request, 'Findings saved.', [
-            'candidate_id'  => $candidate->id,
+            'candidate_id' => $candidate->id,
             'scope_type_id' => $scopeTypeId,
-            'has_findings'  => ! empty($payload),
+            'has_findings' => ! empty($payload),
         ]);
     }
 
@@ -432,21 +433,28 @@ class RequestQueueController extends Controller
      * Detect which structured findings form a scope uses, from its name/category.
      * Mirrors the keyword matching in reports/screening.blade.php.
      */
-    private function scopeFindingsKind(string $hay): string
+    private function scopeFindingsKind(string $name, string $category = ''): string
     {
-        $has = fn (array $kw) => \Illuminate\Support\Str::contains($hay, $kw);
+        // The scope NAME wins over the category: categories like
+        // "Employment & Reference Verification" contain keywords for several kinds.
+        $kindOf = function (string $hay): ?string {
+            $hay = strtolower($hay);
+            $has = fn (array $kw) => Str::contains($hay, $kw);
 
-        if ($has(['referee', 'reference'])) {
-            return 'referee';
-        }
-        if ($has(['employment', 'work history'])) {
-            return 'employment';
-        }
-        if ($has(['academic', 'qualification', 'credential', 'education', 'degree', 'certificate', 'certification']) && ! $has(['loan'])) {
-            return 'academic';
-        }
+            if ($has(['referee', 'reference'])) {
+                return 'referee';
+            }
+            if ($has(['employment', 'work history'])) {
+                return 'employment';
+            }
+            if ($has(['academic', 'qualification', 'credential', 'education', 'degree', 'certificate', 'certification']) && ! $has(['loan'])) {
+                return 'academic';
+            }
 
-        return 'generic';
+            return null;
+        };
+
+        return $kindOf($name) ?? $kindOf($category) ?? 'generic';
     }
 
     /**
@@ -456,9 +464,9 @@ class RequestQueueController extends Controller
     private function normaliseStructuredFindings(string $kind, array $s): array
     {
         $matchVals = ['match', 'partial', 'no_record', 'discrepancy'];
-        $riskVals  = ['low', 'moderate', 'high', 'critical'];
-        $str       = fn ($v) => trim((string) ($v ?? ''));
-        $enum      = fn ($v, array $allowed, string $default) => in_array($v, $allowed, true) ? $v : $default;
+        $riskVals = ['low', 'moderate', 'high', 'critical'];
+        $str = fn ($v) => trim((string) ($v ?? ''));
+        $enum = fn ($v, array $allowed, string $default) => in_array($v, $allowed, true) ? $v : $default;
         $splitList = fn ($v) => collect(explode(',', (string) $v))->map(fn ($x) => trim($x))->filter()->values()->all();
 
         $validation = function (array $items, bool $withProvided) use ($str, $enum, $matchVals, $riskVals) {
@@ -476,7 +484,7 @@ class RequestQueueController extends Controller
                     $row['verified'] = $str($v['verified']);
                 }
                 $row['match'] = $enum($v['match'] ?? '', $matchVals, 'match');
-                $row['risk']  = $enum($v['risk'] ?? '', $riskVals, 'low');
+                $row['risk'] = $enum($v['risk'] ?? '', $riskVals, 'low');
                 if ($str($v['interpretation'] ?? '') !== '') {
                     $row['interpretation'] = $str($v['interpretation']);
                 }
@@ -502,39 +510,58 @@ class RequestQueueController extends Controller
 
         if ($kind === 'employment') {
             // Single employer entry per scope.
-            if ($str($s['employer'] ?? '') !== '')  $out['employer'] = $str($s['employer']);
-            if ($str($s['verifier'] ?? '') !== '')  $out['verifier'] = $str($s['verifier']);
+            if ($str($s['employer'] ?? '') !== '') {
+                $out['employer'] = $str($s['employer']);
+            }
+            if ($str($s['verifier'] ?? '') !== '') {
+                $out['verifier'] = $str($s['verifier']);
+            }
             $rows = $validation($s['validation'] ?? [], true);
-            if (! empty($rows)) $out['validation'] = $rows;
+            if (! empty($rows)) {
+                $out['validation'] = $rows;
+            }
             $out = array_merge($out, $overall($s));
         } elseif ($kind === 'academic') {
             // Multiple credentials per scope.
             $credentials = [];
             foreach ($s['credentials'] ?? [] as $c) {
                 $cred = [];
-                if ($str($c['institution'] ?? '') !== '') $cred['institution'] = $str($c['institution']);
-                $rows = $validation($c['validation'] ?? [], false);
-                if (! empty($rows)) $cred['validation'] = $rows;
+                if ($str($c['institution'] ?? '') !== '') {
+                    $cred['institution'] = $str($c['institution']);
+                }
+                if ($str($c['verifier'] ?? '') !== '') {
+                    $cred['verifier'] = $str($c['verifier']);
+                }
+                $rows = $validation($c['validation'] ?? [], true);
+                if (! empty($rows)) {
+                    $cred['validation'] = $rows;
+                }
                 $rec = $c['recognition'] ?? [];
                 if ($str($rec['scenario'] ?? '') !== '') {
                     $cred['recognition'] = [
-                        'scenario'                => $str($rec['scenario']),
+                        'scenario' => $str($rec['scenario']),
                         'institution_recognition' => $str($rec['institution_recognition'] ?? ''),
-                        'program_accreditation'   => $str($rec['program_accreditation'] ?? ''),
-                        'risk_level'              => $enum($rec['risk_level'] ?? '', $riskVals, 'low'),
+                        'program_accreditation' => $str($rec['program_accreditation'] ?? ''),
+                        'risk_level' => $enum($rec['risk_level'] ?? '', $riskVals, 'low'),
                     ];
                 }
                 $cred = array_merge($cred, $overall($c));
-                if (! empty($cred)) $credentials[] = $cred;
+                if (! empty($cred)) {
+                    $credentials[] = $cred;
+                }
             }
-            if (! empty($credentials)) $out['credentials'] = $credentials;
+            if (! empty($credentials)) {
+                $out['credentials'] = $credentials;
+            }
         } elseif ($kind === 'referee') {
             // Multiple referees per scope.
             $referees = [];
             foreach ($s['referees'] ?? [] as $r) {
                 $ref = [];
                 foreach (['referee_name', 'designation', 'relationship', 'affiliated_org'] as $f) {
-                    if ($str($r[$f] ?? '') !== '') $ref[$f] = $str($r[$f]);
+                    if ($str($r[$f] ?? '') !== '') {
+                        $ref[$f] = $str($r[$f]);
+                    }
                 }
                 if (in_array($r['contact_established'] ?? '', ['successful', 'unsuccessful'], true)) {
                     $ref['contact_established'] = $r['contact_established'];
@@ -544,7 +571,9 @@ class RequestQueueController extends Controller
                 }
                 $ref['independent'] = filter_var($r['independent'] ?? true, FILTER_VALIDATE_BOOLEAN);
                 $weight = (int) ($r['credibility_weight'] ?? 0);
-                if ($weight >= 1 && $weight <= 5) $ref['credibility_weight'] = $weight;
+                if ($weight >= 1 && $weight <= 5) {
+                    $ref['credibility_weight'] = $weight;
+                }
 
                 $questions = [];
                 foreach ($r['questions'] ?? [] as $q) {
@@ -555,15 +584,19 @@ class RequestQueueController extends Controller
                     $rating = (int) ($q['rating'] ?? 0);
                     $questions[] = [
                         'category' => $cat,
-                        'rating'   => ($rating >= 1 && $rating <= 5) ? $rating : 3,
-                        'reply'    => $str($q['reply'] ?? ''),
+                        'rating' => ($rating >= 1 && $rating <= 5) ? $rating : 3,
+                        'reply' => $str($q['reply'] ?? ''),
                     ];
                 }
-                if (! empty($questions)) $ref['questions'] = $questions;
+                if (! empty($questions)) {
+                    $ref['questions'] = $questions;
+                }
 
                 foreach (['overall_strong', 'overall_moderate', 'overall_weak'] as $f) {
                     $list = $splitList($r[$f] ?? '');
-                    if (! empty($list)) $ref[$f] = $list;
+                    if (! empty($list)) {
+                        $ref[$f] = $list;
+                    }
                 }
 
                 // Keep a referee only if it has at least a name or some content.
@@ -572,7 +605,9 @@ class RequestQueueController extends Controller
                     $referees[] = $ref;
                 }
             }
-            if (! empty($referees)) $out['referees'] = $referees;
+            if (! empty($referees)) {
+                $out['referees'] = $referees;
+            }
         }
 
         return $out;

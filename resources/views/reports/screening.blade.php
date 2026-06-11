@@ -84,9 +84,9 @@ ul.body-ul li { margin-bottom: 3px; }
 table.lgt { width: 100%; margin: 0 0 10px; page-break-inside: avoid; }
 table.lgt td { border: 1px solid #000; padding: 6px 8px; vertical-align: middle;
                font-size: 8.5pt; text-align: left; }
-table.lgt td.lg-lbl { color: #0070C0; font-weight: bold; font-family: 'Oswald', sans-serif; width: 30%; }
-table.lgt td.lg-dot { text-align: center; width: 10%; font-size: 12pt; line-height: 1; }
-table.lgt td.lg-lvl { width: 60%; font-weight: bold; }
+table.lgt td.lg-lbl { color: #0070C0; font-weight: bold; font-family: 'Oswald', sans-serif; width: 43%; }
+table.lgt td.lg-dot { text-align: center; width: 14%; font-size: 12pt; line-height: 1; }
+table.lgt td.lg-lvl { width: 43%; font-weight: bold; }
 
 /* ── Risk indicators ── */
 .ri-h { color: #c4453a; font-weight: bold; }
@@ -140,14 +140,17 @@ table.hmt td { border: 1px solid #000; padding: 5px 8px; font-size: 7.5pt; verti
 table.hmt td.hm-domain { font-weight: bold; font-family: 'Oswald', sans-serif;
                           font-size: 8pt; letter-spacing: 0.04em; background: #76923C; color: #fff; }
 
-/* ── DATA REPORT record entries ── */
-.rec-entry { border: 1px solid #000; margin: 6px 0; page-break-inside: avoid; }
-.rec-head  { background: #DDD9C3; color: #002060; padding: 4px 10px; font-weight: bold; font-size: 8.5pt;
-             font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
-.rec-body  { padding: 6px 10px; }
-table.rf   { width: 100%; }
-table.rf td { border: 1px solid #000; padding: 4px 8px; font-size: 8pt; }
-table.rf td.rfl { background: #fff; color: #C00000; font-weight: bold; width: 32%; }
+/* ── DATA REPORT block (Word-exact single table, olive 24% label col) ── */
+table.drt { width: 100%; margin-bottom: 8px; }
+table.drt td, table.drt th { border: 1px solid #000; padding: 5px 8px; vertical-align: top; font-size: 8.5pt; }
+table.drt th.dr-lbl { background: #76923C; color: #fff; font-weight: bold; text-align: left;
+                      font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; width: 24%; }
+table.drt td.dr-scope { background: #C5A82D; color: #000; }
+table.drt td.dr-res   { background: #DDD9C3; color: #002060; font-weight: bold;
+                        font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
+.t-red  { color: #C00000; font-weight: bold; }
+.t-blue { color: #0070C0; font-weight: bold; }
+.t-risk { color: #CC0000; font-weight: bold; }
 
 /* ── Credential / Employment validation matrix ── */
 table.cmt { width: 100%; margin: 6px 0 10px; }
@@ -155,6 +158,18 @@ table.cmt th { background: #76923C; color: #fff; padding: 4px 8px; border: 1px s
                font-size: 8pt; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
 table.cmt td { border: 1px solid #000; padding: 4px 8px; font-size: 8pt; vertical-align: middle; }
 table.cmt td.cm-aspect { font-weight: bold; background: #fff; color: #000; width: 20%; }
+/* gold span-header row inside matrix tables */
+table.cmt td.cm-gold, table.rct td.cm-gold, table.ref-t td.cm-gold {
+    background: #C5A82D; color: #000; font-weight: bold;
+    font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
+/* cream institution / employer divider row */
+table.cmt td.cm-crm, table.rct td.cm-crm, table.ref-t td.cm-crm {
+    background: #DDD9C3; color: #000; font-weight: bold;
+    font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
+/* black terminology header row */
+table.cmt td.cm-blk {
+    background: #000; color: #fff; font-weight: bold;
+    font-family: 'Oswald', sans-serif; letter-spacing: 0.06em; font-size: 8.5pt; }
 .match-M  { background: #ecfdf5; color: #023527; font-weight: bold; }
 .match-PM { background: #fffbeb; color: #92400e; font-weight: bold; }
 .match-NR { background: #fff7ed; color: #c2410c; font-weight: bold; }
@@ -305,6 +320,36 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $stars = function(int $n): string {
         return '<span class="stars">' . str_repeat('&#9733;', $n) . str_repeat('&#9734;', max(0, 5 - $n)) . '</span>';
     };
+    /* Spelled-out record numbers, Word style: RECORD ONE IDENTIFIED */
+    $numWord = fn(int $n): string => [1=>'ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN','EIGHT','NINE','TEN'][$n] ?? (string) $n;
+    /* COLOR & TERM cell: colour dot + match term (Word matrix style) */
+    $matchCell = function(string $m) use ($dot): string {
+        [$c, $label] = match(strtolower($m)) {
+            'match'       => ['#00B050', 'Match'],
+            'partial'     => ['#00B0F0', 'Partial Match'],
+            'no_record'   => ['#FFC000', 'No Record'],
+            'discrepancy' => ['#CC0000', 'Discrepancy'],
+            default       => ['#BFBFBF', strtoupper($m)],
+        };
+        return $dot($c).' <span class="bold">'.$label.'</span>';
+    };
+    /* Overall ERM risk dot colour */
+    $riskDot = fn(string $r): string => match(strtolower($r)) {
+        'low'      => $dot('#00B050'),
+        'moderate' => $dot('#00B0F0'),
+        'high'     => $dot('#FFC000'),
+        'critical' => $dot('#CC0000'),
+        default    => $dot('#BFBFBF'),
+    };
+    /* Static recognition + accreditation scenarios (Word matrix rows) */
+    $recScenarios = [
+        ['REAL + ACCREDITED',             'Recognized by MOHE/MQA',             'Program accredited',     '#00B050', 'Low'],
+        ['REAL + NOT ACCREDITED',         'Recognized institution',             'Program not accredited', '#FFC000', 'High'],
+        ['FAKE VIRTUAL UNIVERSITY',       'Not recognized',                     'No accreditation',       '#CC0000', 'Critical'],
+        ['RECOGNIZED ABROAD ONLY',        'Recognized overseas but not by MQA', 'Accreditation varies',   '#00B050', 'Moderate'],
+        ['RECOGNIZED VIRTUAL UNIVERSITY', 'Listed by MOHE/MQA',                 'Program accredited',     '#00B050', 'Low'],
+        ['RECOGNIZED VIRTUAL UNIVERSITY', 'Listed by MOHE/MQA',                 'Program not accredited', '#FFC000', 'High'],
+    ];
 
     /* Domain → scope keyword map for heatmap */
     $domainKeywords = [
@@ -368,10 +413,10 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 
 <div class="sh-pt" style="margin-top:4px;">REPORT PROFILE</div>
 <table class="pt">
-    <tr><th class="pt-lbl" style="width:38%;">REPORT REF NO</th>      <td class="pt-val bold">{{ $reference }}</td></tr>
+    <tr><th class="pt-lbl" style="width:48%;">REPORT REF NO</th>      <td class="pt-val bold">{{ $reference }}</td></tr>
     <tr><th class="pt-lbl">ENGAGING COMPANY</th>                       <td class="pt-val">{{ $customer->name ?? '—' }}</td></tr>
     <tr><th class="pt-lbl">REQUEST DATE</th>                           <td class="pt-val">{{ $request->created_at->format('d F Y') }}</td></tr>
-    <tr><th class="pt-lbl">INFO TYPE</th>                              <td class="pt-val">{{ strtoupper($request->type ?? 'DATA & SKILL SCREENING') }}</td></tr>
+    <tr><th class="pt-lbl">INFO TYPE</th>                              <td class="pt-val">{{ strtoupper(str_replace('_', ' ', $request->type ?? 'DATA & SKILL SCREENING')) }}</td></tr>
     <tr><th class="pt-lbl">AUTHORIZED REQUESTOR</th>                  <td class="pt-val">{{ $customer->contact_name ?? '—' }}</td></tr>
     <tr><th class="pt-lbl">REQUESTOR EMAIL</th>                        <td class="pt-val">{{ $customer->contact_email ?? '—' }}</td></tr>
     <tr><th class="pt-lbl">REQUESTOR CONTACT</th>                     <td class="pt-val">{{ $customer->contact_phone ?? '—' }}</td></tr>
@@ -380,7 +425,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 
 <div class="sh-pt">NRH INTERNAL</div>
 <table class="pt">
-    <tr><th class="pt-lbl" style="width:38%;">NRH RESEARCH OFFICER</th> <td class="pt-val">{{ data_get($request->meta, 'analyst') ?: '—' }}</td></tr>
+    <tr><th class="pt-lbl" style="width:48%;">NRH RESEARCH OFFICER</th> <td class="pt-val">{{ data_get($request->meta, 'analyst') ?: '—' }}</td></tr>
     <tr><th class="pt-lbl">COMPLIANCE EDITOR</th>                      <td class="pt-val">{{ data_get($request->meta, 'editor') ?: '—' }}</td></tr>
     <tr><th class="pt-lbl">INTERIM REP 1 DATE: (If Any)</th>          <td class="pt-val">{{ $completionBasic ?? '—' }}</td></tr>
     <tr><th class="pt-lbl">INTERIM REP 2 DATE: (If Any)</th>          <td class="pt-val">{{ $completionPrelim ?? '—' }}</td></tr>
@@ -425,6 +470,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <table class="sh-blk" style="margin-bottom:0;"><tr><td>DATA REPORT LEGEND</td></tr></table>
 <table class="lgt">
     <tr><td class="lg-lbl">CLEAN RESULT</td><td colspan="2">No records or adverse findings identified.</td></tr>
+    <tr><td class="lg-lbl">ADVERSE RESULT</td><td colspan="2">Negative findings detected.</td></tr>
     <tr><td class="lg-lbl">RECORD IDENTIFIED</td><td colspan="2">Record found in screening.</td></tr>
     <tr>
         <td class="lg-lbl" rowspan="3">RISK MATRIX INTERPRETATION</td>
@@ -469,18 +515,18 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div class="shd">CANDIDATE INFO</div>
 <table class="rt">
     <tr>
-        <th class="lbl" style="width:38%;">CANDIDATE NAME</th>
-        <td class="val bold">{{ $candidate->name }}</td>
+        <th class="lbl" style="width:33%;">CANDIDATE NAME</th>
+        <td class="val bold">{{ strtoupper($candidate->name) }}</td>
     </tr>
     <tr>
         <th class="lbl">{{ $candidate->identityType ? strtoupper($candidate->identityType->name) : 'ID' }} / PASSPORT NO</th>
-        <td class="val">{{ $candidate->identity_number }}</td>
+        <td class="val bold">{{ $candidate->identity_number }}</td>
     </tr>
     @if($candidate->nationality)
-    <tr><th class="lbl">NATIONALITY</th><td class="val">{{ strtoupper($candidate->nationality) }}</td></tr>
+    <tr><th class="lbl">NATIONALITY</th><td class="val bold">{{ strtoupper($candidate->nationality) }}</td></tr>
     @endif
     @if($candidate->date_of_birth)
-    <tr><th class="lbl">DATE OF BIRTH</th><td class="val">{{ $candidate->date_of_birth->format('jS F Y') }}</td></tr>
+    <tr><th class="lbl">DATE OF BIRTH</th><td class="val bold">{{ strtoupper($candidate->date_of_birth->format('jS F Y')) }}</td></tr>
     @endif
     <tr>
         <th class="lbl" rowspan="2">NAME &amp; ID SCREENING RESULT</th>
@@ -499,10 +545,10 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:9.5pt; letter-spacing:0.08em; color:#000; margin:12px 0 4px;">RISK MATRIX – COMPLIANCE SCREENING DATA REPORT SUMMARY</div>
 <table class="rmt">
     <tr>
-        <th style="width:36%;">SCOPE</th>
-        <th style="width:22%;">RESULT</th>
-        <th style="width:16%; text-align:center;">RISK LEVEL</th>
-        <th style="width:26%;">IMPLICATION</th>
+        <th style="width:35%;">SCOPE</th>
+        <th style="width:18%;">RESULT</th>
+        <th style="width:15%;">RISK LEVEL</th>
+        <th style="width:32%;">IMPLICATION</th>
     </tr>
     @foreach($candidate->scopeTypes as $scope)
     @php
@@ -516,11 +562,9 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         <td class="rmt-scope">
             {{ $scope->name }}
         </td>
-        <td class="{{ match($pT) { 'clean','not_requested' => 'ri-l', 'record_identified','adverse' => 'ri-h', default => 'muted' } }} bold">
-            {{ $resultLabel($pT) }}
-        </td>
-        <td style="text-align:center;">{!! $riskBadge($pLv) !!}</td>
-        <td class="small muted ital">{{ $pIm }}</td>
+        <td>{{ ucwords(strtolower($resultLabel($pT))) }}</td>
+        <td>{!! $riskBadge($pLv) !!}</td>
+        <td class="small">{{ $pIm }}</td>
     </tr>
     @endforeach
 </table>
@@ -545,26 +589,25 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:9.5pt; letter-spacing:0.08em; color:#000; margin:12px 0 4px;">COMPLIANCE RISK HEATMAP</div>
 <table class="hmt">
     <tr>
-        <th style="width:22%;">DOMAIN</th>
-        <th style="width:38%;">SCOPE</th>
-        <th style="width:14%; text-align:center;">RISK LEVEL</th>
-        <th style="width:26%;">HEATMAP INDICATOR</th>
+        <th style="width:21%;">DOMAIN</th>
+        <th style="width:33%;">SCOPE</th>
+        <th style="width:15%;">RISK LEVEL</th>
+        <th style="width:30%;">VISUAL HEATMAP INDICATOR</th>
     </tr>
     @foreach($domainOrder as $dom)
     @if(isset($heatmapRows[$dom]))
     @php
         $row = $heatmapRows[$dom];
         $aggRisk = $aggregateRisk($row['levels']);
-        $bg = $domainBg($aggRisk);
     @endphp
-    <tr style="background:{{ $bg }};">
+    <tr>
         <td class="hm-domain">{{ $dom }}</td>
-        <td style="font-size:7.5pt;">{{ implode(', ', $row['scopes']) }}</td>
-        <td style="text-align:center;">{!! $riskBadge($aggRisk) !!}</td>
-        <td style="font-size:7.5pt; color:#555;">
-            @if($aggRisk === 'high') Critical exposure detected — immediate review required.
-            @elseif($aggRisk === 'medium') Moderate exposure — further review recommended.
-            @elseif($aggRisk === 'low') No significant exposure identified.
+        <td class="bold" style="font-size:7.5pt;">{{ implode(', ', $row['scopes']) }}</td>
+        <td class="bold">{!! $riskBadge($aggRisk) !!}</td>
+        <td class="bold" style="font-size:7.5pt;">
+            @if($aggRisk === 'high') Red blocks (critical exposure)
+            @elseif($aggRisk === 'medium') Yellow block (enhanced due diligence required)
+            @elseif($aggRisk === 'low') Green blocks (clean)
             @else Screening not conducted for this domain.
             @endif
         </td>
@@ -588,8 +631,25 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     domains selected by the client for screening.
 </div>
 
+@php
+    /* Structured scopes (academic / employment / referee) have dedicated report
+       sections — the DATA REPORT loop covers compliance scopes only (as in Word). */
+    $drKindOf = function ($s): string {
+        $probe = function (string $hay): ?string {
+            $hay = strtolower($hay);
+            if (str_contains($hay, 'referee') || str_contains($hay, 'reference')) return 'referee';
+            if (str_contains($hay, 'employment') || str_contains($hay, 'work history')) return 'employment';
+            foreach (['academic','qualification','credential','education','degree','certificate','certification'] as $kw) {
+                if (str_contains($hay, $kw) && !str_contains($hay, 'loan')) return 'academic';
+            }
+            return null;
+        };
+        return $probe($s->name) ?? $probe($s->category ?? '') ?? 'generic';
+    };
+@endphp
 @foreach($candidate->scopeTypes as $scope)
 @continue($nameIdScope && $scope->id === $nameIdScope->id)
+@continue($drKindOf($scope) !== 'generic')
 @php
     $pSt      = $scope->pivot->status ?? 'new';
     $findings = $scope->pivot->findings ?? [];
@@ -603,108 +663,123 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $legacyRec= $findings['record']  ?? [];
     $verMethod= $findings['verification_method'] ?? $scope->verification_method ?? ($scope->description ?? null);
     $scopeDesc= $findings['scope_description'] ?? ($scope->description ?? null);
-    $tatHours = $scope->pivot->tatHours();
-    $finished = in_array($pSt, ['complete', 'flagged']);
+    $lvDot = fn(string $lv) => $dot(match($lv) {
+        'high' => '#CC0000', 'medium' => '#FFC000', 'low' => '#00B050', default => '#BFBFBF',
+    });
 @endphp
-<div class="pi mb8">
+<div class="mb8">
     <div class="shd">DATA REPORT</div>
-    <table class="rt" style="margin-bottom:0;">
+    <table class="drt" style="margin-bottom:0;">
         <tr>
-            <th class="lbl" style="width:22%;">SCOPE</th>
-            <td class="val" style="background:#C5A82D; color:#000;">
+            <th class="dr-lbl">SCOPE</th>
+            <td class="dr-scope" colspan="2">
                 <span class="bold">{{ strtoupper($scope->name) }}</span>
                 @if($scopeDesc && $scopeDesc !== $scope->name)
                 <br><span class="small" style="display:block; margin-top:2px;">{{ $scopeDesc }}</span>
                 @endif
             </td>
         </tr>
-        <tr>
-            <th class="lbl">RESULT</th>
-            <td class="val bold" style="background:#DDD9C3; color:#002060;">{{ $rLabel }}</td>
-        </tr>
-        <tr>
-            <th class="lbl">RISK STATUS</th>
-            <td class="val">{!! $riskBadge($rLevel) !!}&nbsp; {{ $rStat }}</td>
-        </tr>
+
+        {{-- Structured record entries (Word: each record opens with a RESULT row) --}}
+        @if(!empty($records))
+            @foreach($records as $ri => $rec)
+            <tr>
+                <th class="dr-lbl">RESULT</th>
+                <td class="dr-res" colspan="2">RECORD {{ count($records) > 1 ? $numWord($ri + 1).' ' : '' }}IDENTIFIED</td>
+            </tr>
+            @if(!empty($rec['title']))
+            <tr>
+                <th class="dr-lbl"></th>
+                <td colspan="2">
+                    <span class="t-red">{{ strtoupper($rec['title']) }}</span>
+                    @if(!empty($rec['act']))<br><span class="small muted">{{ strtoupper($rec['act']) }}</span>@endif
+                </td>
+            </tr>
+            @endif
+            @if(!empty($rec['section']) || !empty($rec['description']) || !empty($rec['penalty']))
+            <tr>
+                <th class="dr-lbl"></th>
+                @if(!empty($rec['section']))
+                <td style="width:27%;"><span class="t-blue">{{ $rec['section'] }}</span></td>
+                <td>
+                    <span class="t-blue">Offence description</span>
+                    @if(!empty($rec['description']))<br>{{ $rec['description'] }}@endif
+                    @if(!empty($rec['penalty']))<br>Penalty: {{ $rec['penalty'] }}@endif
+                </td>
+                @else
+                <td colspan="2">
+                    @if(!empty($rec['description'])){{ $rec['description'] }}@endif
+                    @if(!empty($rec['penalty']))<br>Penalty: {{ $rec['penalty'] }}@endif
+                </td>
+                @endif
+            </tr>
+            @endif
+            @if(!empty($rec['fields']))
+                @foreach($rec['fields'] as $fk => $fv)
+                <tr>
+                    <th class="dr-lbl"></th>
+                    <td style="width:27%;" class="t-red">{{ $fk }}</td>
+                    <td>{{ $fv }}</td>
+                </tr>
+                @endforeach
+            @endif
+            @if(!empty($rec['verdict']))
+            <tr>
+                <th class="dr-lbl"></th>
+                <td style="width:27%;" class="t-blue">Verdict</td>
+                <td class="bold">{{ strtoupper($rec['verdict']) }}</td>
+            </tr>
+            @endif
+            @if(!empty($rec['risk_text']))
+            @php $recLv = $rec['risk_level'] ?? $rLevel; @endphp
+            <tr>
+                <th class="dr-lbl"></th>
+                <td colspan="2">{!! $lvDot($recLv) !!} <span class="{{ $recLv === 'high' ? 't-risk' : 'bold' }}">Risk Level: {{ $rec['risk_text'] }}</span></td>
+            </tr>
+            @endif
+            @endforeach
+
+        {{-- Legacy key-value record (backwards compatible) --}}
+        @elseif(!empty($legacyRec))
+            <tr>
+                <th class="dr-lbl">RESULT</th>
+                <td class="dr-res" colspan="2">RECORD IDENTIFIED</td>
+            </tr>
+            @foreach($legacyRec as $rk => $rv)
+            <tr>
+                <th class="dr-lbl"></th>
+                <td style="width:27%;" class="t-red">{{ $rk }}</td>
+                <td>{{ $rv }}</td>
+            </tr>
+            @endforeach
+
+        {{-- Clean / pending result --}}
+        @else
+            <tr>
+                <th class="dr-lbl">RESULT</th>
+                <td class="dr-res" colspan="2">{{ $rLabel }}</td>
+            </tr>
+            <tr>
+                <th class="dr-lbl"></th>
+                <td colspan="2" class="bold">{!! $lvDot($rLevel) !!} Status: {{ $rStat }}</td>
+            </tr>
+        @endif
+
         @if($comment)
         <tr>
-            <th class="lbl">NOTES</th>
-            <td class="val">{!! nl2br(e($comment)) !!}</td>
+            <th class="dr-lbl">NOTES</th>
+            <td colspan="2">{!! nl2br(e($comment)) !!}</td>
         </tr>
         @endif
-    </table>
-
-    {{-- New structured record entries --}}
-    @if(!empty($records))
-        @foreach($records as $ri => $rec)
-        <div class="rec-entry">
-            <div class="rec-head">
-                RECORD {{ count($records) > 1 ? ($ri + 1).' IDENTIFIED' : 'IDENTIFIED' }}
-                @if(!empty($rec['title'])) – {{ strtoupper($rec['title']) }}@endif
-            </div>
-            <div class="rec-body">
-                @if(!empty($rec['act']))<div class="bold small" style="margin-bottom:3px;">{{ strtoupper($rec['act']) }}</div>@endif
-                @if(!empty($rec['section']))<div class="small muted" style="margin-bottom:3px;">{{ $rec['section'] }}</div>@endif
-                @if(!empty($rec['description']))<div class="small" style="margin-bottom:4px;"><strong>Offence:</strong> {{ $rec['description'] }}</div>@endif
-                @if(!empty($rec['penalty']))<div class="small" style="margin-bottom:4px;"><strong>Penalty:</strong> {{ $rec['penalty'] }}</div>@endif
-                @if(!empty($rec['fields']))
-                <table class="rf" style="margin:4px 0;">
-                    @foreach($rec['fields'] as $fk => $fv)
-                    <tr><td class="rfl">{{ $fk }}</td><td>{{ $fv }}</td></tr>
-                    @endforeach
-                </table>
-                @endif
-                @if(!empty($rec['verdict']))
-                <div class="bold small ri-h" style="margin-top:4px;">Verdict: {{ strtoupper($rec['verdict']) }}</div>
-                @endif
-                @if(!empty($rec['risk_text']))
-                <div class="small" style="margin-top:3px;">{!! $riskBadge($rec['risk_level'] ?? $rLevel) !!} {{ $rec['risk_text'] }}</div>
-                @endif
-            </div>
-        </div>
-        @endforeach
-
-    {{-- Legacy key-value record (backwards compatible) --}}
-    @elseif(!empty($legacyRec))
-        <div class="rec-entry">
-            <div class="rec-head">RECORD IDENTIFIED</div>
-            <div class="rec-body">
-                <table class="rf">
-                    @foreach($legacyRec as $rk => $rv)
-                    <tr><td class="rfl">{{ $rk }}</td><td>{{ $rv }}</td></tr>
-                    @endforeach
-                </table>
-            </div>
-        </div>
-
-    @endif
-
-    <table class="rt" style="margin-top:-1px; margin-bottom:0;">
         <tr>
-            <th class="lbl" style="width:22%;">VERIFICATION METHOD</th>
-            <td class="val small">
+            <th class="dr-lbl">VERIFICATION METHOD</th>
+            <td colspan="2" class="small">
                 @if($verMethod){{ $verMethod }}@else
                 Verification was conducted using the candidate's Name and ID against authoritative databases and declared information.
                 @endif
                 <br><span class="muted ital">Compliance aligned with PDPA 2010 (Act 709), as amended 2024, and ISO 27001 / ISO 31000 standards.</span>
             </td>
         </tr>
-        @if($scope->turnaround_hours)
-        <tr>
-            <th class="lbl">SLA / TAT</th>
-            <td class="val small">
-                Target: {{ $scope->turnaround_hours }}h.
-                @if($scope->pivot->assigned_at)
-                    Actual: <strong>{{ $tatHours }}h</strong>
-                    @if($finished && $tatHours > $scope->turnaround_hours)
-                        <span class="ri-h">({{ round($tatHours - $scope->turnaround_hours, 1) }}h over SLA)</span>
-                    @elseif($finished)
-                        <span class="ri-l">(within SLA)</span>
-                    @endif
-                @endif
-            </td>
-        </tr>
-        @endif
     </table>
 </div>
 @endforeach
@@ -717,44 +792,45 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 {{-- ══════════════════════════════════════════
      PROFESSIONAL COMPETENCY VALIDATION
 ═══════════════════════════════════════════ --}}
-<div class="sh">PROFESSIONAL COMPETENCY VALIDATION REPORT</div>
+<div class="sh-erm">PROFESSIONAL COMPETENCY VALIDATION REPORT</div>
 
-<div class="sh-crm" style="margin-top:6px;">REPORT TERMINOLOGY</div>
-<table class="cmt" style="margin-top:4px;">
+<table class="cmt" style="margin-top:6px;">
+    <tr><td class="cm-blk" colspan="5">ACADEMIC &amp; PROFESSIONAL CERTIFICATION<br>REPORT TERMINOLOGY</td></tr>
+    <tr><td class="cm-crm" colspan="5">RISK MATRIX INTERPRETATION (BASED ON ERM COLOR)</td></tr>
     <tr>
-        <th style="width:20%;">SCORES PER ASPECT</th>
-        <th style="width:8%; text-align:center;">COLOR</th>
-        <th style="width:16%;">ERM RISK</th>
-        <th style="width:28%;">EXPLANATION</th>
-        <th style="width:28%;">INTERPRETATION</th>
+        <td class="cm-gold" style="width:20%;">SCORES PER ASPECT</td>
+        <td class="cm-gold" style="width:14%; text-align:center;">COLOR</td>
+        <td class="cm-gold" style="width:18%;">ERM RISK</td>
+        <td class="cm-gold" style="width:23%;">EXPLANATION</td>
+        <td class="cm-gold" style="width:25%;">INTERPRETATION</td>
     </tr>
     <tr>
-        <td class="match-M bold">MATCH</td>
+        <td class="t-blue">MATCH</td>
         <td style="text-align:center;">{!! $dot('#00B050') !!}</td>
-        <td class="risk-low bold">LOW</td>
+        <td class="bold">LOW</td>
         <td>Provided info consistent with verified records.</td>
-        <td>Verified. Safe to proceed.</td>
+        <td class="bold">Verified. Safe to proceed.</td>
     </tr>
     <tr>
-        <td class="match-PM bold">PARTIAL MATCH</td>
-        <td style="text-align:center;">{!! $dot('#00B050') !!}</td>
-        <td class="risk-moderate bold">MODERATE</td>
+        <td class="t-blue">PARTIAL MATCH</td>
+        <td style="text-align:center;">{!! $dot('#00B0F0') !!}</td>
+        <td class="bold">MODERATE</td>
         <td>Record mostly consistent but not exact.</td>
-        <td>Minor variation. Acceptable with caution.</td>
+        <td class="bold">Minor variation. Acceptable with caution.</td>
     </tr>
     <tr>
-        <td class="match-NR bold">NO RECORD</td>
+        <td class="t-blue">NO RECORD</td>
         <td style="text-align:center;">{!! $dot('#FFC000') !!}</td>
-        <td class="risk-high bold">HIGH</td>
+        <td class="bold">HIGH</td>
         <td>No official record exists.</td>
-        <td>Missing record. Needs additional document.</td>
+        <td class="bold">Missing record. Needs additional document.</td>
     </tr>
     <tr>
-        <td class="match-D bold">DISCREPANCY</td>
+        <td class="t-blue">DISCREPANCY</td>
         <td style="text-align:center;">{!! $dot('#CC0000') !!}</td>
-        <td class="risk-critical bold">CRITICAL</td>
+        <td class="bold">CRITICAL</td>
         <td>Information differs significantly or is false.</td>
-        <td>Potential fraud. Serious concern for credibility.</td>
+        <td class="bold">Potential fraud. Serious concern for credibility.</td>
     </tr>
 </table>
 
@@ -803,7 +879,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             ]];
         }
     @endphp
-    <div class="sh" style="margin-top:8px;">ACADEMIC CREDENTIAL VALIDATION</div>
+    <div class="sh-gld" style="margin-top:8px;">ACADEMIC CREDENTIAL VALIDATION</div>
 
     @if(!empty($aCredentials))
         @foreach($aCredentials as $aCredIdx => $cred)
@@ -813,61 +889,94 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             $aRecognition = $cred['recognition'] ?? null;
             $aOverallRisk = $cred['overall_risk'] ?? null;
             $aOverallAct  = $cred['overall_action'] ?? null;
+            $aVerifier    = $cred['verifier'] ?? null;
         @endphp
-        <div style="padding:5px 12px; background:#C5A82D; color:#000; border:1px solid #000; font-weight:bold; font-size:8.5pt; font-family:'Oswald',sans-serif; margin:{{ $aCredIdx === 0 ? '0' : '8px 0 0' }};">
-            {{ strtoupper($aInstitution) }}
-        </div>
 
+        {{-- Credential info: VALIDATION | CANDIDATE PROVIDED | NRH VERIFIED INFORMATION --}}
         @if($aValidation)
-        <div class="sh-gld" style="font-size:7.5pt; margin-top:4px;">ACADEMIC CREDENTIAL VALIDATION MATRIX</div>
-        <table class="cmt">
+        <table class="cmt" style="margin-top:{{ $aCredIdx === 0 ? '4px' : '10px' }};">
+            <tr><td class="cm-crm" colspan="3">{{ strtoupper($aInstitution) }}</td></tr>
             <tr>
-                <th style="width:20%;">ASPECT</th>
-                <th style="width:30%;">VERIFIED INFORMATION</th>
-                <th style="width:18%; text-align:center;">TERM</th>
-                <th style="width:12%; text-align:center;">ERM RISK</th>
-                <th style="width:20%;">INTERPRETATION</th>
+                <th style="width:33%;">VALIDATION</th>
+                <th style="width:30%;">CANDIDATE PROVIDED</th>
+                <th style="width:37%;">NRH VERIFIED INFORMATION</th>
+            </tr>
+            @foreach($aValidation as $av)
+            <tr>
+                <td class="bold">{{ strtoupper($av['aspect'] ?? '') }}</td>
+                <td class="bold">{{ strtoupper($av['provided'] ?? '-') }}</td>
+                <td class="bold">{{ strtoupper($av['verified'] ?? 'NO RECORD') }}</td>
+            </tr>
+            @endforeach
+            @if($aVerifier)
+            <tr>
+                <td class="bold">VERIFIER</td>
+                <td class="bold" colspan="2">{{ strtoupper($aVerifier) }}</td>
+            </tr>
+            @endif
+        </table>
+
+        {{-- Validation matrix --}}
+        <table class="cmt">
+            <tr><td class="cm-gold" colspan="5">ACADEMIC CREDENTIAL VALIDATION MATRIX</td></tr>
+            <tr>
+                <th style="width:26%;">ASPECT</th>
+                <th style="width:20%;">VERIFIED INFORMATION</th>
+                <th style="width:12%;">COLOR &amp; TERM</th>
+                <th style="width:13%;">ERM RISK</th>
+                <th style="width:29%;">INTERPRETATION</th>
             </tr>
             @foreach($aValidation as $av)
             @php
                 $avMatch = strtolower($av['match'] ?? 'match');
                 $avRisk  = strtolower($av['risk'] ?? 'low');
-                $matchClass = match($avMatch) { 'match'=>'match-M', 'partial'=>'match-PM', 'no_record'=>'match-NR', 'discrepancy'=>'match-D', default=>'' };
             @endphp
             <tr>
-                <td class="cm-aspect">{{ strtoupper($av['aspect'] ?? '') }}</td>
+                <td class="bold">{{ strtoupper($av['aspect'] ?? '') }}</td>
                 <td>{{ $av['verified'] ?? '—' }}</td>
-                <td style="text-align:center;" class="{{ $matchClass }}">{!! $matchBadge($avMatch) !!}</td>
-                <td style="text-align:center;">{!! $riskLabel($avRisk) !!}</td>
-                <td class="small">{{ $av['interpretation'] ?? '' }}</td>
+                <td>{!! $matchCell($avMatch) !!}</td>
+                <td class="bold">{{ ucfirst($avRisk) }}</td>
+                <td class="bold small">{{ $av['interpretation'] ?? '' }}</td>
             </tr>
             @endforeach
         </table>
         @endif
 
         @if($aRecognition)
-        <div class="sh-gld" style="font-size:7.5pt; margin-top:4px;">RISK MATRIX FOR RECOGNITION + ACCREDITATION</div>
+        @php $selScenario = strtoupper(trim($aRecognition['scenario'] ?? '')); $selMarked = false; @endphp
         <table class="rct">
+            <tr><td class="cm-gold" colspan="5">RISK MATRIX FOR RECOGNITION + ACCREDITATION</td></tr>
             <tr>
-                <th style="width:28%;">SCENARIO</th>
-                <th style="width:30%;">INSTITUTION RECOGNITION</th>
-                <th style="width:30%;">PROGRAM ACCREDITATION</th>
-                <th style="width:12%; text-align:center;">RISK LEVEL</th>
+                <th style="width:25%;">SCENARIO</th>
+                <th style="width:23%;">INSTITUTION RECOGNITION</th>
+                <th style="width:22%;">PROGRAM ACCREDITATION</th>
+                <th style="width:17%;">RISK LEVEL</th>
+                <th style="width:13%;">STATUS</th>
             </tr>
+            @foreach($recScenarios as $rs)
+            @php
+                $isSel = !$selMarked && $selScenario === $rs[0];
+                if ($isSel) $selMarked = true;
+            @endphp
             <tr>
-                <td class="bold">{{ $aRecognition['scenario'] ?? '—' }}</td>
-                <td>{{ $aRecognition['institution_recognition'] ?? '—' }}</td>
-                <td>{{ $aRecognition['program_accreditation'] ?? '—' }}</td>
-                <td style="text-align:center;">{!! $riskBadge(strtolower($aRecognition['risk_level'] ?? 'low')) !!}</td>
+                <td class="bold">{{ $rs[0] }}</td>
+                <td>{{ $rs[1] }}</td>
+                <td>{{ $rs[2] }}</td>
+                <td>{!! $dot($rs[3]) !!} <span class="bold">{{ $rs[4] }}</span></td>
+                <td class="bold" style="text-align:center;">{{ $isSel ? 'X' : '' }}</td>
             </tr>
+            @endforeach
         </table>
         @endif
 
         @if($aOverallRisk)
-        <div class="erm-overall {{ strtolower($aOverallRisk) }}">
-            <strong>OVERALL ERM RISK:</strong> {!! $riskLabel(strtolower($aOverallRisk)) !!}
-            @if($aOverallAct) &nbsp;—&nbsp; {{ $aOverallAct }}@endif
-        </div>
+        <table class="cmt">
+            <tr>
+                <td class="cm-gold" style="width:25%;">OVERALL ERM RISK</td>
+                <td class="t-blue" style="width:24%;">{{ strtoupper($aOverallRisk) }} RISK {!! $riskDot($aOverallRisk) !!}</td>
+                <td class="bold" style="width:51%;">{{ $aOverallAct }}</td>
+            </tr>
+        </table>
         @endif
 
         @if(!$aValidation && !$aRecognition && !$aOverallRisk)
@@ -916,48 +1025,113 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $eOverallAct  = $eF['overall_action'] ?? null;
     $eComment     = $eF['comment'] ?? null;
 @endphp
-<div class="sh" style="margin-top:8px;">EMPLOYMENT VALIDATION</div>
-<div style="padding:5px 12px; background:#C5A82D; color:#000; border:1px solid #000; font-weight:bold; font-size:8.5pt; font-family:'Oswald',sans-serif; margin-bottom:0;">
-    {{ strtoupper($eEmployer) }}
-</div>
+@if($loop->first)
+<div class="sh-gld" style="margin-top:8px;">EMPLOYMENT VALIDATION</div>
+
+{{-- Employment terminology (Word: black header + cream sub-header + gold columns) --}}
+<table class="cmt" style="margin-top:4px;">
+    <tr><td class="cm-blk" colspan="5">EMPLOYMENT VALIDATION REPORT TERMINOLOGY</td></tr>
+    <tr><td class="cm-crm" colspan="5">RISK MATRIX INTERPRETATION (BASED ON ERM COLOR)</td></tr>
+    <tr>
+        <td class="cm-gold" style="width:20%;">SCORES PER ASPECT</td>
+        <td class="cm-gold" style="width:14%; text-align:center;">COLOR</td>
+        <td class="cm-gold" style="width:17%;">ERM RISK</td>
+        <td class="cm-gold" style="width:22%;">EXPLANATION</td>
+        <td class="cm-gold" style="width:27%;">INTERPRETATION</td>
+    </tr>
+    <tr>
+        <td class="t-blue">MATCH</td>
+        <td style="text-align:center;">{!! $dot('#00B050') !!}</td>
+        <td class="bold">LOW</td>
+        <td>Provided info consistent with verified records.</td>
+        <td class="bold">Verified. Safe to proceed.</td>
+    </tr>
+    <tr>
+        <td class="t-blue">PARTIAL MATCH</td>
+        <td style="text-align:center;">{!! $dot('#00B0F0') !!}</td>
+        <td class="bold">MODERATE</td>
+        <td>Record mostly consistent but not exact.</td>
+        <td class="bold">Minor variation. Acceptable with caution.</td>
+    </tr>
+    <tr>
+        <td class="t-blue">NO RECORD</td>
+        <td style="text-align:center;">{!! $dot('#FFC000') !!}</td>
+        <td class="bold">HIGH</td>
+        <td>No official record exists.</td>
+        <td class="bold">Missing record. Needs additional document.</td>
+    </tr>
+    <tr>
+        <td class="t-blue">DISCREPANCY</td>
+        <td style="text-align:center;">{!! $dot('#CC0000') !!}</td>
+        <td class="bold">CRITICAL</td>
+        <td>Information differs significantly or is false.</td>
+        <td class="bold">False or conflicting info, potential fraud. Serious concern for credibility.</td>
+    </tr>
+</table>
+@endif
 
 @if($eValidation)
-<div class="sh-gld" style="font-size:7.5pt; margin-top:4px;">EMPLOYMENT VALIDATION MATRIX</div>
-<table class="cmt">
+{{-- Employer info: VALIDATION | CANDIDATE PROVIDED | NRH VERIFIED INFORMATION --}}
+<table class="cmt" style="margin-top:8px;">
+    <tr><td class="cm-gold" colspan="3">EMPLOYMENT VALIDATION</td></tr>
+    <tr><td class="cm-crm" colspan="3">{{ strtoupper($eEmployer) }}</td></tr>
     <tr>
-        <th style="width:22%;">ASPECT</th>
-        <th style="width:24%;">CANDIDATE PROVIDED</th>
-        <th style="width:24%;">NRH VERIFIED</th>
-        <th style="width:12%; text-align:center;">TERM</th>
-        <th style="width:10%; text-align:center;">RISK</th>
-        <th style="width:8%; font-size:7pt;">INTERPRETATION</th>
+        <th style="width:33%;">VALIDATION</th>
+        <th style="width:30%;">CANDIDATE PROVIDED</th>
+        <th style="width:37%;">NRH VERIFIED INFORMATION</th>
+    </tr>
+    @foreach($eValidation as $ev)
+    <tr>
+        <td class="bold">{{ strtoupper($ev['aspect'] ?? '') }}</td>
+        <td class="bold">{{ strtoupper($ev['provided'] ?? '-') }}</td>
+        <td class="bold">{{ strtoupper($ev['verified'] ?? 'NO RECORD') }}</td>
+    </tr>
+    @endforeach
+    @if($eVerifier)
+    <tr>
+        <td class="bold">VERIFIER</td>
+        <td class="bold" colspan="2">{{ strtoupper($eVerifier) }}</td>
+    </tr>
+    @endif
+</table>
+
+{{-- ERM risk matrix --}}
+<div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:8.5pt; letter-spacing:0.05em; color:#000; margin:6px 0 2px;">EMPLOYMENT ERM RISK MATRIX</div>
+<table class="cmt" style="margin-top:0;">
+    <tr>
+        <th style="width:23%;">ASPECT</th>
+        <th style="width:19%;">VERIFIED INFORMATION</th>
+        <th style="width:10%; text-align:center;">COLOR</th>
+        <th style="width:10%;">TERM</th>
+        <th style="width:12%;">RISK</th>
+        <th style="width:26%;">INTERPRETATION</th>
     </tr>
     @foreach($eValidation as $ev)
     @php
         $evMatch = strtolower($ev['match'] ?? 'match');
         $evRisk  = strtolower($ev['risk'] ?? 'low');
-        $matchClass = match($evMatch) { 'match'=>'match-M', 'partial'=>'match-PM', 'no_record'=>'match-NR', 'discrepancy'=>'match-D', default=>'' };
+        $evDotC  = match($evMatch) { 'match'=>'#00B050', 'partial'=>'#00B0F0', 'no_record'=>'#FFC000', 'discrepancy'=>'#CC0000', default=>'#BFBFBF' };
+        $evTerm  = match($evMatch) { 'match'=>'Match', 'partial'=>'Partial Match', 'no_record'=>'No Record', 'discrepancy'=>'Discrepancy', default=>strtoupper($evMatch) };
     @endphp
     <tr>
-        <td class="cm-aspect">{{ strtoupper($ev['aspect'] ?? '') }}</td>
-        <td>{{ $ev['provided'] ?? '—' }}</td>
-        <td>{{ $ev['verified'] ?? 'No Record' }}</td>
-        <td style="text-align:center;" class="{{ $matchClass }}">{!! $matchBadge($evMatch) !!}</td>
-        <td style="text-align:center;">{!! $riskLabel($evRisk) !!}</td>
-        <td class="small muted">{{ $ev['interpretation'] ?? '' }}</td>
+        <td class="bold">{{ strtoupper($ev['aspect'] ?? '') }}</td>
+        <td>{{ $ev['verified'] ?? '–' }}</td>
+        <td style="text-align:center;">{!! $dot($evDotC) !!}</td>
+        <td>{{ $evTerm }}</td>
+        <td class="bold">{{ ucfirst($evRisk) }}</td>
+        <td class="bold small">{{ $ev['interpretation'] ?? '' }}</td>
     </tr>
     @endforeach
 </table>
-@if($eVerifier)
-<div style="font-size:8pt; color:#555; padding:3px 8px; background:#f0f0f0; border:1px solid #ddd; margin-bottom:4px;">
-    <strong>Verifier:</strong> {{ $eVerifier }}
-</div>
-@endif
+
 @if($eOverallRisk)
-<div class="erm-overall {{ strtolower($eOverallRisk) }}">
-    <strong>OVERALL ERM RISK:</strong> {!! $riskLabel(strtolower($eOverallRisk)) !!}
-    @if($eOverallAct) &nbsp;—&nbsp; {{ $eOverallAct }}@endif
-</div>
+<table class="cmt">
+    <tr>
+        <td class="cm-gold" style="width:23%;">OVERALL ERM RISK</td>
+        <td class="t-blue" style="width:20%;">{{ strtoupper($eOverallRisk) }} RISK {!! $riskDot($eOverallRisk) !!}</td>
+        <td class="bold" style="width:57%;">{{ $eOverallAct }}</td>
+    </tr>
+</table>
 @endif
 
 @elseif($eComment)
@@ -981,102 +1155,112 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
      REFEREE INTERVIEW REPORT
 ═══════════════════════════════════════════ --}}
 @php
-    $hasAnyReferee = $candidates->contains(fn($c) =>
-        $c->scopeTypes->filter(fn($s) =>
-            collect(['referee','reference'])->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
-        )->count() > 0
-    );
+    $isRefereeScope = fn($s) =>
+        collect(['referee','reference'])->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
+        && !collect(['employment','work history'])->contains(fn($kw) => str_contains(strtolower($s->name), $kw));
+    $hasAnyReferee = $candidates->contains(fn($c) => $c->scopeTypes->filter($isRefereeScope)->count() > 0);
 @endphp
 @if($hasAnyReferee)
-<div class="sh">REFEREE INTERVIEW REPORT</div>
+<div class="sh-gld">REFEREE INTERVIEW REPORT</div>
 
-{{-- Terminology --}}
-<div class="sh-crm" style="margin-top:6px;">REFEREE CREDIBILITY HIERARCHY RATING (ERM MATRIX)</div>
+<table class="sh-blk" style="margin-top:6px;"><tr><td>REFEREE INTERVIEW REPORT TERMINOLOGY</td></tr></table>
+<p class="body-p">
+    A referee interview is a risk management tool within the ERM framework. It ensures that hiring decisions
+    are evidence-based, defensible, and aligned with organizational standards.
+</p>
+
+{{-- Credibility hierarchy --}}
 <table class="ref-t" style="margin-top:4px; margin-bottom:8px;">
+    <tr><td class="cm-crm" colspan="4">REFEREE CREDIBILITY HIERARCHY RATING (ERM MATRIX)</td></tr>
     <tr>
         <th style="width:26%;">REFEREE TYPE</th>
-        <th style="width:34%;">AUTHORITY LEVEL</th>
-        <th style="width:18%; text-align:center;">CREDIBILITY</th>
-        <th style="width:22%;">RISK INTERPRETATION</th>
+        <th style="width:25%;">AUTHORITY LEVEL</th>
+        <th style="width:19%;">CREDIBILITY</th>
+        <th style="width:30%;">RISK INTERPRETATION</th>
     </tr>
     <tr>
-        <td class="ref-lbl bold">DIRECT SUPERVISOR</td>
-        <td>Highest – direct oversight of candidate's work</td>
-        <td style="text-align:center;">{!! $stars(5) !!} (5/5)</td>
-        <td class="small">Strongest validation</td>
+        <td class="bold">DIRECT SUPERVISOR</td>
+        <td class="bold">Highest – direct oversight of candidate's work</td>
+        <td class="bold">{!! $stars(5) !!} (5/5)</td>
+        <td class="bold small">Strongest validation</td>
     </tr>
     <tr>
-        <td class="ref-lbl bold">LECTURER / FACULTY PROFESSOR</td>
-        <td>High – academic oversight, authority in education</td>
-        <td style="text-align:center;">{!! $stars(4) !!} (4/5)</td>
-        <td class="small">Reliable for academic performance.</td>
+        <td class="bold">LECTURER / FACULTY PROFESSOR</td>
+        <td class="bold">High – academic oversight, authority in education</td>
+        <td class="bold">{!! $stars(4) !!} (4/5)</td>
+        <td class="bold small">Reliable for academic performance, discipline, and intellectual potential.</td>
     </tr>
     <tr>
-        <td class="ref-lbl bold">SENIOR COLLEAGUE</td>
-        <td>Moderate – peer-level observation</td>
-        <td style="text-align:center;">{!! $stars(3) !!} (3/5)</td>
-        <td class="small">Useful for teamwork and soft skills.</td>
+        <td class="bold">SENIOR COLLEAGUE</td>
+        <td class="bold">Moderate – peer-level observation</td>
+        <td class="bold">{!! $stars(3) !!} (3/5)</td>
+        <td class="bold small">Useful for teamwork, collaboration, and soft skills.</td>
     </tr>
     <tr>
-        <td class="ref-lbl bold">COLLEAGUE</td>
-        <td>Lower – peer without authority</td>
-        <td style="text-align:center;">{!! $stars(2) !!} (2/5)</td>
-        <td class="small">Insights into daily behaviour.</td>
+        <td class="bold">COLLEAGUE</td>
+        <td class="bold">Lower – peer without authority</td>
+        <td class="bold">{!! $stars(2) !!} (2/5)</td>
+        <td class="bold small">Provides insights into daily behavior.</td>
     </tr>
     <tr>
-        <td class="ref-lbl bold">FAMILY MEMBER / ACQUAINTANCE</td>
-        <td>Lowest – personal relationship only</td>
-        <td style="text-align:center;">{!! $stars(1) !!} (1/5)</td>
-        <td class="small">Highly biased. Minimal credibility.</td>
+        <td class="bold">ACQUAINTANCE</td>
+        <td class="bold">Very low – casual contact</td>
+        <td class="bold">{!! $stars(1) !!} (1/5)</td>
+        <td class="bold small">Minimal credibility</td>
+    </tr>
+    <tr>
+        <td class="bold">FAMILY MEMBER</td>
+        <td class="bold">Lowest – personal relationship only</td>
+        <td class="bold">{!! $stars(1) !!} (1/5)</td>
+        <td class="bold small">Highly biased.</td>
     </tr>
 </table>
 
-<div class="sh-crm" style="margin-top:4px;">QUESTION RELIABILITY RATING (ERM MATRIX)</div>
+{{-- Question & reply reliability --}}
 <table class="ref-t" style="margin-top:4px; margin-bottom:10px;">
+    <tr><td class="cm-crm" colspan="4">REFEREE QUESTION AND REPLY RELIABILITY RATING (ERM MATRIX)</td></tr>
     <tr>
-        <th style="width:18%; text-align:center;">CREDIBILITY</th>
+        <th style="width:19%;">CREDIBILITY</th>
         <th style="width:20%;">RISK</th>
-        <th style="width:18%;">TERM</th>
-        <th style="width:44%;">MEANING</th>
+        <th style="width:24%;">INTERPRETATION</th>
+        <th style="width:37%;">MEANING IN REVIEW</th>
     </tr>
     <tr>
-        <td style="text-align:center;">{!! $stars(5) !!} (5/5)</td>
-        <td class="risk-low bold">Fully reliable. Low Risk</td>
+        <td class="bold">{!! $stars(5) !!} (5/5)</td>
+        <td class="bold">Fully reliable.<br>Low Risk</td>
         <td class="bold">OUTSTANDING</td>
-        <td class="small">Candidate excelled in all areas. Very strong endorsement.</td>
+        <td class="bold small">Candidate excelled in all areas, showing exceptional reliability, integrity, and potential. Very strong endorsement.</td>
     </tr>
     <tr>
-        <td style="text-align:center;">{!! $stars(4) !!} (4/5)</td>
-        <td class="risk-moderate bold">Strong. Moderate Risk</td>
+        <td class="bold">{!! $stars(4) !!} (4/5)</td>
+        <td class="bold">Strong reliability. Moderate Risk</td>
         <td class="bold">STRONG PERFORMANCE</td>
-        <td class="small">Consistently met or exceeded expectations. Positive credibility.</td>
+        <td class="bold small">Candidate consistently met or exceeded expectations. Demonstrated solid skills and professionalism. Positive credibility.</td>
     </tr>
     <tr>
-        <td style="text-align:center;">{!! $stars(3) !!} (3/5)</td>
-        <td class="risk-moderate bold">Moderate Risk</td>
+        <td class="bold">{!! $stars(3) !!} (3/5)</td>
+        <td class="bold">Strong reliability. Moderate Risk</td>
         <td class="bold">ACCEPTABLE / COMPETENT</td>
-        <td class="small">Generally met expectations with some inconsistencies. Neutral credibility.</td>
+        <td class="bold small">Candidate generally met expectations with some inconsistencies. Reliable but not outstanding. Neutral credibility.</td>
     </tr>
     <tr>
-        <td style="text-align:center;">{!! $stars(2) !!} (2/5)</td>
-        <td class="risk-high bold">Weak. High Risk</td>
+        <td class="bold">{!! $stars(2) !!} (2/5)</td>
+        <td class="bold">Weak reliability.<br>High Risk</td>
         <td class="bold">BELOW AVERAGE</td>
-        <td class="small">Showed gaps. Needs supervision. Moderate risk.</td>
+        <td class="bold small">Candidate occasionally met expectations but showed gaps. Needs close supervision or improvement. Moderate risk.</td>
     </tr>
     <tr>
-        <td style="text-align:center;">{!! $stars(1) !!} (1/5)</td>
-        <td class="risk-critical bold">Very low. Critical Risk</td>
-        <td class="bold">VERY WEAK</td>
-        <td class="small">Frequently failed to meet expectations. High risk signal.</td>
+        <td class="bold">{!! $stars(1) !!} (1/5)</td>
+        <td class="bold">Very low reliability. Critical Risk</td>
+        <td class="bold">VERY WEAK PERFORMANCE</td>
+        <td class="bold small">Candidate consistently failed to meet expectations; frequent issues in reliability, conduct, or skill. High risk signal.</td>
     </tr>
 </table>
 
 {{-- Per candidate per referee scope --}}
 @foreach($candidates as $candidate)
 @php
-    $refScopes = $candidate->scopeTypes->filter(fn($s) =>
-        collect(['referee','reference'])->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
-    );
+    $refScopes = $candidate->scopeTypes->filter($isRefereeScope);
 @endphp
 @foreach($refScopes as $refScope)
 @php
@@ -1094,28 +1278,37 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 @if(!empty($referees))
     @foreach($referees as $refIdx => $ref)
     {{-- Credibility Validation --}}
-    <div class="sh-gld" style="margin-top:6px;">REFEREE CREDIBILITY VALIDATION @if(count($referees) > 1)— REFEREE {{ $refIdx + 1 }}@endif</div>
-    <table class="ref-t" style="margin-top:4px;">
-        <tr><th colspan="3">VALIDATION</th></tr>
+    <table class="ref-t" style="margin-top:8px;">
+        <tr><td class="cm-gold" colspan="3">REFEREE CREDIBILITY VALIDATION @if(count($referees) > 1)— REFEREE {{ $refIdx + 1 }}@endif</td></tr>
         <tr>
-            <td class="ref-lbl">AFFILIATED ORGANISATION</td>
-            <td colspan="2">{{ $ref['affiliated_org'] ?? '—' }}</td>
+            <th style="width:33%;">VALIDATION</th>
+            <th style="width:30%;">CANDIDATE PROVIDED</th>
+            <th style="width:37%;">NRH VERIFIED INFORMATION</th>
         </tr>
         <tr>
-            <td class="ref-lbl">REFEREE NAME</td>
-            <td colspan="2">{{ $ref['referee_name'] ?? '—' }}</td>
+            <td class="bold">AFFILIATED ORGANIZATION</td>
+            <td></td>
+            <td class="bold">{{ strtoupper($ref['affiliated_org'] ?? '—') }}</td>
         </tr>
         <tr>
-            <td class="ref-lbl">DESIGNATION</td>
-            <td colspan="2">{{ $ref['designation'] ?? '—' }}</td>
+            <td class="bold">REFEREE NAME</td>
+            <td></td>
+            <td class="bold">{{ strtoupper($ref['referee_name'] ?? '—') }}</td>
         </tr>
         <tr>
-            <td class="ref-lbl">RELATIONSHIP</td>
-            <td colspan="2">{{ strtoupper($ref['relationship'] ?? '—') }}</td>
+            <td class="bold">DESIGNATION</td>
+            <td></td>
+            <td class="bold">{{ strtoupper($ref['designation'] ?? '—') }}</td>
         </tr>
         <tr>
-            <td class="ref-lbl">CONTACT ESTABLISHED</td>
-            <td colspan="2">
+            <td class="bold">RELATIONSHIP</td>
+            <td class="bold">-</td>
+            <td class="bold">{{ strtoupper($ref['relationship'] ?? '—') }}</td>
+        </tr>
+        <tr>
+            <td class="bold">CONTACT ESTABLISHED</td>
+            <td></td>
+            <td class="bold">
                 @if(isset($ref['contact_established']))
                     {{ strtolower($ref['contact_established']) === 'successful' || $ref['contact_established'] === true ? 'SUCCESSFUL CONTACT' : 'UNSUCCESSFUL CONTACT' }}
                 @else —
@@ -1123,8 +1316,9 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             </td>
         </tr>
         <tr>
-            <td class="ref-lbl">CONSENT TO REVIEW</td>
-            <td colspan="2">
+            <td class="bold">CONSENT TO REVIEW</td>
+            <td></td>
+            <td class="bold">
                 @if(isset($ref['consent']))
                     {{ strtolower($ref['consent']) === 'consented' ? 'REFEREE CONSENTED FOR REVIEW' : 'REFEREE REFUSED REVIEW' }}
                 @else —
@@ -1132,46 +1326,51 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             </td>
         </tr>
         <tr>
-            <td class="ref-lbl">INDEPENDENT / BIAS REVIEW</td>
-            <td colspan="2">{{ !empty($ref['independent']) ? 'INDEPENDENT REVIEW' : 'POTENTIAL BIAS – FURTHER EVALUATION RECOMMENDED' }}</td>
+            <td class="bold">INDEPENDENT / BIAS REVIEW</td>
+            <td></td>
+            <td class="bold">{{ !empty($ref['independent']) ? 'INDEPENDENT REVIEW' : 'POTENTIAL BIAS – FURTHER EVALUATION RECOMMENDED' }}</td>
         </tr>
         @if(isset($ref['credibility_weight']))
         <tr>
-            <td class="ref-lbl bold">REFEREE CREDIBILITY WEIGHT</td>
-            <td colspan="2" class="bold">
-                {!! $stars((int)$ref['credibility_weight']) !!}
-                ({{ $ref['credibility_weight'] }}/5)
-            </td>
+            <td class="bold" colspan="3">REFEREE CREDIBILITY WEIGHT: {!! $stars((int)$ref['credibility_weight']) !!} ({{ $ref['credibility_weight'] }}/5)</td>
         </tr>
         @endif
     </table>
 
-    {{-- Q&A --}}
+    {{-- Q&A (Word: category | RATE | stars header rows, reply spans the table) --}}
     @if(!empty($ref['questions']))
-    <div class="sh-gld" style="margin-top:6px;">REFEREE INTERVIEW QUESTION AND REPLY</div>
-    @foreach($ref['questions'] as $qa)
-    <div class="qa-category">
-        {{ strtoupper($qa['category'] ?? 'QUESTION') }}
-        @if(isset($qa['rating']))
-        &nbsp;&nbsp;{!! $stars((int)$qa['rating']) !!} ({{ $qa['rating'] }}/5)
-        @endif
-    </div>
-    <div class="qa-reply">{{ $qa['reply'] ?? '—' }}</div>
-    @endforeach
+    <table class="ref-t" style="margin-top:6px;">
+        <tr><td class="cm-gold" colspan="3">REFEREE INTERVIEW QUESTION AND REPLY</td></tr>
+        @foreach($ref['questions'] as $qa)
+        <tr>
+            <td class="ref-lbl" style="width:56%;">{{ strtoupper($qa['category'] ?? 'QUESTION') }}</td>
+            <td class="ref-lbl" style="width:11%;">RATE</td>
+            <td class="ref-lbl" style="width:33%;">@if(isset($qa['rating'])){!! $stars((int)$qa['rating']) !!} ({{ $qa['rating'] }}/5)@endif</td>
+        </tr>
+        <tr>
+            <td colspan="3">{{ $qa['reply'] ?? '—' }}</td>
+        </tr>
+        @endforeach
+    </table>
     @endif
 
     {{-- Overall ERM Risk Analysis --}}
     @if(!empty($ref['overall_strong']) || !empty($ref['overall_moderate']) || !empty($ref['overall_weak']))
-    <div class="sh-gld" style="margin-top:6px;">OVERALL ERM RISK ANALYSIS</div>
-    @if(!empty($ref['overall_strong']))
-    <div class="erm-area-strong"><strong>STRONG AREAS (LOW RISK):</strong> {{ implode(', ', $ref['overall_strong']) }}</div>
-    @endif
-    @if(!empty($ref['overall_moderate']))
-    <div class="erm-area-moderate"><strong>MODERATE AREAS:</strong> {{ implode(', ', $ref['overall_moderate']) }}</div>
-    @endif
-    @if(!empty($ref['overall_weak']))
-    <div class="erm-area-weak"><strong>WEAK AREAS (HIGH RISK):</strong> {{ implode(', ', $ref['overall_weak']) }}</div>
-    @endif
+    <table class="ref-t" style="margin-top:6px;">
+        <tr><td class="cm-gold" colspan="2">OVERALL ERM RISK ANALYSIS</td></tr>
+        <tr>
+            <td class="bold" style="width:39%;">STRONG AREAS (LOW RISK)</td>
+            <td class="bold" style="width:61%;">{{ implode(', ', $ref['overall_strong'] ?? []) }}</td>
+        </tr>
+        <tr>
+            <td class="bold">MODERATE AREAS (MEDIUM RISK)</td>
+            <td class="bold">{{ implode(', ', $ref['overall_moderate'] ?? []) }}</td>
+        </tr>
+        <tr>
+            <td class="bold">WEAK AREAS (HIGH RISK)</td>
+            <td class="bold">{{ implode(', ', $ref['overall_weak'] ?? []) }}</td>
+        </tr>
+    </table>
     @endif
     @endforeach
 @else
@@ -1201,7 +1400,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div class="sh-crm" style="margin-top:8px;">EDUCATION LEVEL HIERARCHY</div>
 <table class="mi" style="margin-top:4px;">
     <tr>
-        <th style="width:36%;">LEVEL</th>
+        <th style="width:32%;">LEVEL</th>
         <th>EXAMPLES</th>
     </tr>
     <tr><td class="mi-lbl">CERTIFICATE</td><td>Short vocational/professional courses (SPM / STPM / IGCSE / O-Level)</td></tr>
@@ -1218,9 +1417,9 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div class="sh-crm" style="margin-top:10px;">RECOGNIZED VS. ACCREDITED DEGREES – COMPARISON MATRIX</div>
 <table class="mi" style="margin-top:4px;">
     <tr>
-        <th style="width:18%;">ASPECT</th>
-        <th style="width:41%;">RECOGNIZED DEGREE</th>
-        <th style="width:41%;">ACCREDITED DEGREE</th>
+        <th style="width:15%;">ASPECT</th>
+        <th style="width:42%;">RECOGNIZED DEGREE</th>
+        <th style="width:43%;">ACCREDITED DEGREE</th>
     </tr>
     <tr>
         <td class="mi-lbl">Definition</td>
@@ -1248,9 +1447,9 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <table class="mi" style="margin-top:4px;">
     <tr>
         <th style="width:24%;">SCENARIO</th>
-        <th style="width:28%;">INSTITUTION RECOGNITION</th>
-        <th style="width:28%;">PROGRAM ACCREDITATION</th>
-        <th style="width:20%; text-align:center;">RISK LEVEL</th>
+        <th style="width:33%;">INSTITUTION RECOGNITION</th>
+        <th style="width:22%;">PROGRAM ACCREDITATION</th>
+        <th style="width:21%; text-align:center;">RISK LEVEL</th>
     </tr>
     <tr>
         <td class="mi-lbl">Real + Accredited</td>
@@ -1281,9 +1480,9 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div class="sh-olv" style="margin-top:10px;">OVERALL PRACTICAL / ERM HIRING RISK DECISION FRAMEWORK</div>
 <table class="mi" style="margin-top:4px;">
     <tr>
-        <th style="width:16%;">SCENARIO</th>
-        <th style="width:36%;">TYPICAL FINDINGS</th>
-        <th style="width:18%; text-align:center;">OVERALL RISK</th>
+        <th style="width:13%;">SCENARIO</th>
+        <th style="width:40%;">TYPICAL FINDINGS</th>
+        <th style="width:17%; text-align:center;">OVERALL RISK</th>
         <th style="width:30%;">RECOMMENDED ACTION</th>
     </tr>
     <tr>

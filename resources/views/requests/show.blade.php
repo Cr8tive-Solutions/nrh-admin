@@ -890,14 +890,16 @@
                             return array_merge($rec, ['fields' => $fa]);
                         }, $findings['records'] ?? []);
 
-                        // ── Detect scope kind (mirrors report template keyword matching) ──
-                        $scopeHay     = strtolower($scope->name.' '.($scope->category ?? ''));
-                        $isReferee    = \Illuminate\Support\Str::contains($scopeHay, ['referee', 'reference']);
-                        $isEmployment = \Illuminate\Support\Str::contains($scopeHay, ['employment', 'work history']);
-                        $isAcademic   = !$isReferee && !$isEmployment
-                            && \Illuminate\Support\Str::contains($scopeHay, ['academic', 'qualification', 'credential', 'education', 'degree', 'certificate', 'certification'])
-                            && !\Illuminate\Support\Str::contains($scopeHay, 'loan');
-                        $scopeKind = $isReferee ? 'referee' : ($isEmployment ? 'employment' : ($isAcademic ? 'academic' : 'generic'));
+                        // ── Detect scope kind (name wins over category — mirrors RequestQueueController::scopeFindingsKind) ──
+                        $kindOf = function (string $hay): ?string {
+                            $hay = strtolower($hay);
+                            if (\Illuminate\Support\Str::contains($hay, ['referee', 'reference'])) return 'referee';
+                            if (\Illuminate\Support\Str::contains($hay, ['employment', 'work history'])) return 'employment';
+                            if (\Illuminate\Support\Str::contains($hay, ['academic', 'qualification', 'credential', 'education', 'degree', 'certificate', 'certification'])
+                                && !\Illuminate\Support\Str::contains($hay, 'loan')) return 'academic';
+                            return null;
+                        };
+                        $scopeKind = $kindOf($scope->name) ?? $kindOf($scope->category ?? '') ?? 'generic';
 
                         // ── Existing structured findings (employment / academic / referee) ──
                         $mapValidation = fn ($items) => array_map(fn ($v) => [
@@ -936,6 +938,7 @@
                         }
                         $exCredentials = array_map(fn ($c) => [
                             'institution'    => $c['institution'] ?? '',
+                            'verifier'       => $c['verifier'] ?? '',
                             'validation'     => $mapValidation($c['validation'] ?? []),
                             'recognition'    => $mapRecognition($c['recognition'] ?? []),
                             'overall_risk'   => $c['overall_risk'] ?? '',
@@ -943,7 +946,7 @@
                         ], $rawCredentials ?? []);
                         if ($scopeKind === 'academic' && empty($exCredentials)) {
                             $exCredentials = [[
-                                'institution' => '', 'validation' => [], 'recognition' => $mapRecognition([]),
+                                'institution' => '', 'verifier' => '', 'validation' => [], 'recognition' => $mapRecognition([]),
                                 'overall_risk' => '', 'overall_action' => '',
                             ]];
                         }
@@ -1020,7 +1023,7 @@
                                 this.empValidation = ['EMPLOYER','JOB TITLE','DATES OF EMPLOYMENT','REASON FOR LEAVING','SALARY/BENEFITS','PERFORMANCE & CONDUCT'].map(a => ({ ...this.blankValidationRow(), aspect: a }));
                             },
                             /* academic credentials */
-                            blankCredential() { return { institution: '', validation: [], recognition: { scenario: '', institution_recognition: '', program_accreditation: '', risk_level: 'low' }, overall_risk: '', overall_action: '' }; },
+                            blankCredential() { return { institution: '', verifier: '', validation: [], recognition: { scenario: '', institution_recognition: '', program_accreditation: '', risk_level: 'low' }, overall_risk: '', overall_action: '' }; },
                             addCredential() { this.credentials.push(this.blankCredential()); },
                             removeCredential(ci) { this.credentials.splice(ci, 1); },
                             addAcaAspect(ci) { this.credentials[ci].validation.push(this.blankValidationRow()); },
@@ -1323,6 +1326,9 @@
                                             <span class="rq-findings-sublabel" style="margin-top:0;">Institution</span>
                                             <input type="text" x-model="cred.institution" placeholder="e.g. University Kebangsaan Malaysia (UKM)" class="rq-findings-input">
 
+                                            <span class="rq-findings-sublabel">Verifier</span>
+                                            <input type="text" x-model="cred.verifier" placeholder="e.g. Records Dept – Ms. Siti bt Hamzah (Record Officer)" class="rq-findings-input">
+
                                             <div class="rq-findings-section-head" style="margin-top:10px;">
                                                 <span class="rq-findings-sublabel" style="margin:0;">Validation Matrix</span>
                                                 <span style="display:inline-flex;gap:6px;">
@@ -1339,8 +1345,16 @@
                                                         <input type="text" x-model="v.aspect" placeholder="ASPECT (e.g. LEVEL)" class="rq-findings-input" style="max-width:60%;">
                                                         <button type="button" @click="removeAcaAspect(ci, vIdx)" class="rq-rec-rm-btn">× Remove</button>
                                                     </div>
-                                                    <span class="rq-findings-sublabel">NRH Verified Information</span>
-                                                    <input type="text" x-model="v.verified" placeholder="e.g. Undergraduate" class="rq-findings-input">
+                                                    <div class="rq-findings-grid-2">
+                                                        <div>
+                                                            <span class="rq-findings-sublabel">Candidate Provided</span>
+                                                            <input type="text" x-model="v.provided" placeholder="e.g. BSc" class="rq-findings-input">
+                                                        </div>
+                                                        <div>
+                                                            <span class="rq-findings-sublabel">NRH Verified Information</span>
+                                                            <input type="text" x-model="v.verified" placeholder="e.g. Undergraduate" class="rq-findings-input">
+                                                        </div>
+                                                    </div>
                                                     <div class="rq-findings-grid-2">
                                                         <div>
                                                             <span class="rq-findings-sublabel">Match</span>

@@ -97,7 +97,14 @@
       "Read(//Users/anwarsaad/Downloads/**)",
       "Bash(rm -f req25_chk-*.png)",
       "Bash(pdftoppm -png -r 60 -f 34 -l 38 req25_full_report_test.pdf req25_chk)",
-      "Bash(pdfinfo req25_full_report_test.pdf)"
+      "Bash(pdfinfo req25_full_report_test.pdf)",
+      "Bash(pdftotext -layout req25_full_report_test.pdf req25.txt)",
+      "Bash(awk -F: '!seen[$2]++')",
+      "Bash(echo \"exit: $?\")",
+      "Bash(echo \"rc=$?\")",
+      "Bash(kill 25033 27053 27951)",
+      "Bash(rm -f v2-*.png)",
+      "Bash(pdftoppm -png -r 60 req25_full_report_test.pdf v2)"
     ]
   }
 }
