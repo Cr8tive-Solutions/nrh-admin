@@ -763,12 +763,14 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $academicScopes    = $candidate->scopeTypes->filter(fn($s) =>
         collect(['academic','qualification','credential','education','degree','certificate','certification'])
             ->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
-        && !collect(['referee','reference','employment','work history'])
+        && !collect(['referee','reference','employment','work history','loan'])
             ->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
     );
     $employmentScopes  = $candidate->scopeTypes->filter(fn($s) =>
         collect(['employment','work history'])
             ->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
+        && !collect(['referee','reference'])
+            ->contains(fn($kw) => str_contains(strtolower($s->name), $kw))
     );
     $refereeScopes     = $candidate->scopeTypes->filter(fn($s) =>
         collect(['referee','reference'])

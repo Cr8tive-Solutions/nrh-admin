@@ -895,7 +895,8 @@
                         $isReferee    = \Illuminate\Support\Str::contains($scopeHay, ['referee', 'reference']);
                         $isEmployment = \Illuminate\Support\Str::contains($scopeHay, ['employment', 'work history']);
                         $isAcademic   = !$isReferee && !$isEmployment
-                            && \Illuminate\Support\Str::contains($scopeHay, ['academic', 'qualification', 'credential', 'education', 'degree', 'certificate', 'certification']);
+                            && \Illuminate\Support\Str::contains($scopeHay, ['academic', 'qualification', 'credential', 'education', 'degree', 'certificate', 'certification'])
+                            && !\Illuminate\Support\Str::contains($scopeHay, 'loan');
                         $scopeKind = $isReferee ? 'referee' : ($isEmployment ? 'employment' : ($isAcademic ? 'academic' : 'generic'));
 
                         // ── Existing structured findings (employment / academic / referee) ──

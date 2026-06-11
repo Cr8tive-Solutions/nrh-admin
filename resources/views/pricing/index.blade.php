@@ -98,6 +98,7 @@
 <div x-data="{
     canEdit: {{ $canEdit ? 'true' : 'false' }},
     customerId: '',
+    customerHid: '',
     customerName: '',
     loading: false,
     countries: [],
@@ -116,8 +117,12 @@
             this.customerId = cid;
             this.$nextTick(() => {
                 const opt = this.$refs.customerSelect.querySelector(`option[value='${cid}']`);
-                if (opt) { this.customerName = opt.textContent.trim(); this.$refs.customerSelect.value = cid; }
-                this.loadScopes(cid);
+                if (opt) {
+                    this.customerName = opt.textContent.trim();
+                    this.customerHid = opt.dataset.hid;
+                    this.$refs.customerSelect.value = cid;
+                    this.loadScopes();
+                }
             });
         }
 
@@ -136,16 +141,17 @@
             return;
         }
         this.customerId = e.target.value;
+        this.customerHid = e.target.options[e.target.selectedIndex].dataset.hid || '';
         this.customerName = e.target.options[e.target.selectedIndex].text;
         this.countries = []; this.prices = {}; this.states = {};
         this.countryFilter = ''; this.scopeSearch = '';
-        if (this.customerId) this.loadScopes(this.customerId);
+        if (this.customerId) this.loadScopes();
     },
 
-    async loadScopes(customerId) {
+    async loadScopes() {
         this.loading = true;
         try {
-            const res = await fetch(`/pricing/${customerId}/scopes`, { headers: { 'Accept': 'application/json' } });
+            const res = await fetch(`/pricing/${this.customerHid}/scopes`, { headers: { 'Accept': 'application/json' } });
             const data = await res.json();
             this.countries = data.countries;
             data.countries.forEach(c => c.categories.forEach(cat => cat.scopes.forEach(scope => {
@@ -217,7 +223,7 @@
         this.saving = true;
         this.saveStatus = '';
         try {
-            const res = await fetch(`/pricing/${this.customerId}`, {
+            const res = await fetch(`/pricing/${this.customerHid}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -259,7 +265,7 @@
         <select x-ref="customerSelect" @change="onCustomerChange($event)" class="pricing-selector">
             <option value="">— Select a customer —</option>
             @foreach($customers as $c)
-            <option value="{{ $c->id }}">{{ $c->name }}</option>
+            <option value="{{ $c->id }}" data-hid="{{ hid($c->id) }}">{{ $c->name }}</option>
             @endforeach
         </select>
 

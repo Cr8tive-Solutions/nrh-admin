@@ -442,7 +442,7 @@ class RequestQueueController extends Controller
         if ($has(['employment', 'work history'])) {
             return 'employment';
         }
-        if ($has(['academic', 'qualification', 'credential', 'education', 'degree', 'certificate', 'certification'])) {
+        if ($has(['academic', 'qualification', 'credential', 'education', 'degree', 'certificate', 'certification']) && ! $has(['loan'])) {
             return 'academic';
         }
 

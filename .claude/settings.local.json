@@ -86,7 +86,18 @@
       "Bash(perl -0pi -e 's/ style=\"background:#1a3a2a;\"//g' resources/views/reports/screening.blade.php)",
       "Bash(perl -i -pe ' *)",
       "Bash(perl -0pi -e ' *)",
-      "Bash(./vendor/bin/pint --test resources/views)"
+      "Bash(./vendor/bin/pint --test resources/views)",
+      "Bash(rm -f req25_pg*.png)",
+      "Bash(pdftoppm -png -r 60 -f 1 -l 6 req25_full_report_test.pdf req25_pg)",
+      "Bash(pdftoppm -png -r 60 -f 7 -l 8 req25_full_report_test.pdf req25_mid)",
+      "Bash(pdftoppm -png -r 60 -f 33 -l 34 req25_full_report_test.pdf req25_emp)",
+      "Bash(pdftoppm -png -r 60 -f 39 -l 40 req25_full_report_test.pdf req25_ref)",
+      "Bash(pdftoppm -png -r 60 -f 35 -l 38 req25_full_report_test.pdf req25_ae)",
+      "Bash(cp /tmp/req25_full_report_test.pdf ~/Downloads/REQ-2026-0013-full-report-preview.pdf)",
+      "Read(//Users/anwarsaad/Downloads/**)",
+      "Bash(rm -f req25_chk-*.png)",
+      "Bash(pdftoppm -png -r 60 -f 34 -l 38 req25_full_report_test.pdf req25_chk)",
+      "Bash(pdfinfo req25_full_report_test.pdf)"
     ]
   }
 }
