@@ -279,7 +279,7 @@ class ReportController extends Controller
         $font        = $fontMetrics->getFont('Oswald', 'normal');
         $canvas->page_text(
             $canvas->get_width() - 115,
-            $canvas->get_height() - 38,
+            $canvas->get_height() - 24,
             'Page {PAGE_NUM} of {PAGE_COUNT}',
             $font,
             8,
