@@ -534,7 +534,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         <td class="val {{ $resultCss($nidT) }} bold">{{ $resultLabel($nidT) }}</td>
     </tr>
     <tr>
-        <td class="val">{!! $dot(['high'=>'#CC0000','medium'=>'#FFC000','low'=>'#00B050','critical'=>'#7C3AED'][$nidLv] ?? '#BFBFBF') !!} Status: {{ $nidStat }}</td>
+        <td class="val">{!! $dot(['high'=>'#CC0000','medium'=>'#FFC000','low'=>'#00B050','critical'=>'#7C3AED'][$nidLv] ?? '#BFBFBF') !!} <span style="color:#0070C0; font-weight:bold; font-style:italic;">Status: {{ $nidStat }}</span></td>
     </tr>
     <tr>
         <th class="lbl">VERIFICATION METHOD</th>
