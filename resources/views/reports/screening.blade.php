@@ -26,27 +26,27 @@ body { font-family: 'Courier Prime', 'Courier', monospace; font-size: 8.5pt; col
 
 /* ── Section headers (Word palette) ── */
 /* .sh = black top-level section bar */
-.sh  { background: #000; color: #fff; padding: 6px 12px; font-weight: bold;
-       font-size: 9.5pt; margin-top: 12px; margin-bottom: 0; letter-spacing: 0.08em;
+.sh  { background: #000; color: #fff; padding: 4px 12px 8px; font-weight: bold;
+       font-size: 9.5pt; line-height: 1.2; margin-top: 12px; margin-bottom: 0; letter-spacing: 0.08em;
        font-family: 'Oswald', sans-serif; }
 /* gold sub-title / divider bar (#C5A82D) */
-.sh-gld { background: #C5A82D; color: #000; padding: 5px 12px; font-weight: bold;
-          font-size: 9pt; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.05em;
+.sh-gld { background: #C5A82D; color: #000; padding: 4px 12px 8px; font-weight: bold;
+          font-size: 9pt; line-height: 1.2; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.05em;
           font-family: 'Oswald', sans-serif; }
 /* cream terminology / index header bar (#DDD9C3) */
-.sh-crm { background: #DDD9C3; color: #000; padding: 5px 12px; font-weight: bold;
-          font-size: 9pt; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.05em;
+.sh-crm { background: #DDD9C3; color: #000; padding: 4px 12px 8px; font-weight: bold;
+          font-size: 9pt; line-height: 1.2; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.05em;
           font-family: 'Oswald', sans-serif; }
 /* olive header bar (#76923C) */
-.sh-olv { background: #76923C; color: #fff; padding: 5px 12px; font-weight: bold;
-          font-size: 9pt; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.05em;
+.sh-olv { background: #76923C; color: #fff; padding: 4px 12px 8px; font-weight: bold;
+          font-size: 9pt; line-height: 1.2; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.05em;
           font-family: 'Oswald', sans-serif; }
 /* legacy alias — kept dark green for any unconverted usage */
 .sh-erm { background: #053827; color: #fff; padding: 4px 12px 8px; font-weight: bold;
           font-size: 9pt; line-height: 1.2; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.06em;
           font-family: 'Oswald', sans-serif; }
-.shs { background: #C5A82D; color: #000; padding: 5px 10px; font-weight: bold;
-       font-size: 9pt; margin-top: 0; margin-bottom: 0;
+.shs { background: #C5A82D; color: #000; padding: 4px 10px 7px; font-weight: bold;
+       font-size: 9pt; line-height: 1.2; margin-top: 0; margin-bottom: 0;
        font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
 .shd { background: #053827; color: #fff; padding: 4px 10px 7px; font-size: 8.5pt; line-height: 1.2;
        font-weight: bold; letter-spacing: 0.08em; margin-top: 10px; margin-bottom: 0;
@@ -126,7 +126,7 @@ table.lgt td.lg-lvl { width: 43%; font-weight: bold; }
 table.rmt { width: 100%; margin-bottom: 10px; }
 table.rmt th { background: #C5A82D; color: #000; font-weight: bold; padding: 4px 8px 7px;
                border: 1px solid #000; font-size: 8.5pt; text-align: left; line-height: 1.2;
-               font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
+               vertical-align: middle; font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
 table.rmt td { border: 1px solid #000; padding: 4px 8px 7px; font-size: 8pt; vertical-align: middle; line-height: 1.2; }
 table.rmt td.rmt-scope { background: #76923C; color: #fff; font-weight: bold;
                font-family: 'Oswald', sans-serif; }
@@ -134,7 +134,7 @@ table.rmt td.rmt-scope { background: #76923C; color: #fff; font-weight: bold;
 /* ── Compliance Risk Heatmap ── */
 table.hmt { width: 100%; margin-bottom: 10px; }
 table.hmt th { background: #C5A82D; color: #000; font-weight: bold; padding: 4px 8px 7px;
-               border: 1px solid #000; font-size: 8pt; line-height: 1.2;
+               border: 1px solid #000; font-size: 8pt; line-height: 1.2; vertical-align: middle;
                font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
 table.hmt td { border: 1px solid #000; padding: 4px 8px 7px; font-size: 7.5pt; vertical-align: middle; line-height: 1.2; }
 table.hmt td.hm-domain { font-weight: bold; font-family: 'Oswald', sans-serif;
@@ -142,7 +142,7 @@ table.hmt td.hm-domain { font-weight: bold; font-family: 'Oswald', sans-serif;
 
 /* ── DATA REPORT block (Word-exact single table, olive 24% label col) ── */
 table.drt { width: 100%; margin-bottom: 8px; }
-table.drt td, table.drt th { border: 1px solid #000; padding: 4px 8px 7px; vertical-align: middle; font-size: 8.5pt; line-height: 1.2; }
+table.drt td, table.drt th { border: 1px solid #000; padding: 4px 8px 7px; vertical-align: middle; font-size: 8.5pt; line-height: 1.2; text-align: justify; }
 table.drt th.dr-lbl { background: #76923C; color: #fff; font-weight: bold; text-align: left;
                       font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; width: 24%; }
 table.drt th.dr-lbl-c { vertical-align: middle; }
@@ -156,7 +156,7 @@ table.drt td.dr-res   { background: #DDD9C3; color: #002060; font-weight: bold;
 /* ── Credential / Employment validation matrix ── */
 table.cmt { width: 100%; margin: 6px 0 10px; }
 table.cmt th { background: #76923C; color: #fff; padding: 3px 8px 6px; border: 1px solid #000;
-               font-size: 8pt; line-height: 1.2; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
+               font-size: 8pt; line-height: 1.2; vertical-align: middle; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
 table.cmt td { border: 1px solid #000; padding: 3px 8px 6px; font-size: 8pt; vertical-align: middle; line-height: 1.2; }
 table.cmt td.cm-aspect { font-weight: bold; background: #fff; color: #000; width: 20%; }
 /* gold span-header row inside matrix tables */
@@ -183,7 +183,7 @@ table.cmt td.cm-blk {
 /* ── Recognition matrix ── */
 table.rct { width: 100%; margin: 6px 0 10px; }
 table.rct th { background: #76923C; color: #fff; padding: 3px 8px 6px; border: 1px solid #000;
-               font-size: 8pt; line-height: 1.2; font-family: 'Oswald', sans-serif; }
+               font-size: 8pt; line-height: 1.2; vertical-align: middle; font-family: 'Oswald', sans-serif; }
 table.rct td { border: 1px solid #000; padding: 3px 8px 6px; font-size: 8pt; vertical-align: middle; line-height: 1.2; }
 
 /* ── Overall ERM risk box ── */
@@ -195,9 +195,9 @@ table.rct td { border: 1px solid #000; padding: 3px 8px 6px; font-size: 8pt; ver
 
 /* ── Referee section ── */
 table.ref-t { width: 100%; margin: 6px 0; }
-table.ref-t th { background: #76923C; color: #fff; padding: 4px 8px; border: 1px solid #000;
-                 font-size: 8pt; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
-table.ref-t td { border: 1px solid #000; padding: 4px 8px; font-size: 8pt; vertical-align: top; }
+table.ref-t th { background: #76923C; color: #fff; padding: 3px 8px 6px; border: 1px solid #000;
+                 font-size: 8pt; line-height: 1.2; vertical-align: middle; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
+table.ref-t td { border: 1px solid #000; padding: 3px 8px 6px; font-size: 8pt; vertical-align: middle; line-height: 1.2; }
 table.ref-t td.ref-lbl { background: #76923C; color: #fff; font-weight: bold; width: 32%;
                          font-family: 'Oswald', sans-serif; }
 .stars { color: #C5A82D; font-size: 9.5pt; font-family: 'DejaVu Sans', sans-serif; letter-spacing: 0.5px; }
@@ -534,11 +534,11 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         <td class="val {{ $resultCss($nidT) }} bold">{{ $resultLabel($nidT) }}</td>
     </tr>
     <tr>
-        <td class="val">{!! $riskBadge($nidLv) !!}&nbsp; {{ $nidStat }}</td>
+        <td class="val">{!! $dot(['high'=>'#CC0000','medium'=>'#FFC000','low'=>'#00B050','critical'=>'#7C3AED'][$nidLv] ?? '#BFBFBF') !!} Status: {{ $nidStat }}</td>
     </tr>
     <tr>
         <th class="lbl">VERIFICATION METHOD</th>
-        <td class="val small">{{ $nidVer }}</td>
+        <td class="val small" style="text-align:justify;">{{ $nidVer }}</td>
     </tr>
 </table>
 
@@ -784,7 +784,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         @endif
         <tr>
             <th class="dr-lbl">VERIFICATION METHOD</th>
-            <td colspan="2" class="small">
+            <td colspan="2" class="small" style="text-align:justify;">
                 @if($verMethod){{ $verMethod }}@else
                 Verification was conducted using the candidate's Name and ID against authoritative databases and declared information.
                 @endif
