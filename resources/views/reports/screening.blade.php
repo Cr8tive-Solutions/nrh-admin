@@ -741,7 +741,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             @if(!empty($rec['risk_text']))
             @php $recLv = $rec['risk_level'] ?? $rLevel; @endphp
             <tr>
-                <td colspan="2">{!! $lvDot($recLv) !!} <span class="{{ $recLv === 'high' ? 't-risk' : 'bold' }}">Risk Level: {{ $rec['risk_text'] }}</span></td>
+                <td colspan="2"><span style="font-family:'DejaVu Sans',sans-serif; color:{{ ['high'=>'#CC0000','medium'=>'#FFC000','low'=>'#00B050'][$recLv] ?? '#BFBFBF' }}; font-size:10pt;">&#9679;</span> <span style="color:#0070C0; font-weight:bold; font-style:italic;">Risk Level: {{ $rec['risk_text'] }}</span></td>
             </tr>
             @endif
         </table>
@@ -770,7 +770,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
                 <td class="dr-res" colspan="2">{{ $rLabel }}</td>
             </tr>
             <tr>
-                <td colspan="2" class="bold">{!! $lvDot($rLevel) !!} Status: {{ $rStat }}</td>
+                <td colspan="2"><span style="font-family:'DejaVu Sans',sans-serif; color:{{ ['high'=>'#CC0000','medium'=>'#FFC000','low'=>'#00B050'][$rLevel] ?? '#BFBFBF' }}; font-size:10pt;">&#9679;</span> <span style="color:#0070C0; font-weight:bold; font-style:italic;">Status: {{ $rStat }}</span></td>
             </tr>
         </table>
     @endif
