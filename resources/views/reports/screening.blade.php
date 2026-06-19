@@ -42,20 +42,20 @@ body { font-family: 'Courier Prime', 'Courier', monospace; font-size: 8.5pt; col
           font-size: 9pt; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.05em;
           font-family: 'Oswald', sans-serif; }
 /* legacy alias — kept dark green for any unconverted usage */
-.sh-erm { background: #053827; color: #fff; padding: 6px 12px; font-weight: bold;
-          font-size: 9pt; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.06em;
+.sh-erm { background: #053827; color: #fff; padding: 4px 12px 8px; font-weight: bold;
+          font-size: 9pt; line-height: 1.2; margin-top: 8px; margin-bottom: 0; letter-spacing: 0.06em;
           font-family: 'Oswald', sans-serif; }
 .shs { background: #C5A82D; color: #000; padding: 5px 10px; font-weight: bold;
        font-size: 9pt; margin-top: 0; margin-bottom: 0;
        font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
-.shd { background: #053827; color: #fff; padding: 5px 10px; font-size: 8.5pt;
+.shd { background: #053827; color: #fff; padding: 4px 10px 7px; font-size: 8.5pt; line-height: 1.2;
        font-weight: bold; letter-spacing: 0.08em; margin-top: 10px; margin-bottom: 0;
        font-family: 'Oswald', sans-serif; }
 
 /* ── Tables ── */
 table { border-collapse: collapse; }
 table.rt { width: 100%; margin-bottom: 8px; page-break-inside: avoid; }
-table.rt td, table.rt th { border: 1px solid #2a2a2a; padding: 5px 8px; vertical-align: top; }
+table.rt td, table.rt th { border: 1px solid #2a2a2a; padding: 4px 8px 7px; vertical-align: middle; line-height: 1.2; }
 table.rt th.lbl { background: #76923C; color: #fff; font-weight: bold; text-align: left;
                   font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; font-size: 8.5pt; }
 table.rt td.val { background: #fff; }
@@ -63,29 +63,29 @@ table.rt tr.div td { background: #d4af37; color: #1a1a1a; font-weight: bold; pad
                      font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
 
 /* ── Word-exact profile tables (Page 1: REPORT PROFILE / NRH INTERNAL) ── */
-.sh-pt { background: #053827; color: #fff; padding: 7px 12px; font-weight: bold;
-         font-size: 9.5pt; margin-top: 12px; margin-bottom: 0; letter-spacing: 0.08em;
+.sh-pt { background: #053827; color: #fff; padding: 5px 12px 8px; font-weight: bold;
+         font-size: 9.5pt; line-height: 1.2; margin-top: 12px; margin-bottom: 0; letter-spacing: 0.08em;
          font-family: 'Oswald', sans-serif; text-align: center; }
 table.pt { width: 100%; margin-bottom: 8px; page-break-inside: avoid; }
-table.pt th, table.pt td { border: 1px solid #000; padding: 7px 8px; vertical-align: middle;
-                           text-align: left; font-size: 8.5pt; }
+table.pt th, table.pt td { border: 1px solid #000; padding: 5px 8px 8px; vertical-align: middle;
+                           text-align: left; font-size: 8.5pt; line-height: 1.2; }
 table.pt th.pt-lbl { background: #fff; color: #000; font-weight: bold;
                      font-family: 'Oswald', sans-serif; letter-spacing: 0.03em; }
 table.pt td.pt-val { background: #fff; color: #000; }
 
 /* ── Word-exact black section bars + plain content (Page 2) ── */
 table.sh-blk { width: 100%; margin: 12px 0 6px; border-collapse: collapse; page-break-inside: avoid; }
-table.sh-blk td { background: #000; color: #fff; height: 28px; padding: 4px 12px;
-                  font-weight: bold; font-size: 9.5pt; letter-spacing: 0.08em;
+table.sh-blk td { background: #000; color: #fff; height: 28px; padding: 4px 12px 7px;
+                  font-weight: bold; font-size: 9.5pt; line-height: 1.2; letter-spacing: 0.08em;
                   font-family: 'Oswald', sans-serif; text-align: left; vertical-align: middle; }
-.body-p { font-size: 8.5pt; line-height: 1.6; margin: 0 0 10px; text-align: left; }
+.body-p { font-size: 8.5pt; line-height: 1.6; margin: 0 0 10px; text-align: justify; }
 ul.body-ul { padding-left: 18px; margin: 0 0 10px; font-size: 8.5pt; line-height: 1.6; }
 ul.body-ul li { margin-bottom: 3px; }
 table.lgt { width: 100%; margin: 0 0 10px; page-break-inside: avoid; }
-table.lgt td { border: 1px solid #000; padding: 6px 8px; vertical-align: middle;
+table.lgt td { border: 1px solid #000; padding: 5px 8px 8px; vertical-align: middle; line-height: 1.2;
                font-size: 8.5pt; text-align: left; }
 table.lgt td.lg-lbl { color: #0070C0; font-weight: bold; font-family: 'Oswald', sans-serif; width: 43%; }
-table.lgt td.lg-dot { text-align: center; width: 14%; font-size: 12pt; line-height: 1; }
+table.lgt td.lg-dot { text-align: center; width: 14%; font-size: 12pt; line-height: 1; padding: 6px 8px; }
 table.lgt td.lg-lvl { width: 43%; font-weight: bold; }
 
 /* ── Risk indicators ── */
@@ -107,7 +107,7 @@ table.lgt td.lg-lvl { width: 43%; font-weight: bold; }
 .cov-logo img { height: 84px; }
 .cov-title { text-align: center; font-size: 17pt; font-weight: bold; color: #023527;
              letter-spacing: 0.08em; margin: 6px 0 2px;
-             font-family: 'Oswald', sans-serif; }
+             font-family: 'Courier Prime', 'Courier', monospace; }
 .cov-sub   { text-align: center; font-size: 8pt; color: #888; letter-spacing: 0.2em;
              margin-bottom: 10px; text-transform: uppercase;
              font-family: 'Oswald', sans-serif; }
@@ -124,25 +124,25 @@ table.lgt td.lg-lvl { width: 43%; font-weight: bold; }
 
 /* ── Risk matrix summary table (per candidate) ── */
 table.rmt { width: 100%; margin-bottom: 10px; }
-table.rmt th { background: #C5A82D; color: #000; font-weight: bold; padding: 5px 8px;
-               border: 1px solid #000; font-size: 8.5pt; text-align: left;
+table.rmt th { background: #C5A82D; color: #000; font-weight: bold; padding: 4px 8px 7px;
+               border: 1px solid #000; font-size: 8.5pt; text-align: left; line-height: 1.2;
                font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
-table.rmt td { border: 1px solid #000; padding: 5px 8px; font-size: 8pt; vertical-align: middle; }
+table.rmt td { border: 1px solid #000; padding: 4px 8px 7px; font-size: 8pt; vertical-align: middle; line-height: 1.2; }
 table.rmt td.rmt-scope { background: #76923C; color: #fff; font-weight: bold;
                font-family: 'Oswald', sans-serif; }
 
 /* ── Compliance Risk Heatmap ── */
 table.hmt { width: 100%; margin-bottom: 10px; }
-table.hmt th { background: #C5A82D; color: #000; font-weight: bold; padding: 5px 8px;
-               border: 1px solid #000; font-size: 8pt;
+table.hmt th { background: #C5A82D; color: #000; font-weight: bold; padding: 4px 8px 7px;
+               border: 1px solid #000; font-size: 8pt; line-height: 1.2;
                font-family: 'Oswald', sans-serif; letter-spacing: 0.05em; }
-table.hmt td { border: 1px solid #000; padding: 5px 8px; font-size: 7.5pt; vertical-align: middle; }
+table.hmt td { border: 1px solid #000; padding: 4px 8px 7px; font-size: 7.5pt; vertical-align: middle; line-height: 1.2; }
 table.hmt td.hm-domain { font-weight: bold; font-family: 'Oswald', sans-serif;
                           font-size: 8pt; letter-spacing: 0.04em; background: #76923C; color: #fff; }
 
 /* ── DATA REPORT block (Word-exact single table, olive 24% label col) ── */
 table.drt { width: 100%; margin-bottom: 8px; }
-table.drt td, table.drt th { border: 1px solid #000; padding: 5px 8px; vertical-align: top; font-size: 8.5pt; }
+table.drt td, table.drt th { border: 1px solid #000; padding: 4px 8px 7px; vertical-align: middle; font-size: 8.5pt; line-height: 1.2; }
 table.drt th.dr-lbl { background: #76923C; color: #fff; font-weight: bold; text-align: left;
                       font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; width: 24%; }
 table.drt th.dr-lbl-c { vertical-align: middle; }
@@ -155,9 +155,9 @@ table.drt td.dr-res   { background: #DDD9C3; color: #002060; font-weight: bold;
 
 /* ── Credential / Employment validation matrix ── */
 table.cmt { width: 100%; margin: 6px 0 10px; }
-table.cmt th { background: #76923C; color: #fff; padding: 4px 8px; border: 1px solid #000;
-               font-size: 8pt; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
-table.cmt td { border: 1px solid #000; padding: 4px 8px; font-size: 8pt; vertical-align: middle; }
+table.cmt th { background: #76923C; color: #fff; padding: 3px 8px 6px; border: 1px solid #000;
+               font-size: 8pt; line-height: 1.2; font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
+table.cmt td { border: 1px solid #000; padding: 3px 8px 6px; font-size: 8pt; vertical-align: middle; line-height: 1.2; }
 table.cmt td.cm-aspect { font-weight: bold; background: #fff; color: #000; width: 20%; }
 /* gold span-header row inside matrix tables */
 table.cmt td.cm-gold, table.rct td.cm-gold, table.ref-t td.cm-gold {
@@ -182,9 +182,9 @@ table.cmt td.cm-blk {
 
 /* ── Recognition matrix ── */
 table.rct { width: 100%; margin: 6px 0 10px; }
-table.rct th { background: #76923C; color: #fff; padding: 4px 8px; border: 1px solid #000;
-               font-size: 8pt; font-family: 'Oswald', sans-serif; }
-table.rct td { border: 1px solid #000; padding: 4px 8px; font-size: 8pt; }
+table.rct th { background: #76923C; color: #fff; padding: 3px 8px 6px; border: 1px solid #000;
+               font-size: 8pt; line-height: 1.2; font-family: 'Oswald', sans-serif; }
+table.rct td { border: 1px solid #000; padding: 3px 8px 6px; font-size: 8pt; vertical-align: middle; line-height: 1.2; }
 
 /* ── Overall ERM risk box ── */
 .erm-overall { padding: 7px 12px; margin: 6px 0; border: 1px solid #2a2a2a; font-size: 8.5pt; }
@@ -410,7 +410,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 
 <div class="cov-logo"><img src="{{ $logoSrc }}" alt="NRH Intelligence"></div>
 <div class="cov-title">NRH INTELLIGENCE</div>
-<div class="cov-sub">Compliance Screening Report &nbsp;—&nbsp; Private &amp; Confidential</div>
+<div class="cov-sub">Compliance Screening Report —&nbsp;Private &amp; Confidential</div>
 
 <div class="sh-pt" style="margin-top:4px;">REPORT PROFILE</div>
 <table class="pt">
@@ -624,7 +624,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:9.5pt; letter-spacing:0.08em; color:#000; text-align:center; margin:12px 0 4px;">COMPLIANCE SCREENING DATA REPORT</div>
 
 <div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:8.5pt; letter-spacing:0.05em; color:#000; margin:6px 0 2px;">DATA REPORT SCREENING:</div>
-<div style="margin:0 0 8px; font-size:8.5pt; line-height:1.6; color:#333;">
+<div style="margin:0 0 8px; font-size:8.5pt; line-height:1.6; color:#333; text-align:justify;">
     The compliance screening framework evaluates exposures across six key domains: legal, international, financial,
     political, reputational, and regulatory risk. It encompasses checks such as crime integrity, corruption records,
     global sanctions, AML/CTF, PEPs, civil and financial defaults, directorship and shareholding risks, and
