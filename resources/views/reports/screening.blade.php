@@ -603,7 +603,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     @endphp
     <tr>
         <td class="hm-domain">{{ $dom }}</td>
-        <td class="bold" style="font-size:7.5pt;">{{ implode(', ', $row['scopes']) }}</td>
+        <td class="bold" style="font-size:7.5pt; text-align:justify;">{{ implode(', ', $row['scopes']) }}</td>
         <td class="bold">{!! $riskBadge($aggRisk) !!}</td>
         <td class="bold" style="font-size:7.5pt;">
             @if($aggRisk === 'high') Red blocks (critical exposure)
