@@ -169,7 +169,7 @@ table.cmt td.cm-crm, table.rct td.cm-crm, table.ref-t td.cm-crm {
     font-family: 'Oswald', sans-serif; letter-spacing: 0.04em; }
 /* black terminology header row */
 table.cmt td.cm-blk {
-    background: #000; color: #fff; font-weight: bold;
+    background: #000; color: #fff; font-weight: bold; text-align: center;
     font-family: 'Oswald', sans-serif; letter-spacing: 0.06em; font-size: 8.5pt; }
 .match-M  { background: #ecfdf5; color: #023527; font-weight: bold; }
 .match-PM { background: #fffbeb; color: #92400e; font-weight: bold; }
@@ -249,7 +249,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         if (!empty($f['risk_level'])) return $f['risk_level'];
         return match($st) { 'complete' => 'low', 'flagged' => 'high', default => 'nil' };
     };
-    $dot = fn(string $c): string => '<span style="font-family:\'DejaVu Sans\', sans-serif; color:'.$c.'; font-size:8pt;">&#9679;</span>';
+    $dot = fn(string $c): string => '<span style="font-family:\'DejaVu Sans\', sans-serif; color:'.$c.'; font-size:10pt;">&#9679;</span>';
     $riskBadge = function(string $lv) use ($dot): string {
         return match($lv) {
             'high'     => $dot('#CC0000').' <span class="bold">High</span>',
@@ -701,9 +701,9 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             </tr>
             @if(!empty($rec['title']))
             <tr>
-                <td colspan="2">
+                <td colspan="2" style="text-align:justify;">
                     <span class="t-red">{{ strtoupper($rec['title']) }}</span>
-                    @if(!empty($rec['act']))<br><span class="small muted">{{ strtoupper($rec['act']) }}</span>@endif
+                    @if(!empty($rec['act']))<br><span class="small muted bold">{{ strtoupper($rec['act']) }}</span>@endif
                 </td>
             </tr>
             @endif
@@ -711,13 +711,13 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             <tr>
                 @if(!empty($rec['section']))
                 <td style="width:27%;"><span class="t-blue">{{ $rec['section'] }}</span></td>
-                <td>
+                <td style="font-weight:bold;">
                     <span class="t-blue">Offence description</span>
                     @if(!empty($rec['description']))<br>{{ $rec['description'] }}@endif
                     @if(!empty($rec['penalty']))<br>Penalty: {{ $rec['penalty'] }}@endif
                 </td>
                 @else
-                <td colspan="2">
+                <td colspan="2" style="font-weight:bold;">
                     @if(!empty($rec['description'])){{ $rec['description'] }}@endif
                     @if(!empty($rec['penalty']))<br>Penalty: {{ $rec['penalty'] }}@endif
                 </td>
@@ -1174,7 +1174,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 @if($hasAnyReferee)
 <div class="sh-gld">REFEREE INTERVIEW REPORT</div>
 
-<table class="sh-blk" style="margin-top:6px;"><tr><td>REFEREE INTERVIEW REPORT TERMINOLOGY</td></tr></table>
+<table class="sh-blk" style="margin-top:6px;"><tr><td style="text-align:center;">REFEREE INTERVIEW REPORT TERMINOLOGY</td></tr></table>
 <p class="body-p">
     A referee interview is a risk management tool within the ERM framework. It ensures that hiring decisions
     are evidence-based, defensible, and aligned with organizational standards.
