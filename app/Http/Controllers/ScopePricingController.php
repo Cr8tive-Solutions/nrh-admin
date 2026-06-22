@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\CustomerScopePrice;
 use App\Models\ScopeType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ScopePricingController extends Controller
 {
@@ -21,7 +22,7 @@ class ScopePricingController extends Controller
             $existingPrices = CustomerScopePrice::where('customer_id', $customer->id)
                 ->pluck('price', 'scope_type_id');
 
-            $scopesByCountry = Country::with(['scopeTypes' => fn ($q) => $q->orderBy('id')])
+            $scopesByCountry = Country::with(['scopeTypes' => fn ($q) => $q->orderBy('sort_order')->orderBy('id')])
                 ->whereHas('scopeTypes')
                 ->orderByRaw("CASE WHEN name = 'Malaysia' THEN 0 ELSE 1 END, name")
                 ->get()
@@ -29,6 +30,7 @@ class ScopePricingController extends Controller
                     $country->scopeTypes->each(function ($scope) use ($existingPrices) {
                         $scope->custom_price = $existingPrices[$scope->id] ?? null;
                     });
+
                     return $country;
                 });
         }
@@ -41,7 +43,7 @@ class ScopePricingController extends Controller
         $existingPrices = CustomerScopePrice::where('customer_id', $customer->id)
             ->pluck('price', 'scope_type_id');
 
-        $countries = Country::with(['scopeTypes' => fn ($q) => $q->orderBy('id')])
+        $countries = Country::with(['scopeTypes' => fn ($q) => $q->orderBy('sort_order')->orderBy('id')])
             ->whereHas('scopeTypes')
             ->orderByRaw("CASE WHEN name = 'Malaysia' THEN 0 ELSE 1 END, name")
             ->get()
@@ -49,26 +51,26 @@ class ScopePricingController extends Controller
                 $categories = $country->scopeTypes
                     ->groupBy('category')
                     ->map(fn ($scopes, $category) => [
-                        'name'   => $category ?: 'Uncategorised',
+                        'name' => $category ?: 'Uncategorised',
                         'scopes' => $scopes->map(fn ($scope) => [
-                            'id'              => $scope->id,
-                            'name'            => $scope->name,
-                            'price_on_request'=> $scope->price_on_request,
-                            'default_price'   => $scope->price_on_request ? null : number_format($scope->price, 2),
-                            'custom_price'    => isset($existingPrices[$scope->id])
+                            'id' => $scope->id,
+                            'name' => $scope->name,
+                            'price_on_request' => $scope->price_on_request,
+                            'default_price' => $scope->price_on_request ? null : number_format($scope->price, 2),
+                            'custom_price' => isset($existingPrices[$scope->id])
                                                     ? number_format($existingPrices[$scope->id], 2, '.', '')
                                                     : null,
-                            'save_url'        => route('pricing.update-one', [$customer, $scope]),
+                            'save_url' => route('pricing.update-one', [$customer, $scope]),
                         ])->values(),
                     ])
                     ->values();
 
                 return [
-                    'name'        => $country->name,
-                    'flag'        => $country->flag,
-                    'currency'    => $country->currency,
+                    'name' => $country->name,
+                    'flag' => $country->flag,
+                    'currency' => $country->currency,
                     'scope_count' => $country->scopeTypes->count(),
-                    'categories'  => $categories,
+                    'categories' => $categories,
                 ];
             });
 
@@ -78,9 +80,9 @@ class ScopePricingController extends Controller
     public function upsert(Request $request, Customer $customer)
     {
         $data = $request->validate([
-            'prices'                => 'required|array|min:1',
-            'prices.*.scope_type_id'=> 'required|exists:scope_types,id',
-            'prices.*.price'        => 'required|numeric|min:0',
+            'prices' => 'required|array|min:1',
+            'prices.*.scope_type_id' => 'required|exists:scope_types,id',
+            'prices.*.price' => 'required|numeric|min:0',
         ]);
 
         $saved = [];
@@ -94,8 +96,8 @@ class ScopePricingController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'saved'   => $saved,
-                'message' => count($saved).' '.\Illuminate\Support\Str::plural('price', count($saved)).' updated.',
+                'saved' => $saved,
+                'message' => count($saved).' '.Str::plural('price', count($saved)).' updated.',
             ]);
         }
 

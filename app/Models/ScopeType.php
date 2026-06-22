@@ -9,16 +9,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ScopeType extends Model
 {
     use HasHashid;
+
     protected $fillable = [
-        'country_id', 'name', 'category', 'turnaround', 'turnaround_hours',
+        'country_id', 'name', 'category', 'sort_order', 'turnaround', 'turnaround_hours',
         'price', 'price_on_request', 'description', 'requires_signed_consent',
     ];
 
     protected $casts = [
-        'price'                   => 'decimal:2',
-        'price_on_request'        => 'boolean',
+        'price' => 'decimal:2',
+        'price_on_request' => 'boolean',
         'requires_signed_consent' => 'boolean',
-        'turnaround_hours'        => 'integer',
+        'turnaround_hours' => 'integer',
     ];
 
     public function country(): BelongsTo
@@ -42,6 +43,7 @@ class ScopeType extends Model
         if ($this->price_on_request) {
             return 'Price on request';
         }
+
         return number_format($this->price, 2);
     }
 }

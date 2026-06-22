@@ -108,7 +108,9 @@
       "Bash(rm -f v6-*.png)",
       "Bash(pdftoppm -png -r 60 req25_full_report_test.pdf v6)",
       "Bash(rm -f v7-*.png)",
-      "Bash(pdftoppm -png -r 60 req25_full_report_test.pdf v7)"
+      "Bash(pdftoppm -png -r 60 req25_full_report_test.pdf v7)",
+      "Bash(pip show *)",
+      "Bash(./vendor/bin/pint database/seeders/DataReportScopeSeeder.php database/migrations/2026_06_22_000001_add_sort_order_to_scope_types.php app/Models/ScopeType.php app/Models/RequestCandidate.php app/Http/Controllers/Config/ScopeTypeController.php app/Http/Controllers/ScopePricingController.php)"
     ]
   }
 }

@@ -32,11 +32,11 @@ class RequestCandidate extends Model
     public function statusBadgeClass(): string
     {
         return match ($this->status) {
-            'new'         => 'badge-blue',
+            'new' => 'badge-blue',
             'in_progress' => 'badge-yellow',
-            'flagged'     => 'badge-red',
-            'complete'    => 'badge-green',
-            default       => 'badge-gray',
+            'flagged' => 'badge-red',
+            'complete' => 'badge-green',
+            default => 'badge-gray',
         };
     }
 
@@ -45,6 +45,7 @@ class RequestCandidate extends Model
         return $this->belongsToMany(ScopeType::class, 'candidate_scope_type', 'request_candidate_id', 'scope_type_id')
             ->using(CandidateScopeType::class)
             ->withPivot('status', 'assigned_at', 'started_at', 'completed_at', 'findings')
+            ->orderBy('scope_types.sort_order')
             ->orderBy('scope_types.id');
     }
 
