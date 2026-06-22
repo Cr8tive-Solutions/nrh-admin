@@ -618,10 +618,10 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 </table>
 @endif
 
-<div class="pb"></div>
-
 {{-- ── DATA REPORT blocks ── --}}
-<div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:9.5pt; letter-spacing:0.08em; color:#000; text-align:center; margin:12px 0 4px;">COMPLIANCE SCREENING DATA REPORT</div>
+{{-- page-break-before (not a standalone .pb div) so a full preceding page
+     does not leave an empty page before this section. --}}
+<div style="page-break-before:always; font-family:'Oswald',sans-serif; font-weight:bold; font-size:9.5pt; letter-spacing:0.08em; color:#000; text-align:center; margin:12px 0 4px;">COMPLIANCE SCREENING DATA REPORT</div>
 
 <div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:8.5pt; letter-spacing:0.05em; color:#000; margin:6px 0 2px;">DATA REPORT SCREENING:</div>
 <div style="margin:0 0 8px; font-size:8.5pt; line-height:1.6; color:#333; text-align:justify;">
@@ -1522,12 +1522,10 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     </tr>
 </table>
 
-<div class="pb"></div>
-
 {{-- ══════════════════════════════════════════
      NRH LEGAL DISCLAIMER
 ═══════════════════════════════════════════ --}}
-<div class="sh">NRH LEGAL DISCLAIMER</div>
+<div class="sh" style="page-break-before:always;">NRH LEGAL DISCLAIMER</div>
 
 <div style="margin-top:8px; font-size:8.5pt; font-weight:bold; color:#023527; text-transform:uppercase; margin-bottom:4px;">Permitted Use of Information</div>
 <div style="font-size:8.5pt; line-height:1.6; margin-bottom:8px;">
