@@ -866,10 +866,6 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $hasCompetency = $academicScopes->count() || $employmentScopes->count();
 @endphp
 
-@if($hasCompetency || $academicScopes->count() === 0)
-<div class="shs" style="margin-top:10px;">{{ strtoupper($candidate->name) }}</div>
-@endif
-
 {{-- ── Academic Credential Validation ── --}}
 @if($academicScopes->count())
     @foreach($academicScopes as $aScope)
@@ -890,7 +886,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             ]];
         }
     @endphp
-    <div class="sh-gld" style="margin-top:8px;">ACADEMIC CREDENTIAL VALIDATION</div>
+    <div class="sh-gld" style="margin-top:8px; page-break-before:always;">ACADEMIC CREDENTIAL VALIDATION</div>
 
     @if(!empty($aCredentials))
         @foreach($aCredentials as $aCredIdx => $cred)
@@ -902,6 +898,9 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             $aOverallAct  = $cred['overall_action'] ?? null;
             $aVerifier    = $cred['verifier'] ?? null;
         @endphp
+
+        {{-- Each credential is its own result → starts on a new page (after the first). --}}
+        <div @if($aCredIdx > 0)style="page-break-before:always;"@endif>
 
         {{-- Credential info: VALIDATION | CANDIDATE PROVIDED | NRH VERIFIED INFORMATION --}}
         @if($aValidation)
@@ -995,6 +994,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             <tr><th class="lbl" style="width:22%;">NOTE</th><td class="val muted ital small">Verification details will be reported upon completion with the institution.</td></tr>
         </table>
         @endif
+        </div>
         @endforeach
 
     @elseif($aComment)
@@ -1037,7 +1037,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $eComment     = $eF['comment'] ?? null;
 @endphp
 @if($loop->first)
-<div class="sh-gld" style="margin-top:8px;">EMPLOYMENT VALIDATION</div>
+<div class="sh-gld" style="margin-top:8px; page-break-before:always;">EMPLOYMENT VALIDATION</div>
 
 {{-- Employment terminology (Word: black header + cream sub-header + gold columns) --}}
 <table class="cmt" style="margin-top:4px;">
@@ -1080,6 +1080,9 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     </tr>
 </table>
 @endif
+
+{{-- Each employer is its own result → starts on a new page (after the first). --}}
+<div @unless($loop->first)style="page-break-before:always;"@endunless>
 
 @if($eValidation)
 {{-- Employer info: VALIDATION | CANDIDATE PROVIDED | NRH VERIFIED INFORMATION --}}
@@ -1156,6 +1159,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     <tr><th class="lbl">NOTE</th><td class="val muted ital small">Employment verification pending confirmation from the referenced organisation.</td></tr>
 </table>
 @endif
+</div>
 @endforeach
 
 @endforeach
@@ -1288,6 +1292,8 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 
 @if(!empty($referees))
     @foreach($referees as $refIdx => $ref)
+    {{-- Each referee is its own result → starts on a new page (after the first). --}}
+    <div @if($refIdx > 0)style="page-break-before:always;"@endif>
     {{-- Credibility Validation --}}
     <table class="ref-t" style="margin-top:8px;">
         <tr><td class="cm-gold" colspan="3">REFEREE CREDIBILITY VALIDATION @if(count($referees) > 1)— REFEREE {{ $refIdx + 1 }}@endif</td></tr>
@@ -1383,6 +1389,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         </tr>
     </table>
     @endif
+    </div>
     @endforeach
 @else
 <table class="rt" style="margin-top:4px;">
@@ -1392,8 +1399,6 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 
 @endforeach
 @endforeach
-
-<div class="pb"></div>
 @endif
 
 {{-- ══════════════════════════════════════════
