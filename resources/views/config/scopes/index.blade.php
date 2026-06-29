@@ -71,6 +71,19 @@
                                     Signed consent
                                 </span>
                             @endif
+                            @php
+                                $docChips = ['nric' => 'NRIC', 'resume' => 'Resume', 'certificate' => 'Certificate'];
+                                $scopeDocs = $scope->required_documents ?? [];
+                            @endphp
+                            @foreach($docChips as $docKey => $docLabel)
+                                @if(in_array($docKey, $scopeDocs, true))
+                                <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider bg-gray-100 text-gray-600 border border-gray-200"
+                                      style="letter-spacing: 0.05em;"
+                                      title="Customers must upload: {{ $docLabel }}">
+                                    {{ $docLabel }}
+                                </span>
+                                @endif
+                            @endforeach
                         </td>
                         <td class="text-gray-500 text-xs w-1/5">{{ $scope->turnaround ?? '—' }}</td>
                         <td class="font-mono text-xs w-1/5">

@@ -36,11 +36,14 @@ class ScopeTypeController extends Controller
             'price' => 'required|numeric|min:0',
             'price_on_request' => 'boolean',
             'requires_signed_consent' => 'boolean',
+            'required_documents' => 'nullable|array',
+            'required_documents.*' => 'string|in:'.implode(',', array_keys(ScopeType::DOCUMENT_TYPES)),
             'description' => 'nullable|string',
         ]);
 
         $data['price_on_request'] = $request->boolean('price_on_request');
         $data['requires_signed_consent'] = $request->boolean('requires_signed_consent');
+        $data['required_documents'] = $this->normaliseDocuments($request->input('required_documents', []));
 
         ScopeType::create($data);
 
@@ -65,14 +68,31 @@ class ScopeTypeController extends Controller
             'price' => 'required|numeric|min:0',
             'price_on_request' => 'boolean',
             'requires_signed_consent' => 'boolean',
+            'required_documents' => 'nullable|array',
+            'required_documents.*' => 'string|in:'.implode(',', array_keys(ScopeType::DOCUMENT_TYPES)),
             'description' => 'nullable|string',
         ]);
 
         $data['price_on_request'] = $request->boolean('price_on_request');
         $data['requires_signed_consent'] = $request->boolean('requires_signed_consent');
+        $data['required_documents'] = $this->normaliseDocuments($request->input('required_documents', []));
 
         $scope->update($data);
 
         return redirect()->route('config.scopes.index')->with('success', 'Scope type updated.');
+    }
+
+    /**
+     * Keep only valid document keys, de-duplicated and in the canonical
+     * DOCUMENT_TYPES order. Returns null when nothing is required.
+     */
+    private function normaliseDocuments(array $input): ?array
+    {
+        $docs = array_values(array_filter(
+            array_keys(ScopeType::DOCUMENT_TYPES),
+            fn ($key) => in_array($key, $input, true)
+        ));
+
+        return $docs ?: null;
     }
 }

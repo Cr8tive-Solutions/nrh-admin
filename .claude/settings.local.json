@@ -112,7 +112,10 @@
       "Bash(pip show *)",
       "Bash(./vendor/bin/pint database/seeders/DataReportScopeSeeder.php database/migrations/2026_06_22_000001_add_sort_order_to_scope_types.php app/Models/ScopeType.php app/Models/RequestCandidate.php app/Http/Controllers/Config/ScopeTypeController.php app/Http/Controllers/ScopePricingController.php)",
       "Bash(rm -rf docx2)",
-      "Bash(mkdir docx2 *)"
+      "Bash(mkdir docx2 *)",
+      "Bash(./vendor/bin/pint app/Models/ScopeType.php app/Http/Controllers/Config/ScopeTypeController.php database/seeders/ScopeDocumentRequirementSeeder.php database/migrations/2026_06_24_000001_add_required_documents_to_scope_types.php)",
+      "Bash(./vendor/bin/pint app/Http/Controllers/Client/Request/CreateRequestController.php app/Models/CandidateDocument.php app/Models/ScopeType.php app/Models/RequestCandidate.php)",
+      "Bash(./vendor/bin/pint database/migrations/2026_06_24_000002_create_candidate_documents_table.php)"
     ]
   }
 }

@@ -100,6 +100,24 @@
             </label>
         </div>
 
+        <div class="rounded-md border border-emerald-200 bg-emerald-50/40 px-3 py-3">
+            <span class="block text-sm font-medium text-gray-900 mb-1">Required documents (customer upload)</span>
+            <span class="block text-xs text-gray-500 mb-2 leading-relaxed">
+                The client portal will block submission until the customer uploads each selected document for this scope.
+            </span>
+            @php $oldDocs = old('required_documents', []); @endphp
+            <div class="grid grid-cols-2 gap-2">
+                @foreach(\App\Models\ScopeType::DOCUMENT_TYPES as $key => $label)
+                <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-800">
+                    <input type="checkbox" name="required_documents[]" value="{{ $key }}"
+                           {{ in_array($key, $oldDocs, true) ? 'checked' : '' }}
+                           class="accent-emerald-600 w-4 h-4 flex-shrink-0">
+                    {{ $label }}
+                </label>
+                @endforeach
+            </div>
+        </div>
+
         <div class="flex gap-3 pt-2">
             <button type="submit" class="nrh-btn nrh-btn-primary">
                 Create Scope
