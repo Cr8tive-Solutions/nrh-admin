@@ -42,14 +42,23 @@ class Agreement extends Model
     }
 
     /**
-     * Canonical billing mode. The client portal alias-matches multiple
-     * legacy synonyms ('cash', 'invoice', etc.) — anything that isn't
-     * explicitly 'per_request' is treated as monthly/credit (the safer
-     * default), so this resolver mirrors that behaviour.
+     * Legacy synonyms the client portal accepts as cash/per-request billing
+     * (config('billing.cash_aliases') on nrh-intelligence). Kept in sync
+     * manually since the two apps don't share code — the admin form only
+     * ever writes 'per_request', but this keeps both sides agreeing if the
+     * column is ever touched another way.
+     */
+    private const CASH_ALIASES = ['per_request', 'per request', 'cash', 'pay_per_use', 'pay per use', 'prepaid', 'pre-paid'];
+
+    /**
+     * Canonical billing mode. Anything that isn't a recognised cash/per-request
+     * alias is treated as monthly/credit (the safer default).
      */
     public function billingMode(): string
     {
-        return $this->billing === 'per_request' ? 'per_request' : 'monthly';
+        $value = strtolower(trim((string) $this->billing));
+
+        return in_array($value, self::CASH_ALIASES, true) ? 'per_request' : 'monthly';
     }
 
     public function isPerRequest(): bool

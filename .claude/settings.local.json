@@ -115,7 +115,14 @@
       "Bash(mkdir docx2 *)",
       "Bash(./vendor/bin/pint app/Models/ScopeType.php app/Http/Controllers/Config/ScopeTypeController.php database/seeders/ScopeDocumentRequirementSeeder.php database/migrations/2026_06_24_000001_add_required_documents_to_scope_types.php)",
       "Bash(./vendor/bin/pint app/Http/Controllers/Client/Request/CreateRequestController.php app/Models/CandidateDocument.php app/Models/ScopeType.php app/Models/RequestCandidate.php)",
-      "Bash(./vendor/bin/pint database/migrations/2026_06_24_000002_create_candidate_documents_table.php)"
+      "Bash(./vendor/bin/pint database/migrations/2026_06_24_000002_create_candidate_documents_table.php)",
+      "Bash(composer test *)",
+      "Bash(./vendor/bin/pint --test)",
+      "Bash(awk '/relation \"admin_notifications\" does not exist/{print NR}' /Users/anwarsaad/Herd/nrh-admin/storage/logs/laravel.log)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://nrh-admin.test/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://nrh-admin.test/login)",
+      "Bash(npx playwright *)",
+      "Bash(vendor/bin/pint --dirty --format agent)"
     ]
   }
 }
