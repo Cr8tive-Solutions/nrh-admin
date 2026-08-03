@@ -27,12 +27,12 @@ use Illuminate\Support\Facades\Route;
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
+Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // 2FA challenge — accessible only when password verified, before full login completes.
 Route::get('/two-factor-challenge', [TwoFactorChallengeController::class, 'show'])->name('two-factor.challenge');
-Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'verify'])->name('two-factor.verify');
+Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'verify'])->name('two-factor.verify')->middleware('throttle:5,1');
 
 // ─── Protected admin routes ───────────────────────────────────────────────────
 Route::middleware('admin.auth')->group(function () {

@@ -122,7 +122,19 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://nrh-admin.test/)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://nrh-admin.test/login)",
       "Bash(npx playwright *)",
-      "Bash(vendor/bin/pint --dirty --format agent)"
+      "Bash(vendor/bin/pint --dirty --format agent)",
+      "Bash(composer audit *)",
+      "Bash(npm audit *)",
+      "Bash(composer why *)",
+      "Bash(composer update *)",
+      "Bash(curl -s -I http://nrh-admin.test/login)",
+      "Bash(curl -s -I http://nrh-intelligence.test/login)",
+      "Bash(curl -s -I http://nrh-intelligence.test/)",
+      "Bash(curl -s -o /dev/null -w \"GET /storage/reports/11/basic-v1.pdf -> %{http_code}, %{size_download} bytes\\\\n\" http://nrh-admin.test/storage/reports/11/basic-v1.pdf --no-cookie-jar)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -o /tmp/vapt_test_download.pdf http://nrh-admin.test/storage/reports/11/basic-v1.pdf)",
+      "Bash(rm -f /tmp/vapt_test_download.pdf)",
+      "Bash(curl -s http://nrh-admin.test/storage/reports/11/basic-v1.pdf)",
+      "Bash(curl -s -o /dev/null -w \"PUT /storage/reports/11/basic-v1.pdf -> %{http_code}\\\\n\" -X PUT http://nrh-admin.test/storage/reports/11/basic-v1-VAPTPROBE.pdf --data-binary \"vapt-probe-content\")"
     ]
   }
 }
