@@ -150,7 +150,8 @@
       "Bash(PGPASSWORD=nrh_test /usr/local/opt/postgresql@15/bin/psql -h 127.0.0.1 -p 5432 -U nrh_test -d nrh_test -c '\\\\d invoice_payment_receipts')",
       "Bash(RUN_PROBE=1 php artisan test tests/Feature/DedupProbeTest.php)",
       "Bash(./vendor/bin/pint tests/ scripts/)",
-      "Bash(./vendor/bin/pint tests/)"
+      "Bash(./vendor/bin/pint tests/)",
+      "Bash(./vendor/bin/pint app/Http/Controllers/PaymentReceiptController.php app/Services/ReportSnapshot.php tests/)"
     ]
   }
 }

@@ -40,27 +40,38 @@ class PaymentReceiptController extends Controller
         DB::transaction(function () use ($receipt, $data) {
             $invoice = $receipt->invoice;
 
-            $receipt->update([
-                'status'               => 'verified',
-                'verified_by_admin_id' => current_admin()?->id,
-                'verified_at'          => now(),
-                'verification_note'    => $data['verification_note'] ?? null,
-            ]);
+            // Coverage contributed by receipts verified BEFORE this one.
+            $alreadyCovered = $invoice->verifiedReceiptsTotal();
 
-            // Receipt-claimed amount falls back to the full invoice total when
-            // the customer didn't enter one (typical for "I paid the whole bill" uploads).
+            // A receipt with no claimed amount means "I paid what's outstanding"
+            // (typical for "I paid the whole bill" uploads; equals the full total
+            // when nothing else has been verified yet).
+            //
+            // The figure is PERSISTED onto the receipt rather than used only for
+            // the transaction row: verifiedReceiptsTotal() sums `amount_claimed`,
+            // so leaving it NULL would book a full-value payment while
+            // contributing 0 to coverage — the invoice would never flip to paid
+            // and any request gated on it would stay stuck at 'new'.
             $amount = $receipt->amount_claimed !== null
                 ? (float) $receipt->amount_claimed
-                : (float) $invoice->total;
+                : max(0.0, round((float) $invoice->total - $alreadyCovered, 2));
+
+            $receipt->update([
+                'status' => 'verified',
+                'amount_claimed' => $amount,
+                'verified_by_admin_id' => current_admin()?->id,
+                'verified_at' => now(),
+                'verification_note' => $data['verification_note'] ?? null,
+            ]);
 
             Transaction::create([
                 'customer_id' => $invoice->customer_id,
-                'type'        => 'payment',
-                'amount'      => $amount,
-                'reference'   => $invoice->number,
-                'status'      => 'completed',
-                'method'      => 'Bank Transfer',
-                'notes'       => "Receipt #{$receipt->id} verified for invoice {$invoice->number}.",
+                'type' => 'payment',
+                'amount' => $amount,
+                'reference' => $invoice->number,
+                'status' => 'completed',
+                'method' => 'Bank Transfer',
+                'notes' => "Receipt #{$receipt->id} verified for invoice {$invoice->number}.",
             ]);
 
             // Refresh + check coverage. We re-read invoice from DB after the
@@ -81,12 +92,12 @@ class PaymentReceiptController extends Controller
             }
 
             AdminAuditLog::record('payment.verified', null, [
-                'receipt_id'  => $receipt->id,
-                'invoice_id'  => $invoice->id,
-                'invoice_no'  => $invoice->number,
+                'receipt_id' => $receipt->id,
+                'invoice_id' => $invoice->id,
+                'invoice_no' => $invoice->number,
                 'customer_id' => $invoice->customer_id,
-                'amount'      => $amount,
-                'note'        => $data['verification_note'] ?? null,
+                'amount' => $amount,
+                'note' => $data['verification_note'] ?? null,
                 'invoice_now_paid' => $invoice->status === 'paid',
             ]);
         });
@@ -107,18 +118,18 @@ class PaymentReceiptController extends Controller
         ]);
 
         $receipt->update([
-            'status'               => 'rejected',
+            'status' => 'rejected',
             'verified_by_admin_id' => current_admin()?->id,
-            'verified_at'          => now(),
-            'verification_note'    => $data['verification_note'],
+            'verified_at' => now(),
+            'verification_note' => $data['verification_note'],
         ]);
 
         AdminAuditLog::record('payment.rejected', null, [
-            'receipt_id'  => $receipt->id,
-            'invoice_id'  => $receipt->invoice_id,
-            'invoice_no'  => $receipt->invoice?->number,
+            'receipt_id' => $receipt->id,
+            'invoice_id' => $receipt->invoice_id,
+            'invoice_no' => $receipt->invoice?->number,
             'customer_id' => $receipt->invoice?->customer_id,
-            'note'        => $data['verification_note'],
+            'note' => $data['verification_note'],
         ]);
 
         return back()->with('success', 'Receipt rejected.');

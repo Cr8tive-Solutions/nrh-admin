@@ -2,6 +2,7 @@
 
 use App\Models\ReportVersion;
 use App\Models\ScreeningRequest;
+use App\Services\ReportSnapshot;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\Fixtures;
@@ -62,28 +63,43 @@ it('generates a full report as version 1 and flips status to complete', function
  *   attempt 4  status updated      -> BLOCKED (hash finally stable)
  *
  * Business rule #7 in CLAUDE.md says re-issuing with no data change is blocked;
- * in practice an admin double-clicking Generate mints 2 extra immutable
- * "official" report versions. Likely fix: exclude the workflow status (and the
- * auto-filled completion_* meta dates) from the hashed snapshot.
+ * in practice an admin double-clicking Generate minted 2 extra immutable
+ * "official" report versions.
  *
- * This test pins the CURRENT behaviour. When fixed, attempt 2 should be blocked
- * and the version count should stay at 1.
+ * FIXED 2026-08-10: ReportSnapshot::hash() now fingerprints the snapshot with
+ * `request.status` removed, so the workflow flip no longer reads as a content
+ * change. The status is still kept in the stored snapshot.
  */
-it('lets an unchanged full report be re-issued twice before the guard bites', function () {
+it('blocks an unchanged full report on the very next click', function () {
     ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    expect(ScreeningRequest::find($this->requestId)->status)->toBe('complete');
 
-    // Attempts 2 and 3 slip through only because the status flip changed the hash.
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
-
-    expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(3);
-
-    // Now the status has settled on 'updated', so the hash is finally stable
-    // and the guard fires as intended.
+    // The status flip must NOT read as a content change any more.
     ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full'])
         ->assertSessionHasErrors('type');
 
-    expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(3);
+    // ...and it stays blocked however many times it's clicked.
+    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full'])
+        ->assertSessionHasErrors('type');
+
+    expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(1);
+
+    // A rejected duplicate must not advance the workflow either.
+    expect(ScreeningRequest::find($this->requestId)->status)->toBe('complete');
+});
+
+it('ignores the workflow status when fingerprinting, but keeps it in the snapshot', function () {
+    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    $version = ReportVersion::where('screening_request_id', $this->requestId)->firstOrFail();
+
+    // Stored snapshot still records the status it was issued under...
+    expect($version->snapshot['request']['status'])->toBe('in_progress');
+
+    // ...but re-hashing the request now (status = 'complete') yields the same
+    // fingerprint, which is exactly what makes the dedup guard reliable.
+    $current = ReportSnapshot::build(ScreeningRequest::find($this->requestId));
+    expect($current['request']['status'])->toBe('complete')
+        ->and(ReportSnapshot::hash($current))->toBe($version->content_hash);
 });
 
 it('blocks an unchanged prelim re-issue immediately', function () {

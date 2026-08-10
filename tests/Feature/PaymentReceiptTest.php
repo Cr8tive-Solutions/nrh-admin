@@ -82,27 +82,41 @@ it('flips the invoice once part payments add up', function () {
  *   Invoice::verifiedReceiptsTotal()   — SUMs `amount_claimed`, where NULL
  *     contributes 0, so coverage stays 0.00 and the invoice is never flipped.
  *
- * Net effect: the money is booked, but the invoice stays 'unpaid' and any
- * cash-billed request gated on it stays stuck at 'new'. Verify is idempotent,
- * so an admin cannot even fix it by re-verifying.
+ * Net effect: the money was booked, but the invoice stayed 'unpaid' and any
+ * cash-billed request gated on it stayed stuck at 'new'. Verify is idempotent,
+ * so an admin could not even fix it by re-verifying.
  *
- * This test pins the CURRENT behaviour so the suite stays green. When the bug
- * is fixed, flip the two marked expectations to 'paid' / 'in_progress'.
+ * FIXED 2026-08-10: verify() now persists the fallback figure into
+ * `amount_claimed`, so it contributes to coverage like any other receipt.
  */
-it('books the payment but leaves the invoice unpaid when no amount is claimed', function () {
+it('treats a receipt with no claimed amount as paying the outstanding balance', function () {
     $receiptId = Fixtures::receipt($this->invoiceId, ['amount_claimed' => null]);
 
     ($this->as)()->post(route('payment-receipts.verify', InvoicePaymentReceipt::find($receiptId)));
 
-    // The transaction is written for the full invoice total...
+    // The fallback figure is written onto the receipt so it counts toward coverage.
+    expect((float) InvoicePaymentReceipt::find($receiptId)->amount_claimed)->toBe(106.00)
+        ->and(Invoice::find($this->invoiceId)->verifiedReceiptsTotal())->toBe(106.00);
+
     expect((float) DB::table('transactions')->where('customer_id', $this->customerId)->value('amount'))
         ->toBe(106.00);
 
-    // ...but coverage sums to 0, so these two are the bug.
-    expect(Invoice::find($this->invoiceId)->status)->toBe('unpaid');            // should be 'paid'
-    expect(ScreeningRequest::find($this->requestId)->status)->toBe('new');      // should be 'in_progress'
+    expect(Invoice::find($this->invoiceId)->status)->toBe('paid')
+        ->and(ScreeningRequest::find($this->requestId)->status)->toBe('in_progress');
+});
 
-    expect(Invoice::find($this->invoiceId)->verifiedReceiptsTotal())->toBe(0.0);
+it('falls back to the REMAINING balance when earlier part payments exist', function () {
+    // 50 already verified, then a no-amount receipt: it must settle the
+    // outstanding 56, not re-claim the full 106 and overshoot.
+    $first = Fixtures::receipt($this->invoiceId, ['amount_claimed' => 50.00]);
+    ($this->as)()->post(route('payment-receipts.verify', InvoicePaymentReceipt::find($first)));
+
+    $second = Fixtures::receipt($this->invoiceId, ['amount_claimed' => null]);
+    ($this->as)()->post(route('payment-receipts.verify', InvoicePaymentReceipt::find($second)));
+
+    expect((float) InvoicePaymentReceipt::find($second)->amount_claimed)->toBe(56.00)
+        ->and(Invoice::find($this->invoiceId)->verifiedReceiptsTotal())->toBe(106.00)
+        ->and(Invoice::find($this->invoiceId)->status)->toBe('paid');
 });
 
 it('is idempotent — re-verifying does nothing', function () {

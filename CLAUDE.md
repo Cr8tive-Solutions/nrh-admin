@@ -347,7 +347,7 @@ created_at, updated_at
 
 Verify cascade (single DB transaction): mark verified → write `transactions` row → if coverage hits invoice total flip invoice to `paid` → cascade-flip linked `new` requests to `in_progress` → audit log.
 
-> **Known bug:** coverage is `SUM(amount_claimed)` over verified receipts (`Invoice::verifiedReceiptsTotal()`), but `PaymentReceiptController::verify()` falls back to the full invoice total when `amount_claimed` is NULL. A receipt with no claimed amount therefore books a full-value transaction while contributing 0 to coverage — the invoice stays `unpaid` and gated requests stay `new`. Pinned by a test in `tests/Feature/PaymentReceiptTest.php`.
+Coverage is `SUM(amount_claimed)` over verified receipts (`Invoice::verifiedReceiptsTotal()`). When a receipt is verified with a NULL `amount_claimed`, `verify()` treats it as "paid the outstanding balance" and **writes that figure into `amount_claimed`** so it counts toward coverage. Persisting it matters: leaving it NULL would book a full-value transaction while contributing 0 to coverage, so the invoice would never flip to `paid` and gated requests would stay `new`. Covered by `tests/Feature/PaymentReceiptTest.php`.
 
 ### `transactions`
 ```
@@ -409,7 +409,7 @@ admins.status:               active | inactive
 5. **TAT clock is paused** when `screening_requests.status = 'rejected'` (`ScreeningRequest::isTatPaused()`).
 6. **Billing mode** (`agreements.billing`): `monthly` = post-pay invoicing; `per_request` = cash/upfront. Per-request requests show a payment-slip confirmation workflow before going `in_progress`.
 7. **Report deduplication**: generating the same report type with no data changes is blocked unless `supersedes_id` is provided.
-   > **Known bug:** the guard is defeated for `full` reports. `ReportSnapshot::build()` hashes `request.status`, and issuing a `full` report mutates that status (`in_progress`→`complete`→`updated`), so the first three clicks each produce a different hash and mint a version. Only the 4th is blocked. `prelim` is unaffected (it doesn't move status). Likely fix: exclude workflow status and the auto-filled `completion_*` meta dates from the hashed snapshot. Pinned by a test in `tests/Feature/ReportGenerationTest.php`.
+   > The hash is computed over a **fingerprint** of the snapshot with `request.status` removed (`ReportSnapshot::hash()` → `fingerprint()`). This is load-bearing: issuing a `full` report mutates the status (`in_progress`→`complete`→`updated`), so hashing it would make each click look like a content change and mint spurious versions. The status is still kept in the stored `snapshot` JSON — it just doesn't count as a change. Covered by `tests/Feature/ReportGenerationTest.php`.
 
 ---
 
