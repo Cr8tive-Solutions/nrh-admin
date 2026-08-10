@@ -1,7 +1,9 @@
 <?php
 
-it('returns a successful response', function () {
-    $response = $this->get('/');
+// The admin portal has no public landing page — "/" redirects to the dashboard,
+// which in turn bounces guests to the login screen.
+it('redirects an unauthenticated visitor to login', function () {
+    $this->get('/')->assertRedirect();
 
-    $response->assertStatus(200);
+    $this->followingRedirects()->get('/')->assertOk()->assertSee('login', false);
 });

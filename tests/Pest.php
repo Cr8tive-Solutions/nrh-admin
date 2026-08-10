@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 /*
@@ -14,8 +14,11 @@ use Tests\TestCase;
 |
 */
 
+// DatabaseTransactions (not RefreshDatabase): the test database is a snapshot of
+// the production schema loaded by scripts/test-db-setup.sh. Migrations cannot
+// rebuild it, so each test runs in a transaction that is rolled back afterwards.
 pest()->extend(TestCase::class)
- // ->use(RefreshDatabase::class)
+    ->use(DatabaseTransactions::class)
     ->in('Feature');
 
 /*

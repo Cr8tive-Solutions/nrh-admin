@@ -69,23 +69,22 @@ Route::middleware('admin.auth')->group(function () {
 
     // Re-download a persisted version's exact bytes.
     Route::get('/requests/{screeningRequest}/report/versions/{version}/download', [ReportController::class, 'download'])
-        ->whereNumber('version')
         ->name('requests.report.download');
 
     Route::get('/requests/{screeningRequest}/report/versions/{version}/view', [ReportController::class, 'view'])
-        ->whereNumber('version')
         ->name('requests.report.view');
 
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
-    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
 
     Route::get('/pricing', [ScopePricingController::class, 'index'])->name('pricing.index');
     Route::get('/pricing/{customer}/scopes', [ScopePricingController::class, 'scopesJson'])->name('pricing.scopes-json');
 
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+
+    // NOTE: the bare `/customers/{customer}` and `/invoices/{invoice}` show routes
+    // are declared at the BOTTOM of this group — see "Catch-all show routes".
 
     // ── request.update ───────────────────────────────────────────────────────
     Route::middleware('admin.can:request.update')->group(function () {
@@ -104,15 +103,16 @@ Route::middleware('admin.auth')->group(function () {
     Route::middleware('admin.can:customer.manage')->group(function () {
         Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
         Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
-        Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->whereNumber('customer')->name('customers.edit');
-        Route::put('/customers/{customer}', [CustomerController::class, 'update'])->whereNumber('customer')->name('customers.update');
+        Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
+        Route::put('/customers/{customer}', [CustomerController::class, 'update'])->name('customers.update');
 
+        // {user} is a CustomerUser — it has no HasHashid trait, so its route key
+        // really is the integer id and whereNumber is correct here.
         Route::post('/customers/{customer}/users/{user}/resend-invitation', [CustomerController::class, 'resendInvitation'])
-            ->whereNumber('customer')->whereNumber('user')
+            ->whereNumber('user')
             ->name('customers.users.resend-invitation');
 
         Route::post('/customers/{customer}/provision-primary-user', [CustomerController::class, 'provisionPrimaryUser'])
-            ->whereNumber('customer')
             ->name('customers.provision-primary-user');
 
         Route::get('/customers/{customer}/agreements/create', [AgreementController::class, 'create'])->name('customers.agreements.create');
@@ -135,9 +135,9 @@ Route::middleware('admin.auth')->group(function () {
         Route::post('/invoices/bulk-store', [InvoiceController::class, 'bulkStore'])->name('invoices.bulk-store');
         Route::get('/invoices/preview-items', [InvoiceController::class, 'previewItems'])->name('invoices.preview-items');
         Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
-        Route::get('/invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->whereNumber('invoice')->name('invoices.edit');
-        Route::put('/invoices/{invoice}', [InvoiceController::class, 'update'])->whereNumber('invoice')->name('invoices.update');
-        Route::patch('/invoices/{invoice}/paid', [InvoiceController::class, 'markPaid'])->whereNumber('invoice')->name('invoices.paid');
+        Route::get('/invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
+        Route::put('/invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
+        Route::patch('/invoices/{invoice}/paid', [InvoiceController::class, 'markPaid'])->name('invoices.paid');
     });
 
     // ── transaction.manage ───────────────────────────────────────────────────
@@ -157,13 +157,10 @@ Route::middleware('admin.auth')->group(function () {
 
         // Customer-uploaded payment receipts — admin verify/reject + view file.
         Route::post('/payment-receipts/{receipt}/verify', [PaymentReceiptController::class, 'verify'])
-            ->whereNumber('receipt')
             ->name('payment-receipts.verify');
         Route::post('/payment-receipts/{receipt}/reject', [PaymentReceiptController::class, 'reject'])
-            ->whereNumber('receipt')
             ->name('payment-receipts.reject');
         Route::get('/payment-receipts/{receipt}/file', [PaymentReceiptController::class, 'downloadFile'])
-            ->whereNumber('receipt')
             ->name('payment-receipts.file');
     });
 
@@ -206,7 +203,6 @@ Route::middleware('admin.auth')->group(function () {
             ->whereNumber('candidateId')
             ->name('compliance.consent.store');
         Route::get('/compliance/consent/{consent}/evidence', [ConsentController::class, 'downloadEvidence'])
-            ->whereNumber('consent')
             ->name('compliance.consent.evidence');
     });
 
@@ -222,14 +218,14 @@ Route::middleware('admin.auth')->group(function () {
         Route::get('/compliance/dsar', [DataSubjectRequestController::class, 'index'])->name('compliance.dsar.index');
         Route::get('/compliance/dsar/create', [DataSubjectRequestController::class, 'create'])->name('compliance.dsar.create');
         Route::post('/compliance/dsar', [DataSubjectRequestController::class, 'store'])->name('compliance.dsar.store');
-        Route::get('/compliance/dsar/{dsar}', [DataSubjectRequestController::class, 'show'])->whereNumber('dsar')->name('compliance.dsar.show');
-        Route::patch('/compliance/dsar/{dsar}/verify', [DataSubjectRequestController::class, 'verify'])->whereNumber('dsar')->name('compliance.dsar.verify');
-        Route::patch('/compliance/dsar/{dsar}/confirm-identity', [DataSubjectRequestController::class, 'confirmIdentity'])->whereNumber('dsar')->name('compliance.dsar.confirm-identity');
-        Route::patch('/compliance/dsar/{dsar}/link-candidate', [DataSubjectRequestController::class, 'linkCandidate'])->whereNumber('dsar')->name('compliance.dsar.link-candidate');
-        Route::patch('/compliance/dsar/{dsar}/complete', [DataSubjectRequestController::class, 'complete'])->whereNumber('dsar')->name('compliance.dsar.complete');
-        Route::patch('/compliance/dsar/{dsar}/reject', [DataSubjectRequestController::class, 'reject'])->whereNumber('dsar')->name('compliance.dsar.reject');
-        Route::post('/compliance/dsar/{dsar}/execute-erasure', [DataSubjectRequestController::class, 'executeErasure'])->whereNumber('dsar')->name('compliance.dsar.execute-erasure');
-        Route::get('/compliance/dsar/{dsar}/evidence', [DataSubjectRequestController::class, 'downloadEvidence'])->whereNumber('dsar')->name('compliance.dsar.evidence');
+        Route::get('/compliance/dsar/{dsar}', [DataSubjectRequestController::class, 'show'])->name('compliance.dsar.show');
+        Route::patch('/compliance/dsar/{dsar}/verify', [DataSubjectRequestController::class, 'verify'])->name('compliance.dsar.verify');
+        Route::patch('/compliance/dsar/{dsar}/confirm-identity', [DataSubjectRequestController::class, 'confirmIdentity'])->name('compliance.dsar.confirm-identity');
+        Route::patch('/compliance/dsar/{dsar}/link-candidate', [DataSubjectRequestController::class, 'linkCandidate'])->name('compliance.dsar.link-candidate');
+        Route::patch('/compliance/dsar/{dsar}/complete', [DataSubjectRequestController::class, 'complete'])->name('compliance.dsar.complete');
+        Route::patch('/compliance/dsar/{dsar}/reject', [DataSubjectRequestController::class, 'reject'])->name('compliance.dsar.reject');
+        Route::post('/compliance/dsar/{dsar}/execute-erasure', [DataSubjectRequestController::class, 'executeErasure'])->name('compliance.dsar.execute-erasure');
+        Route::get('/compliance/dsar/{dsar}/evidence', [DataSubjectRequestController::class, 'downloadEvidence'])->name('compliance.dsar.evidence');
     });
 
     // ── permissions.manage (role matrix) ─────────────────────────────────────
@@ -242,4 +238,13 @@ Route::middleware('admin.auth')->group(function () {
     Route::middleware('admin.can:staff.manage')->group(function () {
         Route::get('/audit', [AuditLogController::class, 'index'])->name('audit.index');
     });
+
+    // ── Catch-all show routes (read-only, any admin role) ────────────────────
+    // These MUST stay last. `{customer}`/`{invoice}` are hashid-bound, and a
+    // hashid is indistinguishable from a literal word like "create" — so a bare
+    // `/customers/{customer}` declared earlier would swallow `/customers/create`,
+    // `/invoices/bulk-generate`, etc. and 404 when the hashid decode fails.
+    // Declaring them after every literal-segment route lets the literals win.
+    Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
 });

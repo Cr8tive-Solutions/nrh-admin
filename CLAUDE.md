@@ -24,10 +24,14 @@ composer dev
 # Register custom PDF fonts (run once after cloning or deploying to a new server)
 php artisan fonts:register
 
+# Build the local Postgres test database (run once, then after any schema change)
+./scripts/test-db-setup.sh            # reuse cached schema dump
+./scripts/test-db-setup.sh --refresh  # re-dump the schema from Supabase
+
 # Run tests
 composer test
 # or a single test file
-php artisan test tests/Feature/ExampleTest.php
+php artisan test tests/Feature/AuthTest.php
 
 # Code style (Laravel Pint)
 ./vendor/bin/pint
@@ -42,6 +46,20 @@ composer setup
 The app runs at `http://nrh-admin.test` under Laravel Herd. Migrations run against the live Supabase DB — there is no local SQLite fallback.
 
 ---
+
+## Testing
+
+Tests run against a **local Postgres snapshot of the production schema** — never sqlite, never live Supabase.
+
+Why not sqlite: the code uses Postgres-only `ilike` (18 call sites across both portals), and neither repo's migrations can rebuild the real schema. This repo ships **delta migrations only** (they assume the shared base tables already exist), so `RefreshDatabase` fails immediately; `nrh-intelligence` is missing 6 tables that exist in production.
+
+`scripts/test-db-setup.sh` snapshots the live schema with `pg_dump --schema-only` (**structure only — it refuses to run if the dump contains any data rows**) and loads it into a local `nrh_test` database. Both portals point at that same database, mirroring how they share one database in production.
+
+Because migrations can't rebuild the schema, Feature tests use **`DatabaseTransactions`, not `RefreshDatabase`** — each test runs in a transaction that rolls back, so the schema is loaded once and never mutated. Setting `RefreshDatabase` on a test would wipe the schema and break every later test.
+
+There are no model factories for the shared tables; use `tests/Support/Fixtures.php` (each portal has its own) to build rows. `Fixtures::actingAs()` populates the custom `admin_*` session keys that `AdminAuth` checks — `$this->actingAs()` does **not** work in the admin portal, which has no Laravel guard. The client portal does use a real guard: `$this->actingAs($user, 'customer_user')`.
+
+Note: report-generation tests render real PDFs via dompdf and take ~5–9s each.
 
 ## Architecture: Non-Obvious Patterns
 
@@ -80,7 +98,7 @@ Font metric files (`.ufm`, `installed-fonts.json`) live alongside the TTF files 
 
 `ReportController::generate()` creates immutable `ReportVersion` records with a SHA-256 `content_hash` (built by `ReportSnapshot::build()` + `ReportSnapshot::hash()`). Re-issuing the same report type without any data change is rejected unless the caller passes `supersedes_id`. PDFs are rendered via `barryvdh/laravel-dompdf` from the `reports.screening` Blade view and stored at `storage/app/reports/{request_id}/{type}-v{n}.pdf` on the `local` disk. A second render pass embeds the file SHA-256 (first 8 chars) in the PDF footer.
 
-Status is auto-flipped on generate: `prelim` type → request status `prelim`; `full` type → `complete` (or `updated` if already complete/updated).
+Status is auto-flipped on generate only by the `full` type → `complete` (or `updated` if already complete/updated). `basic` and `prelim` reports are bookkeeping artefacts and do **not** move the request status.
 
 ### Scope Findings JSON Structure (`candidate_scope_type.findings`)
 
@@ -291,7 +309,7 @@ reference (REQ-YYYY-NNNN), status, type, meta (json), rejection_reason (nullable
 payment_slip_path, payment_slip_uploaded_at, payment_verified_at, payment_verified_by,
 created_at, updated_at
 ```
-Status values: `new | in_progress | rejected | prelim | complete | updated | flagged`
+Status values: `new | in_progress | rejected | complete | updated` (canonical set — see `ScreeningRequest::STATUSES`)
 
 ### `request_candidates`
 ```
@@ -319,10 +337,17 @@ invoice_items: id, invoice_id, description, qty, unit_price, total
 ### `invoice_payment_receipts`
 Customer-uploaded payment slips linked to invoices.
 ```
-id, invoice_id, screening_request_id (nullable), file_path, status (pending|verified|rejected),
-amount, rejection_reason (nullable), verified_at, verified_by_admin_id, created_at, updated_at
+id, invoice_id, uploaded_by_customer_user_id (nullable), file_path, file_name,
+amount_claimed (nullable, numeric 10,2), paid_on (nullable date), reference (nullable),
+notes (nullable), status (pending|verified|rejected),
+verified_by_admin_id (nullable), verified_at (nullable), verification_note (nullable),
+created_at, updated_at
 ```
+> There is **no** `screening_request_id`, `amount`, or `rejection_reason` column — the claimed amount is `amount_claimed` and the reject/verify note is `verification_note`. Requests are linked to the *invoice* (`screening_requests.invoice_id`), not to the receipt.
+
 Verify cascade (single DB transaction): mark verified → write `transactions` row → if coverage hits invoice total flip invoice to `paid` → cascade-flip linked `new` requests to `in_progress` → audit log.
+
+> **Known bug:** coverage is `SUM(amount_claimed)` over verified receipts (`Invoice::verifiedReceiptsTotal()`), but `PaymentReceiptController::verify()` falls back to the full invoice total when `amount_claimed` is NULL. A receipt with no claimed amount therefore books a full-value transaction while contributing 0 to coverage — the invoice stays `unpaid` and gated requests stay `new`. Pinned by a test in `tests/Feature/PaymentReceiptTest.php`.
 
 ### `transactions`
 ```
@@ -363,7 +388,7 @@ PDPA compliance tracking. Consent records link to candidates; DSARs track erasur
 ## Status Values (use exactly these strings)
 
 ```
-screening_requests.status:   new | in_progress | rejected | prelim | complete | updated | flagged
+screening_requests.status:   new | in_progress | rejected | complete | updated
 request_candidates.status:   new | in_progress | flagged | complete
 invoices.status:             unpaid | paid | overdue
 transactions.type:           topup | payment | adjustment
@@ -384,6 +409,7 @@ admins.status:               active | inactive
 5. **TAT clock is paused** when `screening_requests.status = 'rejected'` (`ScreeningRequest::isTatPaused()`).
 6. **Billing mode** (`agreements.billing`): `monthly` = post-pay invoicing; `per_request` = cash/upfront. Per-request requests show a payment-slip confirmation workflow before going `in_progress`.
 7. **Report deduplication**: generating the same report type with no data changes is blocked unless `supersedes_id` is provided.
+   > **Known bug:** the guard is defeated for `full` reports. `ReportSnapshot::build()` hashes `request.status`, and issuing a `full` report mutates that status (`in_progress`→`complete`→`updated`), so the first three clicks each produce a different hash and mint a version. Only the 4th is blocked. `prelim` is unaffected (it doesn't move status). Likely fix: exclude workflow status and the auto-filled `completion_*` meta dates from the hashed snapshot. Pinned by a test in `tests/Feature/ReportGenerationTest.php`.
 
 ---
 

@@ -23,8 +23,24 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <!--
+            Tests run against a LOCAL Postgres schema snapshot, not sqlite and
+            never the live Supabase database.
+
+            sqlite cannot be used: the app relies on Postgres-only `ilike`, and
+            this repo ships delta migrations only (they assume the shared base
+            tables already exist), so RefreshDatabase cannot build a schema.
+
+            Create/refresh the database with:  ./scripts/test-db-setup.sh
+            Feature tests wrap each case in a transaction and roll back, so the
+            schema is loaded once and never mutated.
+        -->
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="5432"/>
+        <env name="DB_DATABASE" value="nrh_test"/>
+        <env name="DB_USERNAME" value="nrh_test"/>
+        <env name="DB_PASSWORD" value="nrh_test"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>

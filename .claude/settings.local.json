@@ -134,7 +134,23 @@
       "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -o /tmp/vapt_test_download.pdf http://nrh-admin.test/storage/reports/11/basic-v1.pdf)",
       "Bash(rm -f /tmp/vapt_test_download.pdf)",
       "Bash(curl -s http://nrh-admin.test/storage/reports/11/basic-v1.pdf)",
-      "Bash(curl -s -o /dev/null -w \"PUT /storage/reports/11/basic-v1.pdf -> %{http_code}\\\\n\" -X PUT http://nrh-admin.test/storage/reports/11/basic-v1-VAPTPROBE.pdf --data-binary \"vapt-probe-content\")"
+      "Bash(curl -s -o /dev/null -w \"PUT /storage/reports/11/basic-v1.pdf -> %{http_code}\\\\n\" -X PUT http://nrh-admin.test/storage/reports/11/basic-v1-VAPTPROBE.pdf --data-binary \"vapt-probe-content\")",
+      "Bash(perl -pi -e \"s/->whereNumber\\\\\\('dsar'\\\\\\)//g\" routes/web.php)",
+      "Bash(./vendor/bin/pint --test routes/web.php)",
+      "Bash(brew --prefix)",
+      "Bash(brew services *)",
+      "Read(//usr/local/opt/**)",
+      "Read(//Applications/Herd.app/**)",
+      "Bash(/usr/local/opt/libpq/bin/pg_dump --version)",
+      "Bash(/usr/local/opt/libpq/bin/psql --version)",
+      "Bash(/usr/local/opt/postgresql@15/bin/psql -h 127.0.0.1 -p 5432 -d postgres -tAc 'select current_user, version\\(\\);')",
+      "Bash(chmod +x scripts/test-db-setup.sh)",
+      "Bash(NRH_TEST_SCHEMA_DUMP=/private/tmp/claude-501/-Users-anwarsaad-Herd-nrh-admin/72ec5661-9e8b-4b5d-8a71-8e9f41b87cc6/scratchpad/nrh_schema.sql ./scripts/test-db-setup.sh)",
+      "Bash(PGPASSWORD=nrh_test $PGBIN/psql *)",
+      "Bash(PGPASSWORD=nrh_test /usr/local/opt/postgresql@15/bin/psql -h 127.0.0.1 -p 5432 -U nrh_test -d nrh_test -c '\\\\d invoice_payment_receipts')",
+      "Bash(RUN_PROBE=1 php artisan test tests/Feature/DedupProbeTest.php)",
+      "Bash(./vendor/bin/pint tests/ scripts/)",
+      "Bash(./vendor/bin/pint tests/)"
     ]
   }
 }
