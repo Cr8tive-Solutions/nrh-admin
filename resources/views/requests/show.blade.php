@@ -513,6 +513,7 @@
         </div>
         <div style="font-size: 12px; color: var(--ink-700); margin-top: 4px; line-height: 1.55;">
             Expected amount: <strong style="font-family: 'JetBrains Mono', monospace; color: var(--ink-900);">MYR {{ number_format($paymentAmount, 2) }}</strong>
+            <span style="color: var(--ink-500);">(incl. {{ rtrim(rtrim(number_format(config('billing.sst_rate') * 100, 1), '0'), '.') }}% SST MYR {{ number_format($request->calculateTax(), 2) }})</span>
             · reference <strong style="font-family: 'JetBrains Mono', monospace; color: var(--ink-900);">{{ $request->reference }}</strong>.
             @if($hasSlip)
                 Customer uploaded a slip on {{ $request->payment_slip_uploaded_at?->format('d M Y · H:i') }} — review and verify below.

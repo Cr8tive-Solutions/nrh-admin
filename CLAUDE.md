@@ -414,8 +414,8 @@ admins.status:               active | inactive
 
 ## Key Business Rules
 
-1. **Malaysia scopes** (`price_on_request = true`) have no fixed price. Price is always set per customer in `customer_scope_prices`. If no price is set, show "Price on request".
-2. **Tax is 6% SST** — applied to invoice subtotal.
+1. **Malaysia scopes** (`price_on_request = true`) have no fixed price. Price is always set per customer in `customer_scope_prices`. If no price is set, show "Price on request". **Guarded both ends:** the client portal refuses to submit a request containing an unpriced price-on-request scope, and admin invoice generation skips such lines with a warning (a request whose only lines are unpriced is not linked to the invoice). Covered by `tests/Feature/CashBillingTest.php` in both repos.
+2. **Tax is 6% SST** (`config('billing.sst_rate')`, same value in both portals) — applied to invoice subtotals **and** per-request cash totals: `calculateTotal()` = `calculateSubtotal()` + `calculateTax()` here, mirrored by `cashTotal()` on the client portal. The verified-slip transaction books the SST-inclusive figure.
 3. **Agreement expiry** — warn at 60 days, critical at 14 days.
 4. **Candidate status** is independent of request status. A request can be `complete` even if some candidates are `flagged`.
 5. **TAT clock is paused** when `screening_requests.status = 'rejected'` (`ScreeningRequest::isTatPaused()`).

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 class ScreeningRequest extends Model
 {
     use HasHashid;
+
     protected $fillable = [
         'customer_id', 'customer_user_id', 'invoice_id', 'reference',
         'status', 'type', 'meta', 'rejection_reason',
@@ -81,12 +82,13 @@ class ScreeningRequest extends Model
     }
 
     /**
-     * Sum of effective scope prices across every candidate's assigned scopes.
-     * Uses customer-specific pricing where set, otherwise the scope_types
-     * default. Malaysia "price on request" scopes without a customer override
-     * contribute 0 — the cash-payment flow assumes pricing has been set.
+     * Pre-tax sum of effective scope prices across every candidate's assigned
+     * scopes. Uses customer-specific pricing where set, otherwise the
+     * scope_types default. Unpriced "price on request" scopes contribute 0 —
+     * the client portal blocks submitting those, so only legacy requests can
+     * still contain one.
      */
-    public function calculateTotal(): float
+    public function calculateSubtotal(): float
     {
         $candidateIds = $this->candidates()->pluck('id');
         if ($candidateIds->isEmpty()) {
@@ -116,5 +118,21 @@ class ScreeningRequest extends Model
         }
 
         return round($total, 2);
+    }
+
+    /** SST on the cash subtotal (config('billing.sst_rate'), 6%). */
+    public function calculateTax(): float
+    {
+        return round($this->calculateSubtotal() * (float) config('billing.sst_rate', 0.06), 2);
+    }
+
+    /**
+     * Total cash-payable amount including SST — the figure quoted to the
+     * customer (client ScreeningRequest::cashTotal) and booked as the
+     * transaction when the payment slip is verified.
+     */
+    public function calculateTotal(): float
+    {
+        return round($this->calculateSubtotal() + $this->calculateTax(), 2);
     }
 }

@@ -71,7 +71,7 @@ class InvoiceController extends Controller
 
         DB::transaction(function () use ($data, $requestIds, $start, $end, &$invoice) {
             $subtotal = collect($data['items'])->sum(fn ($i) => $i['qty'] * $i['unit_price']);
-            $tax = round($subtotal * 0.06, 2);
+            $tax = round($subtotal * (float) config('billing.sst_rate'), 2);
             $total = $subtotal + $tax;
 
             $invoice = Invoice::create([
@@ -169,6 +169,7 @@ class InvoiceController extends Controller
 
         $rows = [];
         $skipped = [];
+        $warnings = [];
 
         foreach ($customers as $customer) {
             if ($existingInvoices->has($customer->id)) {
@@ -184,23 +185,29 @@ class InvoiceController extends Controller
             }
 
             $result = $this->buildItemsForCustomer($customer->id, $start, $end);
+
+            foreach ($result['warnings'] as $warning) {
+                $warnings[] = "{$customer->name}: {$warning}";
+            }
+
             if (empty($result['items'])) {
                 continue;
             }
 
             $subtotal = collect($result['items'])->sum(fn ($i) => $i['qty'] * $i['unit_price']);
+            $tax = round($subtotal * (float) config('billing.sst_rate'), 2);
             $rows[] = [
                 'customer_id' => $customer->id,
                 'customer_name' => $customer->name,
                 'items' => $result['items'],
                 'request_ids' => collect($result['requests'])->pluck('id')->values()->all(),
                 'subtotal' => round($subtotal, 2),
-                'tax' => round($subtotal * 0.06, 2),
-                'total' => round($subtotal * 1.06, 2),
+                'tax' => $tax,
+                'total' => round($subtotal + $tax, 2),
             ];
         }
 
-        return response()->json(['customers' => $rows, 'skipped' => $skipped]);
+        return response()->json(['customers' => $rows, 'skipped' => $skipped, 'warnings' => $warnings]);
     }
 
     public function bulkStore(Request $request)
@@ -236,7 +243,7 @@ class InvoiceController extends Controller
                 }
 
                 $subtotal = collect($row['items'])->sum(fn ($i) => $i['qty'] * $i['unit_price']);
-                $tax = round($subtotal * 0.06, 2);
+                $tax = round($subtotal * (float) config('billing.sst_rate'), 2);
                 $total = $subtotal + $tax;
 
                 $invoice = Invoice::create([
@@ -398,7 +405,7 @@ class InvoiceController extends Controller
             ->get();
 
         if ($requests->isEmpty()) {
-            return ['items' => [], 'requests' => []];
+            return ['items' => [], 'requests' => [], 'warnings' => []];
         }
 
         $candidateIds = $requests->flatMap(fn ($r) => $r->candidates->pluck('id'));
@@ -415,11 +422,12 @@ class InvoiceController extends Controller
 
         $scopeTypes = DB::table('scope_types')
             ->whereIn('id', $scopeIds)
-            ->get(['id', 'name', 'price'])
+            ->get(['id', 'name', 'price', 'price_on_request'])
             ->keyBy('id');
 
         $items = [];
         $requestList = [];
+        $warnings = [];
 
         foreach ($requests as $req) {
             $candidateIdsForReq = $req->candidates->pluck('id');
@@ -428,10 +436,21 @@ class InvoiceController extends Controller
                 ->pluck('scope_type_id');
 
             $scopeCounts = $reqScopeIds->countBy();
+            $reqHasItems = false;
 
             foreach ($scopeCounts as $scopeId => $count) {
                 $scope = $scopeTypes[$scopeId] ?? null;
                 $name = $scope ? $scope->name : "Scope #{$scopeId}";
+
+                // A price-on-request scope with no customer override would bill
+                // at RM0 — skip the line and surface it instead of silently
+                // giving the check away. Set the customer's price and re-run.
+                if ($scope && $scope->price_on_request && ! isset($customerPrices[$scopeId])) {
+                    $warnings[] = "{$name} – {$req->reference}: price on request with no customer price set — line skipped.";
+
+                    continue;
+                }
+
                 $price = (float) ($customerPrices[$scopeId] ?? ($scope ? $scope->price : 0));
 
                 $items[] = [
@@ -439,11 +458,16 @@ class InvoiceController extends Controller
                     'qty' => $count,
                     'unit_price' => number_format($price, 2, '.', ''),
                 ];
+                $reqHasItems = true;
             }
 
-            $requestList[] = ['id' => $req->id, 'reference' => $req->reference];
+            // Don't link a request that contributed no billable line — attaching
+            // it would stamp invoice_id and the skipped scopes would never bill.
+            if ($reqHasItems) {
+                $requestList[] = ['id' => $req->id, 'reference' => $req->reference];
+            }
         }
 
-        return ['items' => $items, 'requests' => $requestList];
+        return ['items' => $items, 'requests' => $requestList, 'warnings' => $warnings];
     }
 }

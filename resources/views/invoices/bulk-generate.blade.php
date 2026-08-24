@@ -19,13 +19,14 @@
     success: '',
     customers: [],
     skipped: [],
+    warnings: [],
 
     get selectedCount()  { return this.customers.filter(c => c.selected).length; },
     get grandTotal()     { return this.customers.filter(c => c.selected).reduce((s, c) => s + c.total, 0); },
 
     async preview() {
         if (!this.periodStart || !this.periodEnd) { this.error = 'Set the date range first.'; return; }
-        this.loading = true; this.error = ''; this.customers = []; this.skipped = [];
+        this.loading = true; this.error = ''; this.customers = []; this.skipped = []; this.warnings = [];
         try {
             const res  = await fetch('{{ route('invoices.bulk-preview') }}?period_start=' + encodeURIComponent(this.periodStart) + '&period_end=' + encodeURIComponent(this.periodEnd), {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
@@ -33,6 +34,7 @@
             const json = await res.json();
             if (!res.ok) { this.error = json.error || 'Server error.'; return; }
             this.skipped = json.skipped || [];
+            this.warnings = json.warnings || [];
             if (!json.customers.length && !this.skipped.length) { this.error = 'No uninvoiced activity found for any monthly customer in that period.'; return; }
             if (!json.customers.length && this.skipped.length) { this.error = 'All monthly customers already have an invoice for this period.'; return; }
             this.customers = json.customers.map(c => ({ ...c, selected: true, expanded: false }));
@@ -195,6 +197,23 @@
                     </template>
                 </tbody>
             </table>
+        </div>
+
+        {{-- Unpriced price-on-request lines skipped from the preview --}}
+        <div x-show="warnings.length > 0" style="display:none;" class="nrh-card" x-cloak>
+            <div class="nrh-card-head">
+                <h3 style="display:flex;align-items:center;gap:8px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M12 2L2 22h20z"/></svg>
+                    <span>Unpriced lines — excluded</span>
+                </h3>
+                <span style="font-size:11px; color:var(--ink-400);" x-text="warnings.length + ' line(s)'"></span>
+            </div>
+            <div style="padding:8px 20px 12px;">
+                <template x-for="(w, i) in warnings" :key="i">
+                    <div style="font-size:12px; color:var(--ink-700); padding:5px 0; border-bottom:1px solid var(--line);" x-text="w"></div>
+                </template>
+                <p style="font-size:11px; color:var(--ink-400); margin:8px 0 0;">Set the customer's price under Pricing, then re-run the preview to include these lines.</p>
+            </div>
         </div>
 
         {{-- Skipped customers (already invoiced for this period) --}}

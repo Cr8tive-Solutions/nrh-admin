@@ -13,8 +13,9 @@
     autoRequestIds: [],
     autoLoading: false,
     autoError: '',
+    autoWarnings: [],
     get subtotal() { return this.items.reduce((s, i) => s + (parseFloat(i.qty) * parseFloat(i.unit_price) || 0), 0); },
-    get tax()      { return this.subtotal * 0.06; },
+    get tax()      { return this.subtotal * {{ config('billing.sst_rate') }}; },
     get total()    { return this.subtotal + this.tax; },
     addItem()      { this.items.push({ description: '', qty: 1, unit_price: '' }); },
     removeItem(i)  { if (this.items.length > 1) this.items.splice(i, 1); },
@@ -25,12 +26,14 @@
         if (!customerId || !periodStart || !periodEnd) { this.autoError = 'Select a customer and set the date range first.'; return; }
         this.autoLoading = true;
         this.autoError = '';
+        this.autoWarnings = [];
         try {
             const url = '{{ route('invoices.preview-items') }}?customer_id=' + encodeURIComponent(customerId) + '&period_start=' + encodeURIComponent(periodStart) + '&period_end=' + encodeURIComponent(periodEnd);
             const res = await fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
             const json = await res.json();
             if (!res.ok) { this.autoError = json.error || 'Server error.'; return; }
-            if (!json.items.length) { this.autoError = 'No uninvoiced requests found for that customer and period.'; return; }
+            this.autoWarnings = json.warnings || [];
+            if (!json.items.length) { this.autoError = this.autoWarnings.length ? 'All lines are unpriced price-on-request scopes — set customer prices first.' : 'No uninvoiced requests found for that customer and period.'; return; }
             this.items = json.items;
             this.autoRequestIds = json.requests.map(r => r.id);
         } catch (e) {
@@ -120,6 +123,13 @@
 
             <div x-show="autoError" x-text="autoError"
                  style="margin:0 20px 0; padding:8px 12px; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; font-size:12px; color:#b91c1c; display:none;"></div>
+            <div x-show="autoWarnings.length > 0"
+                 style="margin:12px 20px 0; padding:8px 12px; background:#fffbeb; border:1px solid #fde68a; border-radius:6px; font-size:12px; color:#92400e; display:none;">
+                <span style="font-weight:600;">Unpriced lines excluded:</span>
+                <template x-for="(w, i) in autoWarnings" :key="i">
+                    <div style="margin-top:3px;" x-text="w"></div>
+                </template>
+            </div>
             <div x-show="autoRequestIds.length > 0"
                  style="margin:12px 20px 0; padding:8px 12px; background:rgba(4,108,78,0.05); border:1px solid rgba(4,108,78,0.15); border-radius:6px; font-size:12px; color:var(--ink-500); display:none;">
                 <span style="font-weight:600; color:var(--emerald-700);">Auto-generated</span>
