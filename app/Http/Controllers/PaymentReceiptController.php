@@ -153,6 +153,11 @@ class PaymentReceiptController extends Controller
 
         abort_if($disk === null, 404);
 
+        AdminAuditLog::record('finance.receipt_downloaded', null, [
+            'receipt_id' => $receipt->id,
+            'invoice_id' => $receipt->invoice_id,
+        ]);
+
         return Storage::disk($disk)->download(
             $receipt->file_path,
             $receipt->file_name ?: ('receipt-'.$receipt->id.'.'.pathinfo($receipt->file_path, PATHINFO_EXTENSION))

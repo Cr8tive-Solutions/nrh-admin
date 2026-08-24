@@ -30,8 +30,9 @@ class PermissionSeeder extends Seeder
 
             // PDPA / Compliance
             ['key' => 'pdpa.consent',       'label' => 'Record candidate consent',           'group' => 'Compliance', 'sort' => 100],
-            ['key' => 'pdpa.dsar',          'label' => 'Manage data subject requests (DSAR)','group' => 'Compliance', 'sort' => 110],
-            ['key' => 'pdpa.retention',     'label' => 'Configure retention policies & purge','group' => 'Compliance', 'sort' => 120],
+            ['key' => 'pdpa.dsar',          'label' => 'Manage data subject requests (DSAR)', 'group' => 'Compliance', 'sort' => 110],
+            ['key' => 'pdpa.retention',     'label' => 'Configure retention policies & purge', 'group' => 'Compliance', 'sort' => 120],
+            ['key' => 'pdpa.documents',     'label' => 'View candidate identity documents (IC/passport)', 'group' => 'Compliance', 'sort' => 130],
         ];
 
         foreach ($permissions as $p) {
@@ -40,9 +41,9 @@ class PermissionSeeder extends Seeder
 
         $defaults = [
             'super_admin' => Permission::pluck('id')->all(),
-            'operations'  => Permission::whereIn('key', ['request.update', 'customer.manage', 'pdpa.consent', 'pdpa.dsar'])->pluck('id')->all(),
-            'finance'     => Permission::whereIn('key', ['pricing.manage', 'invoice.manage', 'transaction.manage'])->pluck('id')->all(),
-            'viewer'      => [],
+            'operations' => Permission::whereIn('key', ['request.update', 'customer.manage', 'pdpa.consent', 'pdpa.dsar', 'pdpa.documents'])->pluck('id')->all(),
+            'finance' => Permission::whereIn('key', ['pricing.manage', 'invoice.manage', 'transaction.manage'])->pluck('id')->all(),
+            'viewer' => [],
         ];
 
         // Sync admin_role_permissions to defaults only if a role currently has none.
@@ -54,10 +55,10 @@ class PermissionSeeder extends Seeder
             }
             foreach ($permissionIds as $pid) {
                 DB::table('admin_role_permissions')->insert([
-                    'role'                => $role,
+                    'role' => $role,
                     'admin_permission_id' => $pid,
-                    'created_at'          => now(),
-                    'updated_at'          => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
         }

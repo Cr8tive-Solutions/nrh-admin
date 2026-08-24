@@ -33,7 +33,11 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // serve:false — nothing links private files through the framework's
+            // /storage route; disabling it removes the signature-gated GET/PUT
+            // endpoints into private storage (all downloads go through
+            // authenticated, ownership-checked controllers instead).
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

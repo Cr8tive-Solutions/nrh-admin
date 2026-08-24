@@ -188,6 +188,11 @@ class RequestQueueController extends Controller
         $extension = pathinfo($screeningRequest->payment_slip_path, PATHINFO_EXTENSION);
         $filename = "payment-slip-{$screeningRequest->reference}.{$extension}";
 
+        AdminAuditLog::record('finance.payment_slip_downloaded', null, [
+            'request_id' => $screeningRequest->id,
+            'reference' => $screeningRequest->reference,
+        ]);
+
         return $disk->download($screeningRequest->payment_slip_path, $filename);
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminAuditLog;
 use App\Models\ScreeningRequest;
 use Illuminate\Support\Facades\Storage;
 
@@ -29,6 +30,13 @@ class CandidateDocumentController extends Controller
         }
 
         abort_if($disk === null, 404, 'Document file is not reachable — check the client_local storage mount.');
+
+        AdminAuditLog::record('pdpa.document_downloaded', null, [
+            'document_id' => $document->id,
+            'candidate_id' => $candidate->id,
+            'request_id' => $screeningRequest->id,
+            'type' => $document->type,
+        ]);
 
         return Storage::disk($disk)->download(
             $document->file_path,

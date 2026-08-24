@@ -82,7 +82,7 @@ it('resolves effective permission keys correctly per role', function () {
         ->toEqualCanonicalizing(['pricing.manage', 'invoice.manage', 'transaction.manage']);
 
     expect(Fixtures::admin(['role' => 'operations'])->effectivePermissionKeys())
-        ->toEqualCanonicalizing(['request.update', 'customer.manage', 'pdpa.consent', 'pdpa.dsar']);
+        ->toEqualCanonicalizing(['request.update', 'customer.manage', 'pdpa.consent', 'pdpa.dsar', 'pdpa.documents']);
 
     // super_admin short-circuits to every key.
     expect(Fixtures::admin(['role' => 'super_admin'])->effectivePermissionKeys())

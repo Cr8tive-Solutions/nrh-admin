@@ -749,7 +749,7 @@
                     @endallowed
                 </div>
 
-                @if($candidate->documents->isNotEmpty())
+                @if($candidate->documents->isNotEmpty() && admin_can('pdpa.documents'))
                 <div style="margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                     <span style="font-size: 10px; color: var(--ink-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;">Documents:</span>
                     @foreach($candidate->documents as $doc)

@@ -76,7 +76,9 @@ Route::middleware('admin.auth')->group(function () {
         ->name('requests.report.view');
 
     // Customer-uploaded candidate documents (NRIC, resume, consent…) — served via client_local.
+    // Gated: raw identity documents are the most sensitive PII, not for viewer/finance roles.
     Route::get('/requests/{screeningRequest}/candidates/{candidateId}/documents/{documentId}', [CandidateDocumentController::class, 'download'])
+        ->middleware('admin.can:pdpa.documents')
         ->name('requests.candidates.documents.download');
 
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');

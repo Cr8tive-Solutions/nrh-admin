@@ -250,6 +250,11 @@ class DataSubjectRequestController extends Controller
             abort(404);
         }
 
+        AdminAuditLog::record('pdpa.dsar_evidence_downloaded', null, [
+            'dsar_id' => $dsar->id,
+            'reference' => $dsar->reference,
+        ]);
+
         return Storage::disk('local')->download(
             $dsar->evidence_file_path,
             "{$dsar->reference}-evidence.".pathinfo($dsar->evidence_file_path, PATHINFO_EXTENSION)

@@ -7,6 +7,7 @@ use App\Models\ReportVersion;
 use App\Models\ScreeningRequest;
 use App\Services\ReportSnapshot;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -23,14 +24,15 @@ class ReportController extends Controller
         $screeningRequest->load(['customer', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes', 'candidates.latestConsent']);
 
         $pdf = $this->renderPdf($screeningRequest, [
-            'reportType'    => null,
+            'reportType' => null,
             'reportVersion' => null,
-            'reportHash'    => null,
+            'reportHash' => null,
         ]);
 
         $filename = 'NRH-Report-Preview-'.$screeningRequest->reference.'.pdf';
+
         return response($pdf, 200, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="'.$filename.'"',
         ]);
     }
@@ -43,14 +45,14 @@ class ReportController extends Controller
     public function generate(Request $request, ScreeningRequest $screeningRequest)
     {
         $data = $request->validate([
-            'type'              => 'required|in:prelim,full',
-            'supersedes_id'     => 'nullable|integer|exists:report_versions,id',
-            'supersede_reason'  => 'nullable|string|max:1000|required_with:supersedes_id',
+            'type' => 'required|in:prelim,full',
+            'supersedes_id' => 'nullable|integer|exists:report_versions,id',
+            'supersede_reason' => 'nullable|string|max:1000|required_with:supersedes_id',
         ]);
 
         $screeningRequest->load(['customer', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes', 'candidates.latestConsent']);
 
-        $type         = $data['type'];
+        $type = $data['type'];
         $supersedesId = $data['supersedes_id'] ?? null;
 
         // Auto-fill completion_* date BEFORE the snapshot, so the hash is stable
@@ -58,8 +60,8 @@ class ReportController extends Controller
         // make every later snapshot look "changed").
         $metaKey = match ($type) {
             'prelim' => 'completion_prelim',
-            'full'   => 'completion_full',
-            default  => null,
+            'full' => 'completion_full',
+            default => null,
         };
         $meta = $screeningRequest->meta ?? [];
         $completionAutofilled = false;
@@ -70,8 +72,8 @@ class ReportController extends Controller
             $completionAutofilled = true;
         }
 
-        $snapshot     = ReportSnapshot::build($screeningRequest);
-        $contentHash  = ReportSnapshot::hash($snapshot);
+        $snapshot = ReportSnapshot::build($screeningRequest);
+        $contentHash = ReportSnapshot::hash($snapshot);
 
         $latest = ReportVersion::where('screening_request_id', $screeningRequest->id)
             ->where('type', $type)
@@ -106,33 +108,33 @@ class ReportController extends Controller
 
         // Pre-create the model so its id can be stamped into the PDF.
         $version = new ReportVersion([
-            'screening_request_id'  => $screeningRequest->id,
-            'type'                  => $type,
-            'version'               => $newVersion,
-            'generated_at'          => now(),
+            'screening_request_id' => $screeningRequest->id,
+            'type' => $type,
+            'version' => $newVersion,
+            'generated_at' => now(),
             'generated_by_admin_id' => current_admin()?->id,
-            'content_hash'          => $contentHash,
-            'snapshot'              => $snapshot,
-            'supersedes_id'         => $supersedesId,
-            'supersede_reason'      => $data['supersede_reason'] ?? null,
-            'file_path'             => '',         // filled below
-            'file_sha256'           => '',         // filled below
+            'content_hash' => $contentHash,
+            'snapshot' => $snapshot,
+            'supersedes_id' => $supersedesId,
+            'supersede_reason' => $data['supersede_reason'] ?? null,
+            'file_path' => '',         // filled below
+            'file_sha256' => '',         // filled below
         ]);
 
         // Render PDF with the version label + (placeholder) hash on the cover.
         // Reorder: hash is computed from final file bytes, so placeholder for now.
         $pdfBytes = $this->renderPdf($screeningRequest, [
-            'reportType'    => $type,
+            'reportType' => $type,
             'reportVersion' => $newVersion,
-            'reportHash'    => null, // first render — see below
+            'reportHash' => null, // first render — see below
         ]);
         $fileSha256 = hash('sha256', $pdfBytes);
 
         // Re-render with the actual file hash embedded so it's traceable on the artifact itself.
         $pdfBytes = $this->renderPdf($screeningRequest, [
-            'reportType'    => $type,
+            'reportType' => $type,
             'reportVersion' => $newVersion,
-            'reportHash'    => substr($fileSha256, 0, 8),
+            'reportHash' => substr($fileSha256, 0, 8),
         ]);
         // file_sha256 reflects the final bytes that get persisted/downloaded.
         $fileSha256 = hash('sha256', $pdfBytes);
@@ -140,7 +142,7 @@ class ReportController extends Controller
         $relPath = "reports/{$screeningRequest->id}/{$type}-v{$newVersion}.pdf";
         Storage::disk('local')->put($relPath, $pdfBytes);
 
-        $version->file_path   = $relPath;
+        $version->file_path = $relPath;
         $version->file_sha256 = $fileSha256;
 
         // Map report types to the request workflow status they imply.
@@ -161,22 +163,22 @@ class ReportController extends Controller
 
             if ($supersedesId) {
                 AdminAuditLog::record('report.version_superseded', null, [
-                    'request_id'         => $version->screening_request_id,
-                    'type'               => $version->type,
-                    'new_version'        => $version->version,
+                    'request_id' => $version->screening_request_id,
+                    'type' => $version->type,
+                    'new_version' => $version->version,
                     'superseded_version' => $supersedesId,
-                    'reason'             => $version->supersede_reason,
+                    'reason' => $version->supersede_reason,
                 ]);
             }
 
             AdminAuditLog::record('report.version_issued', null, [
-                'request_id'    => $version->screening_request_id,
-                'type'          => $version->type,
-                'version'       => $version->version,
-                'file_sha256'   => $version->file_sha256,
-                'content_hash'  => $version->content_hash,
+                'request_id' => $version->screening_request_id,
+                'type' => $version->type,
+                'version' => $version->version,
+                'file_sha256' => $version->file_sha256,
+                'content_hash' => $version->content_hash,
                 'supersedes_id' => $supersedesId,
-                'status_flip'   => $statusFlip && $statusFlip !== $previousStatus
+                'status_flip' => $statusFlip && $statusFlip !== $previousStatus
                     ? ['from' => $previousStatus, 'to' => $statusFlip]
                     : null,
             ]);
@@ -184,10 +186,10 @@ class ReportController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'ok'         => true,
-                'message'    => "{$version->label()} issued.",
+                'ok' => true,
+                'message' => "{$version->label()} issued.",
                 'version_id' => $version->id,
-                'label'      => $version->label(),
+                'label' => $version->label(),
                 'short_hash' => $version->shortHash(),
             ]);
         }
@@ -211,8 +213,15 @@ class ReportController extends Controller
         $bytes = Storage::disk('local')->get($version->file_path);
         $filename = 'NRH-Report-'.$screeningRequest->reference.'-'.ucfirst($version->type).'-v'.$version->version.'.pdf';
 
+        AdminAuditLog::record('report.downloaded', null, [
+            'request_id' => $screeningRequest->id,
+            'version_id' => $version->id,
+            'type' => $version->type,
+            'version' => $version->version,
+        ]);
+
         return response($bytes, 200, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
@@ -226,8 +235,16 @@ class ReportController extends Controller
             abort(410);
         }
         $bytes = Storage::disk('local')->get($version->file_path);
+
+        AdminAuditLog::record('report.viewed', null, [
+            'request_id' => $screeningRequest->id,
+            'version_id' => $version->id,
+            'type' => $version->type,
+            'version' => $version->version,
+        ]);
+
         return response($bytes, 200, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="'.$version->label().'.pdf"',
         ]);
     }
@@ -244,39 +261,39 @@ class ReportController extends Controller
 
         $meta = $screeningRequest->meta ?? [];
         $fmtDate = fn ($key) => ! empty($meta[$key])
-            ? \Carbon\Carbon::parse($meta[$key])->format('d F Y')
+            ? Carbon::parse($meta[$key])->format('d F Y')
             : null;
 
         $data = [
-            'request'           => $screeningRequest,
-            'reference'         => $screeningRequest->reference,
-            'customer'          => $screeningRequest->customer,
-            'candidates'        => $screeningRequest->candidates,
-            'logoSrc'           => $logoSrc,
-            'completionBasic'   => $fmtDate('completion_basic'),
-            'completionPrelim'  => $fmtDate('completion_prelim'),
-            'completionFull'    => $fmtDate('completion_full')
+            'request' => $screeningRequest,
+            'reference' => $screeningRequest->reference,
+            'customer' => $screeningRequest->customer,
+            'candidates' => $screeningRequest->candidates,
+            'logoSrc' => $logoSrc,
+            'completionBasic' => $fmtDate('completion_basic'),
+            'completionPrelim' => $fmtDate('completion_prelim'),
+            'completionFull' => $fmtDate('completion_full')
                 ?? ($screeningRequest->status === 'complete' ? $screeningRequest->updated_at->format('d F Y') : null),
-            'reportType'        => $stamps['reportType'] ?? null,
-            'reportVersion'     => $stamps['reportVersion'] ?? null,
-            'reportHash'        => $stamps['reportHash'] ?? null,
+            'reportType' => $stamps['reportType'] ?? null,
+            'reportVersion' => $stamps['reportVersion'] ?? null,
+            'reportHash' => $stamps['reportHash'] ?? null,
         ];
 
         $pdf = Pdf::loadView('reports.screening', $data)
             ->setPaper('a4', 'portrait')
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
-                'isPhpEnabled'         => true,
-                'defaultFont'          => 'Courier Prime',
-                'fontDir'              => storage_path('fonts'),
-                'fontCache'            => storage_path('fonts'),
+                'isPhpEnabled' => true,
+                'defaultFont' => 'Courier Prime',
+                'fontDir' => storage_path('fonts'),
+                'fontCache' => storage_path('fonts'),
             ]);
 
         $dompdf = $pdf->getDomPDF();
         $dompdf->render();
-        $canvas      = $dompdf->getCanvas();
+        $canvas = $dompdf->getCanvas();
         $fontMetrics = $dompdf->getFontMetrics();
-        $font        = $fontMetrics->getFont('Oswald', 'normal');
+        $font = $fontMetrics->getFont('Oswald', 'normal');
         $canvas->page_text(
             $canvas->get_width() - 115,
             $canvas->get_height() - 24,

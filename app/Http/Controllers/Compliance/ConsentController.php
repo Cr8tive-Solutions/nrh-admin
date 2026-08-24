@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Compliance;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdminAuditLog;
 use App\Models\ConsentRecord;
 use App\Models\ScreeningRequest;
 use Illuminate\Http\Request;
@@ -83,6 +84,11 @@ TXT;
         }
 
         abort_if($disk === null, 404);
+
+        AdminAuditLog::record('pdpa.consent_evidence_downloaded', null, [
+            'consent_id' => $consent->id,
+            'candidate_id' => $consent->request_candidate_id,
+        ]);
 
         return Storage::disk($disk)->download(
             $consent->evidence_file_path,
