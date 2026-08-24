@@ -58,5 +58,47 @@ it('deletes orphans with --delete and keeps referenced files', function () {
     Storage::disk('client_local')->assertMissing($orphan);
     Storage::disk('client_local')->assertExists($referenced); // consent-referenced, kept
 
-    expect(AdminAuditLog::where('action', 'pdpa.orphan_files_deleted')->exists())->toBeTrue();
+    expect(AdminAuditLog::where('action', 'storage.orphan_files_deleted')->exists())->toBeTrue();
+});
+
+it('sweeps finance/compliance prefixes too (receipts, payment slips)', function () {
+    Storage::fake('client_local');
+    Storage::fake('local');
+
+    // A referenced receipt (kept) and an orphaned one (removed).
+    $invoiceId = Fixtures::invoice($this->customerId);
+    $keptReceipt = "receipts/{$this->customerId}/{$invoiceId}/keep.pdf";
+    Storage::disk('client_local')->put($keptReceipt, 'x');
+    DB::table('invoice_payment_receipts')->insert([
+        'invoice_id' => $invoiceId, 'file_path' => $keptReceipt, 'file_name' => 'keep.pdf',
+        'status' => 'pending', 'amount_claimed' => 100,
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
+    $orphanReceipt = "receipts/{$this->customerId}/{$invoiceId}/orphan.pdf";
+    Storage::disk('client_local')->put($orphanReceipt, 'left-behind');
+
+    // A referenced payment slip (kept).
+    $keptSlip = "payment-slips/{$this->customerId}/slip.pdf";
+    Storage::disk('client_local')->put($keptSlip, 'x');
+    DB::table('screening_requests')->where('id', $this->requestId)->update(['payment_slip_path' => $keptSlip]);
+    $orphanSlip = "payment-slips/{$this->customerId}/orphan.pdf";
+    Storage::disk('client_local')->put($orphanSlip, 'left-behind');
+
+    $this->artisan('pii:reconcile-files --delete')->assertSuccessful();
+
+    Storage::disk('client_local')->assertMissing($orphanReceipt);
+    Storage::disk('client_local')->assertMissing($orphanSlip);
+    Storage::disk('client_local')->assertExists($keptReceipt);
+    Storage::disk('client_local')->assertExists($keptSlip);
+});
+
+it('never touches report PDFs', function () {
+    Storage::fake('local');
+
+    $report = "reports/{$this->requestId}/full-v1.pdf";
+    Storage::disk('local')->put($report, 'immutable-report');
+
+    $this->artisan('pii:reconcile-files --delete')->assertSuccessful();
+
+    Storage::disk('local')->assertExists($report); // reports/ prefix is not swept
 });
