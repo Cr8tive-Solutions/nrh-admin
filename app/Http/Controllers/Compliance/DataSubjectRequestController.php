@@ -7,6 +7,7 @@ use App\Models\AdminAuditLog;
 use App\Models\DataSubjectRequest;
 use App\Models\RequestCandidate;
 use App\Services\RedactionService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -28,19 +29,19 @@ class DataSubjectRequestController extends Controller
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('reference', 'ilike', "%{$s}%")
-                  ->orWhere('subject_name', 'ilike', "%{$s}%")
-                  ->orWhere('subject_email', 'ilike', "%{$s}%");
+                    ->orWhere('subject_name', 'ilike', "%{$s}%")
+                    ->orWhere('subject_email', 'ilike', "%{$s}%");
             });
         }
 
         $requests = $query->paginate(25)->withQueryString();
 
         $stats = [
-            'received'  => DataSubjectRequest::where('status', 'received')->count(),
+            'received' => DataSubjectRequest::where('status', 'received')->count(),
             'verifying' => DataSubjectRequest::where('status', 'verifying_identity')->count(),
             'in_progress' => DataSubjectRequest::where('status', 'in_progress')->count(),
-            'overdue'   => DataSubjectRequest::whereIn('status', ['received', 'verifying_identity', 'in_progress'])
-                            ->where('due_at', '<', now())->count(),
+            'overdue' => DataSubjectRequest::whereIn('status', ['received', 'verifying_identity', 'in_progress'])
+                ->where('due_at', '<', now())->count(),
         ];
 
         return view('compliance.dsar.index', compact('requests', 'stats'));
@@ -49,7 +50,7 @@ class DataSubjectRequestController extends Controller
     public function create()
     {
         return view('compliance.dsar.create', [
-            'types'     => DataSubjectRequest::types(),
+            'types' => DataSubjectRequest::types(),
             'relations' => DataSubjectRequest::relations(),
         ]);
     }
@@ -57,16 +58,16 @@ class DataSubjectRequestController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'subject_name'            => 'required|string|max:255',
-            'subject_email'           => 'nullable|email|max:255',
+            'subject_name' => 'required|string|max:255',
+            'subject_email' => 'nullable|email|max:255',
             'subject_identity_number' => 'nullable|string|max:60',
-            'relation'                => 'required|in:'.implode(',', array_keys(DataSubjectRequest::relations())),
-            'type'                    => 'required|in:'.implode(',', array_keys(DataSubjectRequest::types())),
-            'received_via'            => 'required|in:email,post,phone,in_person',
-            'received_at'             => 'required|date|before_or_equal:now',
-            'description'             => 'required|string|max:4000',
-            'evidence_file'           => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'request_candidate_id'    => 'nullable|integer|exists:request_candidates,id',
+            'relation' => 'required|in:'.implode(',', array_keys(DataSubjectRequest::relations())),
+            'type' => 'required|in:'.implode(',', array_keys(DataSubjectRequest::types())),
+            'received_via' => 'required|in:email,post,phone,in_person',
+            'received_at' => 'required|date|before_or_equal:now',
+            'description' => 'required|string|max:4000',
+            'evidence_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'request_candidate_id' => 'nullable|integer|exists:request_candidates,id',
         ]);
 
         $filePath = null;
@@ -75,21 +76,21 @@ class DataSubjectRequestController extends Controller
         }
 
         $dsar = DataSubjectRequest::create([
-            'reference'              => DataSubjectRequest::nextReference(),
-            'subject_name'           => $data['subject_name'],
-            'subject_email'          => $data['subject_email'] ?? null,
-            'subject_identity_number'=> $data['subject_identity_number'] ?? null,
-            'relation'               => $data['relation'],
-            'type'                   => $data['type'],
-            'received_via'           => $data['received_via'],
-            'received_at'            => $data['received_at'],
+            'reference' => DataSubjectRequest::nextReference(),
+            'subject_name' => $data['subject_name'],
+            'subject_email' => $data['subject_email'] ?? null,
+            'subject_identity_number' => $data['subject_identity_number'] ?? null,
+            'relation' => $data['relation'],
+            'type' => $data['type'],
+            'received_via' => $data['received_via'],
+            'received_at' => $data['received_at'],
             // PDPA-aligned: respond within 21 working days
-            'due_at'                 => \Carbon\Carbon::parse($data['received_at'])->addWeekdays(21),
-            'description'            => $data['description'],
-            'evidence_file_path'     => $filePath,
-            'request_candidate_id'   => $data['request_candidate_id'] ?? null,
-            'status'                 => 'received',
-            'handled_by_admin_id'    => current_admin()?->id,
+            'due_at' => Carbon::parse($data['received_at'])->addWeekdays(21),
+            'description' => $data['description'],
+            'evidence_file_path' => $filePath,
+            'request_candidate_id' => $data['request_candidate_id'] ?? null,
+            'status' => 'received',
+            'handled_by_admin_id' => current_admin()?->id,
         ]);
 
         return redirect()->route('compliance.dsar.show', $dsar)
@@ -108,7 +109,8 @@ class DataSubjectRequestController extends Controller
                 ->where(function ($q) use ($dsar) {
                     $q->where('name', 'ilike', "%{$dsar->subject_name}%");
                     if ($dsar->subject_identity_number) {
-                        $q->orWhere('identity_number', $dsar->subject_identity_number);
+                        // Exact match via the blind index (identity_number is encrypted at rest).
+                        $q->orWhere(fn ($m) => $m->whereIdentityNumber($dsar->subject_identity_number));
                     }
                 })
                 ->limit(20)
@@ -128,7 +130,7 @@ class DataSubjectRequestController extends Controller
         }
 
         $dsar->update([
-            'status'      => 'verifying_identity',
+            'status' => 'verifying_identity',
             'verified_at' => null,
         ]);
         // Followed by confirmIdentity below. Two-step so the admin can pause.
@@ -139,7 +141,7 @@ class DataSubjectRequestController extends Controller
     public function confirmIdentity(DataSubjectRequest $dsar)
     {
         $dsar->update([
-            'status'      => 'in_progress',
+            'status' => 'in_progress',
             'verified_at' => now(),
         ]);
 
@@ -167,15 +169,15 @@ class DataSubjectRequestController extends Controller
         }
 
         $dsar->update([
-            'status'       => 'completed',
-            'outcome'      => $data['outcome'],
+            'status' => 'completed',
+            'outcome' => $data['outcome'],
             'completed_at' => now(),
         ]);
 
         AdminAuditLog::record('pdpa.dsar_completed', null, [
-            'dsar_id'  => $dsar->id,
-            'reference'=> $dsar->reference,
-            'type'     => $dsar->type,
+            'dsar_id' => $dsar->id,
+            'reference' => $dsar->reference,
+            'type' => $dsar->type,
         ]);
 
         return back()->with('success', "{$dsar->reference} completed.");
@@ -188,15 +190,15 @@ class DataSubjectRequestController extends Controller
         ]);
 
         $dsar->update([
-            'status'       => 'rejected',
-            'outcome'      => $data['outcome'],
+            'status' => 'rejected',
+            'outcome' => $data['outcome'],
             'completed_at' => now(),
         ]);
 
         AdminAuditLog::record('pdpa.dsar_rejected', null, [
-            'dsar_id'   => $dsar->id,
+            'dsar_id' => $dsar->id,
             'reference' => $dsar->reference,
-            'reason'    => $data['outcome'],
+            'reason' => $data['outcome'],
         ]);
 
         return back()->with('success', "{$dsar->reference} rejected with reason.");
@@ -227,19 +229,19 @@ class DataSubjectRequestController extends Controller
         RedactionService::redactCandidate($dsar->candidate, "erasure_request_{$dsar->reference}");
 
         $dsar->update([
-            'status'       => 'completed',
-            'outcome'      => "Candidate PII redacted under erasure request {$dsar->reference} on ".now()->format('d M Y, H:i').". Issued report PDFs are immutable and were not modified.",
+            'status' => 'completed',
+            'outcome' => "Candidate PII redacted under erasure request {$dsar->reference} on ".now()->format('d M Y, H:i').'. Issued report PDFs are immutable and were not modified.',
             'completed_at' => now(),
         ]);
 
         AdminAuditLog::record('pdpa.erasure_executed', null, [
-            'dsar_id'      => $dsar->id,
-            'reference'    => $dsar->reference,
+            'dsar_id' => $dsar->id,
+            'reference' => $dsar->reference,
             'candidate_id' => $dsar->candidate->id,
         ]);
 
         return redirect()->route('compliance.dsar.show', $dsar)
-            ->with('success', "Erasure executed. Candidate PII has been redacted.");
+            ->with('success', 'Erasure executed. Candidate PII has been redacted.');
     }
 
     public function downloadEvidence(DataSubjectRequest $dsar)
@@ -247,6 +249,7 @@ class DataSubjectRequestController extends Controller
         if (! $dsar->evidence_file_path || ! Storage::disk('local')->exists($dsar->evidence_file_path)) {
             abort(404);
         }
+
         return Storage::disk('local')->download(
             $dsar->evidence_file_path,
             "{$dsar->reference}-evidence.".pathinfo($dsar->evidence_file_path, PATHINFO_EXTENSION)

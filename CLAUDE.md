@@ -326,10 +326,13 @@ Status values: `new | in_progress | rejected | complete | updated` (canonical se
 ### `request_candidates`
 ```
 id, screening_request_id, identity_type_id,
-name, identity_number, nationality (nullable), date_of_birth (date, nullable),
-mobile (nullable), remarks (nullable),
+name, identity_number (text; encrypted at rest — see below), identity_number_hash (blind index),
+nationality (nullable), date_of_birth (date, nullable),
+mobile (nullable), remarks (nullable), redacted_at (nullable), redacted_reason (nullable),
 status (new|in_progress|flagged|complete), created_at, updated_at
 ```
+> **`identity_number` PII encryption.** Encrypted at rest via the `EncryptsIdentityNumber` trait + `EncryptedString` cast, keyed off `config('pii.key')` (a **shared** `PII_KEY`, NOT `APP_KEY` — both portals share the DB but have different app keys). Env-gated: empty `PII_KEY` = plaintext, no-op. Exact-match lookups use the deterministic blind index `identity_number_hash` (`RequestCandidate::scopeWhereIdentityNumber()` / `hashIdentity()`); substring IC search is impossible on ciphertext. Reads transparently fall back to legacy plaintext, so activation is: run the widen+index migration, set `PII_KEY` in both apps, `php artisan pii:backfill-identity`. Keep `App\Support\Pii`, the cast, and the trait identical across both repos.
+> **Redaction deletes PII files.** `RedactionService::redactCandidate()` (retention purge + DSAR erasure) masks fields, clears the blind-index hash, deletes `candidate_documents` (rows + files), and nulls+unlinks consent evidence files — and audit-logs what it deleted. Issued report PDFs and payment/receipt files are out of scope (immutable / separate financial retention).
 
 ### `candidate_scope_type`
 Pivot: candidates ↔ scope checks with per-check status and findings.

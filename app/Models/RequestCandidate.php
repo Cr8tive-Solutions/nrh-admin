@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\EncryptsIdentityNumber;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class RequestCandidate extends Model
 {
+    use EncryptsIdentityNumber;
+
     protected $fillable = [
         'screening_request_id', 'identity_type_id',
         'name', 'identity_number', 'nationality', 'date_of_birth', 'mobile', 'remarks', 'status',
