@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ReportVersion extends Model
 {
     use HasHashid;
+
     protected $fillable = [
         'screening_request_id', 'type', 'version',
         'generated_at', 'generated_by_admin_id',
@@ -19,7 +20,8 @@ class ReportVersion extends Model
 
     protected $casts = [
         'generated_at' => 'datetime',
-        'snapshot'     => 'array',
+        'snapshot' => 'array',
+        'version' => 'integer',
     ];
 
     public function screeningRequest(): BelongsTo

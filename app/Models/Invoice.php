@@ -6,23 +6,25 @@ use App\Traits\HasHashid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Invoice extends Model
 {
     use HasHashid;
+
     protected $fillable = [
         'customer_id', 'number', 'period', 'period_date', 'period_end', 'status',
         'issued_at', 'due_at', 'subtotal', 'tax', 'total',
     ];
 
     protected $casts = [
-        'issued_at'   => 'date',
-        'due_at'      => 'date',
+        'issued_at' => 'date',
+        'due_at' => 'date',
         'period_date' => 'date',
-        'period_end'  => 'date',
-        'subtotal'    => 'decimal:2',
-        'tax'         => 'decimal:2',
-        'total'       => 'decimal:2',
+        'period_end' => 'date',
+        'subtotal' => 'decimal:2',
+        'tax' => 'decimal:2',
+        'total' => 'decimal:2',
     ];
 
     public function customer(): BelongsTo
@@ -58,22 +60,29 @@ class Invoice extends Model
 
     public static function generateNumber(): string
     {
+        // Serialise concurrent generators (single create + the bulk loop run
+        // in parallel) — the read-then-increment below would otherwise race
+        // and trip the unique constraint on `number`. Transaction-scoped
+        // advisory lock; both call sites run inside DB::transaction().
+        DB::select('SELECT pg_advisory_xact_lock(hashtext(?))', ['invoices.number']);
+
         $year = now()->year;
         // Order by numeric tail so mixed-width sequences (e.g. legacy 3-digit + new 4-digit) sort correctly.
         $last = self::where('number', 'like', "INV-{$year}-%")
             ->orderByRaw('LENGTH(number) DESC, number DESC')
             ->first();
         $seq = $last ? ((int) substr(strrchr($last->number, '-'), 1)) + 1 : 1;
-        return "INV-{$year}-" . str_pad($seq, 4, '0', STR_PAD_LEFT);
+
+        return "INV-{$year}-".str_pad($seq, 4, '0', STR_PAD_LEFT);
     }
 
     public function statusBadgeClass(): string
     {
         return match ($this->status) {
-            'unpaid'  => 'badge-yellow',
-            'paid'    => 'badge-green',
+            'unpaid' => 'badge-yellow',
+            'paid' => 'badge-green',
             'overdue' => 'badge-red',
-            default   => 'badge-gray',
+            default => 'badge-gray',
         };
     }
 }

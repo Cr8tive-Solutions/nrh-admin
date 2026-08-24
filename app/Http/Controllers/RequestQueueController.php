@@ -73,10 +73,7 @@ class RequestQueueController extends Controller
         })->all();
 
         // Cash-billed customers need explicit payment confirmation before processing starts.
-        $activeAgreement = $screeningRequest->customer?->agreements
-            ->filter(fn ($a) => $a->expiry_date->isFuture())
-            ->sortByDesc('expiry_date')
-            ->first();
+        $activeAgreement = $screeningRequest->customer?->activeAgreement();
         $isCashBilled = $activeAgreement?->isPerRequest() ?? false;
         $awaitingPayment = $isCashBilled && $screeningRequest->status === 'new';
         $paymentAmount = $awaitingPayment ? $screeningRequest->calculateTotal() : null;
@@ -111,10 +108,7 @@ class RequestQueueController extends Controller
     {
         $screeningRequest->load('customer.agreements');
 
-        $agreement = $screeningRequest->customer?->agreements
-            ->filter(fn ($a) => $a->expiry_date->isFuture())
-            ->sortByDesc('expiry_date')
-            ->first();
+        $agreement = $screeningRequest->customer?->activeAgreement();
 
         if (! $agreement || ! $agreement->isPerRequest()) {
             return $this->saveResponse($request, 'Customer is not on cash billing — no payment verification needed.', [], 422);

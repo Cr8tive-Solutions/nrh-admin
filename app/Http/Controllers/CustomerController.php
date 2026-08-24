@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CustomerUserInvitationMail;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomerUser;
 use App\Models\CustomerUserInvitation;
-use App\Mail\CustomerUserInvitationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
@@ -26,8 +25,8 @@ class CustomerController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('registration_no', 'ilike', "%{$search}%")
-                  ->orWhere('contact_email', 'ilike', "%{$search}%");
+                    ->orWhere('registration_no', 'ilike', "%{$search}%")
+                    ->orWhere('contact_email', 'ilike', "%{$search}%");
             });
         }
 
@@ -60,17 +59,14 @@ class CustomerController extends Controller
         $recentRequests = $customer->screeningRequests()->with('candidates')->latest()->take(10)->get();
 
         $stats = [
-            'requests_total'   => $customer->screeningRequests()->count(),
-            'requests_active'  => $customer->screeningRequests()->whereIn('status', ['new', 'in_progress'])->count(),
+            'requests_total' => $customer->screeningRequests()->count(),
+            'requests_active' => $customer->screeningRequests()->whereIn('status', ['new', 'in_progress'])->count(),
             'requests_flagged' => $customer->screeningRequests()->whereHas('candidates', fn ($q) => $q->where('status', 'flagged'))->count(),
-            'invoices_unpaid'  => $customer->invoices()->whereIn('status', ['unpaid', 'overdue'])->count(),
-            'team_members'     => $customer->customerUsers->count(),
+            'invoices_unpaid' => $customer->invoices()->whereIn('status', ['unpaid', 'overdue'])->count(),
+            'team_members' => $customer->customerUsers->count(),
         ];
 
-        $activeAgreement = $customer->agreements
-            ->filter(fn ($a) => $a->expiry_date->isFuture())
-            ->sortByDesc('expiry_date')
-            ->first();
+        $activeAgreement = $customer->activeAgreement();
 
         $countryFlag = Country::where('name', $customer->country)->value('flag');
 
@@ -80,20 +76,21 @@ class CustomerController extends Controller
     public function edit(Customer $customer)
     {
         $countries = Country::orderBy('name')->get();
+
         return view('customers.edit', compact('customer', 'countries'));
     }
 
     public function update(Request $request, Customer $customer)
     {
         $data = $request->validate([
-            'name'           => 'required|string|max:255',
-            'registration_no'=> 'nullable|string|max:100',
-            'address'        => 'nullable|string',
-            'country'        => 'nullable|string|max:100',
-            'industry'       => 'nullable|string|max:100',
-            'contact_name'   => 'nullable|string|max:255',
-            'contact_email'  => 'nullable|email|max:255',
-            'contact_phone'  => 'nullable|string|max:50',
+            'name' => 'required|string|max:255',
+            'registration_no' => 'nullable|string|max:100',
+            'address' => 'nullable|string',
+            'country' => 'nullable|string|max:100',
+            'industry' => 'nullable|string|max:100',
+            'contact_name' => 'nullable|string|max:255',
+            'contact_email' => 'nullable|email|max:255',
+            'contact_phone' => 'nullable|string|max:50',
         ]);
 
         $customer->update($data);
@@ -104,21 +101,22 @@ class CustomerController extends Controller
     public function create()
     {
         $countries = Country::orderBy('name')->get();
+
         return view('customers.create', compact('countries'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'             => 'required|string|max:255',
-            'registration_no'  => 'nullable|string|max:100',
-            'address'          => 'nullable|string',
-            'country'          => 'nullable|string|max:100',
-            'industry'         => 'nullable|string|max:100',
-            'contact_name'     => 'nullable|string|max:255',
-            'contact_email'    => 'nullable|email|max:255',
-            'contact_phone'    => 'nullable|string|max:50',
-            'send_invitation'  => 'sometimes|boolean',
+            'name' => 'required|string|max:255',
+            'registration_no' => 'nullable|string|max:100',
+            'address' => 'nullable|string',
+            'country' => 'nullable|string|max:100',
+            'industry' => 'nullable|string|max:100',
+            'contact_name' => 'nullable|string|max:255',
+            'contact_email' => 'nullable|email|max:255',
+            'contact_phone' => 'nullable|string|max:50',
+            'send_invitation' => 'sometimes|boolean',
         ]);
 
         $sendInvitation = ! empty($data['send_invitation']);
@@ -133,17 +131,18 @@ class CustomerController extends Controller
                 $existing = CustomerUser::where('email', $data['contact_email'])->first();
                 if ($existing) {
                     $invitationError = "A client portal user with email {$data['contact_email']} already exists; no new invitation sent.";
+
                     return $customer;
                 }
 
                 $user = CustomerUser::create([
                     'customer_id' => $customer->id,
-                    'name'        => $data['contact_name'],
-                    'email'       => $data['contact_email'],
+                    'name' => $data['contact_name'],
+                    'email' => $data['contact_email'],
                     // Random 32-byte placeholder; the user sets a real password through the invitation link.
-                    'password'    => Str::random(32),
-                    'role'        => 'admin',
-                    'status'      => 'inactive',
+                    'password' => Str::random(32),
+                    'role' => 'admin',
+                    'status' => 'inactive',
                 ]);
 
                 $invitation = $this->createInvitation($user);
@@ -186,17 +185,17 @@ class CustomerController extends Controller
 
         $user = CustomerUser::create([
             'customer_id' => $customer->id,
-            'name'        => $customer->contact_name,
-            'email'       => $customer->contact_email,
-            'password'    => Str::random(32),
-            'role'        => 'admin',
-            'status'      => 'inactive',
+            'name' => $customer->contact_name,
+            'email' => $customer->contact_email,
+            'password' => Str::random(32),
+            'role' => 'admin',
+            'status' => 'inactive',
         ]);
 
         $invitation = $this->createInvitation($user);
 
         return back()->with([
-            'success'        => "Primary user created and invitation sent to {$user->email}.",
+            'success' => "Primary user created and invitation sent to {$user->email}.",
             'invitation_url' => $invitation->url(),
         ]);
     }
@@ -221,7 +220,7 @@ class CustomerController extends Controller
         $invitation = $this->createInvitation($user);
 
         return back()->with([
-            'success'        => "Fresh invitation sent to {$user->email}.",
+            'success' => "Fresh invitation sent to {$user->email}.",
             'invitation_url' => $invitation->url(),
         ]);
     }
@@ -230,10 +229,10 @@ class CustomerController extends Controller
     {
         $invitation = CustomerUserInvitation::create([
             'customer_user_id' => $user->id,
-            'token'            => Str::random(64),
-            'expires_at'       => now()->addDays(14),
-            'sent_count'       => 1,
-            'last_sent_at'     => now(),
+            'token' => Str::random(64),
+            'expires_at' => now()->addDays(14),
+            'sent_count' => 1,
+            'last_sent_at' => now(),
         ]);
 
         try {
@@ -242,8 +241,8 @@ class CustomerController extends Controller
             // Log but don't fail; admin can copy link manually from the success message.
             Log::warning('Failed to send invitation email', [
                 'customer_user_id' => $user->id,
-                'email'            => $user->email,
-                'error'            => $e->getMessage(),
+                'email' => $user->email,
+                'error' => $e->getMessage(),
             ]);
         }
 

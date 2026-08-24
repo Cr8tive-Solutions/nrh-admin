@@ -302,6 +302,7 @@
                             'in_progress' => 'nrh-pill-progress',
                             'complete'    => 'nrh-pill-complete',
                             'updated'     => 'nrh-pill-complete',
+                            'rejected'    => 'nrh-pill-flagged',
                             default       => 'nrh-pill-new',
                         };
                     @endphp

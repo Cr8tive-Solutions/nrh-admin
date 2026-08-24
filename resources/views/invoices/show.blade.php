@@ -231,8 +231,10 @@
                                   placeholder="e.g. Confirmed via Maybank statement, ref MBB-2026-0512-NRH."
                                   class="w-full text-xs px-3 py-2 border border-emerald-200 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-white"></textarea>
                         @php
-                            $effectiveAmount = $receipt->amount_claimed !== null ? (float) $receipt->amount_claimed : (float) $invoice->total;
-                            $coverageAfter   = $invoice->verifiedReceiptsTotal() + $effectiveAmount;
+                            // Mirror PaymentReceiptController::verify(): a NULL claim books the outstanding balance, not the full invoice total.
+                            $alreadyCovered  = $invoice->verifiedReceiptsTotal();
+                            $effectiveAmount = $receipt->amount_claimed !== null ? (float) $receipt->amount_claimed : max(0, (float) $invoice->total - $alreadyCovered);
+                            $coverageAfter   = $alreadyCovered + $effectiveAmount;
                             $willFlipPaid    = $coverageAfter + 0.005 >= (float) $invoice->total;
                         @endphp
                         <p class="text-xs text-gray-600">
@@ -266,7 +268,7 @@
                         <textarea name="verification_note" required rows="2" maxlength="1000"
                                   placeholder="e.g. Receipt is illegible, please reupload a clearer scan."
                                   class="w-full text-xs px-3 py-2 border border-rose-200 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"></textarea>
-                        <p class="text-xs text-gray-500">Internal note — the customer sees a generic "rejected" status, not this text.</p>
+                        <p class="text-xs text-gray-500">Visible to the customer — this text is shown on the rejected receipt in the client portal, so write it for them.</p>
                         <div class="flex gap-2">
                             <button type="submit" class="text-xs font-semibold px-3 py-1.5 rounded-md text-white bg-rose-700 hover:bg-rose-800">Confirm reject</button>
                             <button type="button" @click="rejecting = null" class="text-xs px-3 py-1.5 text-gray-500">Cancel</button>

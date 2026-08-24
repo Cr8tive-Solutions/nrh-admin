@@ -151,7 +151,9 @@
       "Bash(RUN_PROBE=1 php artisan test tests/Feature/DedupProbeTest.php)",
       "Bash(./vendor/bin/pint tests/ scripts/)",
       "Bash(./vendor/bin/pint tests/)",
-      "Bash(./vendor/bin/pint app/Http/Controllers/PaymentReceiptController.php app/Services/ReportSnapshot.php tests/)"
+      "Bash(./vendor/bin/pint app/Http/Controllers/PaymentReceiptController.php app/Services/ReportSnapshot.php tests/)",
+      "Bash(xargs -I{} echo \"pending count: {}\")",
+      "Bash(./vendor/bin/pint tests/Feature/DueDiligenceDisabledTest.php routes/client.php)"
     ]
   }
 }

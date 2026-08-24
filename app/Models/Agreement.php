@@ -3,22 +3,22 @@
 namespace App\Models;
 
 use App\Traits\HasHashid;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Agreement extends Model
 {
     use HasHashid;
+
     protected $fillable = [
         'customer_id', 'type', 'start_date', 'expiry_date',
         'sla_tat', 'billing', 'payment', 'terms',
     ];
 
     protected $casts = [
-        'start_date'  => 'date',
+        'start_date' => 'date',
         'expiry_date' => 'date',
-        'terms'       => 'array',
+        'terms' => 'array',
     ];
 
     public function customer(): BelongsTo
@@ -48,7 +48,7 @@ class Agreement extends Model
      * ever writes 'per_request', but this keeps both sides agreeing if the
      * column is ever touched another way.
      */
-    private const CASH_ALIASES = ['per_request', 'per request', 'cash', 'pay_per_use', 'pay per use', 'prepaid', 'pre-paid'];
+    public const CASH_ALIASES = ['per_request', 'per request', 'cash', 'pay_per_use', 'pay per use', 'prepaid', 'pre-paid'];
 
     /**
      * Canonical billing mode. Anything that isn't a recognised cash/per-request

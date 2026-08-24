@@ -25,7 +25,7 @@ class InvoiceController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('number', 'ilike', "%{$search}%")
-                  ->orWhereHas('customer', fn ($c) => $c->where('name', 'ilike', "%{$search}%"));
+                    ->orWhereHas('customer', fn ($c) => $c->where('name', 'ilike', "%{$search}%"));
             });
         }
 
@@ -37,26 +37,27 @@ class InvoiceController extends Controller
     public function create()
     {
         $customers = Customer::orderBy('name')->get();
+
         return view('invoices.create', compact('customers'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'customer_id'    => 'required|exists:customers,id',
-            'period_start'   => 'required|date',
-            'period_end'     => 'required|date|after_or_equal:period_start',
-            'issued_at'      => 'required|date',
-            'due_at'         => 'required|date|after_or_equal:issued_at',
-            'items'          => 'required|array|min:1',
+            'customer_id' => 'required|exists:customers,id',
+            'period_start' => 'required|date',
+            'period_end' => 'required|date|after_or_equal:period_start',
+            'issued_at' => 'required|date',
+            'due_at' => 'required|date|after_or_equal:issued_at',
+            'items' => 'required|array|min:1',
             'items.*.description' => 'required|string',
-            'items.*.qty'         => 'required|integer|min:1',
-            'items.*.unit_price'  => 'required|numeric|min:0',
-            'request_ids'    => 'nullable|string',
+            'items.*.qty' => 'required|integer|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'request_ids' => 'nullable|string',
         ]);
 
         $start = Carbon::parse($data['period_start'])->startOfDay();
-        $end   = Carbon::parse($data['period_end'])->endOfDay();
+        $end = Carbon::parse($data['period_end'])->endOfDay();
 
         if (Invoice::where('customer_id', $data['customer_id'])->where('period_date', $start->toDateString())->exists()) {
             return back()->withInput()->withErrors(['period_start' => 'An invoice for this customer starting on that date already exists.']);
@@ -70,30 +71,30 @@ class InvoiceController extends Controller
 
         DB::transaction(function () use ($data, $requestIds, $start, $end, &$invoice) {
             $subtotal = collect($data['items'])->sum(fn ($i) => $i['qty'] * $i['unit_price']);
-            $tax      = round($subtotal * 0.06, 2);
-            $total    = $subtotal + $tax;
+            $tax = round($subtotal * 0.06, 2);
+            $total = $subtotal + $tax;
 
             $invoice = Invoice::create([
                 'customer_id' => $data['customer_id'],
-                'number'      => Invoice::generateNumber(),
-                'period'      => $this->formatPeriodDisplay($start, $end),
+                'number' => Invoice::generateNumber(),
+                'period' => $this->formatPeriodDisplay($start, $end),
                 'period_date' => $start->toDateString(),
-                'period_end'  => $end->toDateString(),
-                'status'      => 'unpaid',
-                'issued_at'   => $data['issued_at'],
-                'due_at'      => $data['due_at'],
-                'subtotal'    => $subtotal,
-                'tax'         => $tax,
-                'total'       => $total,
+                'period_end' => $end->toDateString(),
+                'status' => 'unpaid',
+                'issued_at' => $data['issued_at'],
+                'due_at' => $data['due_at'],
+                'subtotal' => $subtotal,
+                'tax' => $tax,
+                'total' => $total,
             ]);
 
             foreach ($data['items'] as $item) {
                 InvoiceItem::create([
-                    'invoice_id'  => $invoice->id,
+                    'invoice_id' => $invoice->id,
                     'description' => $item['description'],
-                    'qty'         => $item['qty'],
-                    'unit_price'  => $item['unit_price'],
-                    'total'       => $item['qty'] * $item['unit_price'],
+                    'qty' => $item['qty'],
+                    'unit_price' => $item['unit_price'],
+                    'total' => $item['qty'] * $item['unit_price'],
                 ]);
             }
 
@@ -117,19 +118,20 @@ class InvoiceController extends Controller
             'receipts.verifiedBy',
             'screeningRequests',
         ]);
+
         return view('invoices.show', compact('invoice'));
     }
 
     public function previewItems(Request $request)
     {
         $request->validate([
-            'customer_id'  => 'required|exists:customers,id',
+            'customer_id' => 'required|exists:customers,id',
             'period_start' => 'required|date',
-            'period_end'   => 'required|date|after_or_equal:period_start',
+            'period_end' => 'required|date|after_or_equal:period_start',
         ]);
 
         $start = Carbon::parse($request->period_start)->startOfDay();
-        $end   = Carbon::parse($request->period_end)->endOfDay();
+        $end = Carbon::parse($request->period_end)->endOfDay();
 
         $result = $this->buildItemsForCustomer((int) $request->customer_id, $start, $end);
 
@@ -145,13 +147,16 @@ class InvoiceController extends Controller
     {
         $request->validate([
             'period_start' => 'required|date',
-            'period_end'   => 'required|date|after_or_equal:period_start',
+            'period_end' => 'required|date|after_or_equal:period_start',
         ]);
 
         $start = Carbon::parse($request->period_start)->startOfDay();
-        $end   = Carbon::parse($request->period_end)->endOfDay();
+        $end = Carbon::parse($request->period_end)->endOfDay();
 
-        $customers = Customer::whereHas('agreements', fn ($q) => $q->where('billing', '!=', 'per_request'))
+        // Exclude every cash/per-request alias, not just the canonical value —
+        // a raw != 'per_request' would sweep 'cash'/'prepaid' customers into
+        // monthly bulk invoicing and double-bill them.
+        $customers = Customer::whereHas('agreements', fn ($q) => $q->whereNotIn(DB::raw('lower(trim(billing))'), Agreement::CASH_ALIASES))
             ->orderBy('name')
             ->get(['id', 'name']);
 
@@ -162,18 +167,19 @@ class InvoiceController extends Controller
             ->get(['id', 'customer_id', 'number'])
             ->groupBy('customer_id');
 
-        $rows    = [];
+        $rows = [];
         $skipped = [];
 
         foreach ($customers as $customer) {
             if ($existingInvoices->has($customer->id)) {
                 foreach ($existingInvoices[$customer->id] as $existing) {
                     $skipped[] = [
-                        'customer_name'  => $customer->name,
+                        'customer_name' => $customer->name,
                         'invoice_number' => $existing->number,
-                        'invoice_id'     => $existing->id,
+                        'invoice_id' => $existing->id,
                     ];
                 }
+
                 continue;
             }
 
@@ -184,13 +190,13 @@ class InvoiceController extends Controller
 
             $subtotal = collect($result['items'])->sum(fn ($i) => $i['qty'] * $i['unit_price']);
             $rows[] = [
-                'customer_id'   => $customer->id,
+                'customer_id' => $customer->id,
                 'customer_name' => $customer->name,
-                'items'         => $result['items'],
-                'request_ids'   => collect($result['requests'])->pluck('id')->values()->all(),
-                'subtotal'      => round($subtotal, 2),
-                'tax'           => round($subtotal * 0.06, 2),
-                'total'         => round($subtotal * 1.06, 2),
+                'items' => $result['items'],
+                'request_ids' => collect($result['requests'])->pluck('id')->values()->all(),
+                'subtotal' => round($subtotal, 2),
+                'tax' => round($subtotal * 0.06, 2),
+                'total' => round($subtotal * 1.06, 2),
             ];
         }
 
@@ -200,23 +206,23 @@ class InvoiceController extends Controller
     public function bulkStore(Request $request)
     {
         $data = $request->validate([
-            'issued_at'                       => 'required|date',
-            'due_at'                          => 'required|date|after_or_equal:issued_at',
-            'period_start'                    => 'required|date',
-            'period_end'                      => 'required|date|after_or_equal:period_start',
-            'customers'                       => 'required|array|min:1',
-            'customers.*.customer_id'         => 'required|exists:customers,id',
-            'customers.*.items'               => 'required|array|min:1',
+            'issued_at' => 'required|date',
+            'due_at' => 'required|date|after_or_equal:issued_at',
+            'period_start' => 'required|date',
+            'period_end' => 'required|date|after_or_equal:period_start',
+            'customers' => 'required|array|min:1',
+            'customers.*.customer_id' => 'required|exists:customers,id',
+            'customers.*.items' => 'required|array|min:1',
             'customers.*.items.*.description' => 'required|string',
-            'customers.*.items.*.qty'         => 'required|integer|min:1',
-            'customers.*.items.*.unit_price'  => 'required|numeric|min:0',
-            'customers.*.request_ids'         => 'nullable|array',
+            'customers.*.items.*.qty' => 'required|integer|min:1',
+            'customers.*.items.*.unit_price' => 'required|numeric|min:0',
+            'customers.*.request_ids' => 'nullable|array',
         ]);
 
-        $start         = Carbon::parse($data['period_start'])->startOfDay();
-        $end           = Carbon::parse($data['period_end'])->endOfDay();
+        $start = Carbon::parse($data['period_start'])->startOfDay();
+        $end = Carbon::parse($data['period_end'])->endOfDay();
         $periodDisplay = $this->formatPeriodDisplay($start, $end);
-        $created       = 0;
+        $created = 0;
 
         DB::transaction(function () use ($data, $start, $end, $periodDisplay, &$created) {
             foreach ($data['customers'] as $row) {
@@ -230,30 +236,30 @@ class InvoiceController extends Controller
                 }
 
                 $subtotal = collect($row['items'])->sum(fn ($i) => $i['qty'] * $i['unit_price']);
-                $tax      = round($subtotal * 0.06, 2);
-                $total    = $subtotal + $tax;
+                $tax = round($subtotal * 0.06, 2);
+                $total = $subtotal + $tax;
 
                 $invoice = Invoice::create([
                     'customer_id' => $row['customer_id'],
-                    'number'      => Invoice::generateNumber(),
-                    'period'      => $periodDisplay,
+                    'number' => Invoice::generateNumber(),
+                    'period' => $periodDisplay,
                     'period_date' => $start->toDateString(),
-                    'period_end'  => $end->toDateString(),
-                    'status'      => 'unpaid',
-                    'issued_at'   => $data['issued_at'],
-                    'due_at'      => $data['due_at'],
-                    'subtotal'    => $subtotal,
-                    'tax'         => $tax,
-                    'total'       => $total,
+                    'period_end' => $end->toDateString(),
+                    'status' => 'unpaid',
+                    'issued_at' => $data['issued_at'],
+                    'due_at' => $data['due_at'],
+                    'subtotal' => $subtotal,
+                    'tax' => $tax,
+                    'total' => $total,
                 ]);
 
                 foreach ($row['items'] as $item) {
                     InvoiceItem::create([
-                        'invoice_id'  => $invoice->id,
+                        'invoice_id' => $invoice->id,
                         'description' => $item['description'],
-                        'qty'         => $item['qty'],
-                        'unit_price'  => $item['unit_price'],
-                        'total'       => $item['qty'] * $item['unit_price'],
+                        'qty' => $item['qty'],
+                        'unit_price' => $item['unit_price'],
+                        'total' => $item['qty'] * $item['unit_price'],
                     ]);
                 }
 
@@ -270,7 +276,7 @@ class InvoiceController extends Controller
         });
 
         return response()->json([
-            'created'      => $created,
+            'created' => $created,
             'redirect_url' => route('invoices.index'),
         ]);
     }
@@ -297,18 +303,18 @@ class InvoiceController extends Controller
 
         $data = $request->validate([
             'period_start' => 'required|date',
-            'period_end'   => 'required|date|after_or_equal:period_start',
-            'issued_at'    => 'required|date',
-            'due_at'       => 'required|date|after_or_equal:issued_at',
-            'items'        => 'required|array|min:1',
+            'period_end' => 'required|date|after_or_equal:period_start',
+            'issued_at' => 'required|date',
+            'due_at' => 'required|date|after_or_equal:issued_at',
+            'items' => 'required|array|min:1',
             'items.*.description' => 'required|string',
-            'items.*.qty'         => 'required|integer|min:1',
-            'items.*.unit_price'  => 'required|numeric|min:0',
-            'request_ids'  => 'nullable|string',
+            'items.*.qty' => 'required|integer|min:1',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'request_ids' => 'nullable|string',
         ]);
 
         $start = Carbon::parse($data['period_start'])->startOfDay();
-        $end   = Carbon::parse($data['period_end'])->endOfDay();
+        $end = Carbon::parse($data['period_end'])->endOfDay();
 
         $conflict = Invoice::where('customer_id', $invoice->customer_id)
             ->where('id', '!=', $invoice->id)
@@ -326,29 +332,29 @@ class InvoiceController extends Controller
 
         DB::transaction(function () use ($invoice, $data, $newRequestIds, $start, $end) {
             $subtotal = collect($data['items'])->sum(fn ($i) => $i['qty'] * $i['unit_price']);
-            $tax      = round($subtotal * 0.06, 2);
-            $total    = $subtotal + $tax;
+            $tax = round($subtotal * 0.06, 2);
+            $total = $subtotal + $tax;
 
             $invoice->update([
-                'period'      => $this->formatPeriodDisplay($start, $end),
+                'period' => $this->formatPeriodDisplay($start, $end),
                 'period_date' => $start->toDateString(),
-                'period_end'  => $end->toDateString(),
-                'issued_at'   => $data['issued_at'],
-                'due_at'      => $data['due_at'],
-                'subtotal'    => $subtotal,
-                'tax'         => $tax,
-                'total'       => $total,
+                'period_end' => $end->toDateString(),
+                'issued_at' => $data['issued_at'],
+                'due_at' => $data['due_at'],
+                'subtotal' => $subtotal,
+                'tax' => $tax,
+                'total' => $total,
             ]);
 
             $invoice->items()->delete();
 
             foreach ($data['items'] as $item) {
                 InvoiceItem::create([
-                    'invoice_id'  => $invoice->id,
+                    'invoice_id' => $invoice->id,
                     'description' => $item['description'],
-                    'qty'         => $item['qty'],
-                    'unit_price'  => $item['unit_price'],
-                    'total'       => $item['qty'] * $item['unit_price'],
+                    'qty' => $item['qty'],
+                    'unit_price' => $item['unit_price'],
+                    'total' => $item['qty'] * $item['unit_price'],
                 ]);
             }
 
@@ -369,15 +375,17 @@ class InvoiceController extends Controller
     public function markPaid(Invoice $invoice)
     {
         $invoice->update(['status' => 'paid']);
+
         return back()->with('success', 'Invoice marked as paid.');
     }
 
     private function formatPeriodDisplay(Carbon $start, Carbon $end): string
     {
         if ($start->isSameMonth($end)) {
-            return $start->format('d') . '–' . $end->format('d M Y');
+            return $start->format('d').'–'.$end->format('d M Y');
         }
-        return $start->format('d M Y') . ' – ' . $end->format('d M Y');
+
+        return $start->format('d M Y').' – '.$end->format('d M Y');
     }
 
     private function buildItemsForCustomer(int $customerId, Carbon $start, Carbon $end): array
@@ -394,7 +402,7 @@ class InvoiceController extends Controller
         }
 
         $candidateIds = $requests->flatMap(fn ($r) => $r->candidates->pluck('id'));
-        $scopeRows    = DB::table('candidate_scope_type')
+        $scopeRows = DB::table('candidate_scope_type')
             ->whereIn('request_candidate_id', $candidateIds)
             ->get(['request_candidate_id', 'scope_type_id']);
 
@@ -423,13 +431,13 @@ class InvoiceController extends Controller
 
             foreach ($scopeCounts as $scopeId => $count) {
                 $scope = $scopeTypes[$scopeId] ?? null;
-                $name  = $scope ? $scope->name : "Scope #{$scopeId}";
+                $name = $scope ? $scope->name : "Scope #{$scopeId}";
                 $price = (float) ($customerPrices[$scopeId] ?? ($scope ? $scope->price : 0));
 
                 $items[] = [
                     'description' => "{$name} – {$req->reference}",
-                    'qty'         => $count,
-                    'unit_price'  => number_format($price, 2, '.', ''),
+                    'qty' => $count,
+                    'unit_price' => number_format($price, 2, '.', ''),
                 ];
             }
 

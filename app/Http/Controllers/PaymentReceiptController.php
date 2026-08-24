@@ -138,11 +138,22 @@ class PaymentReceiptController extends Controller
     /** Stream the uploaded receipt file privately to admins. */
     public function downloadFile(InvoicePaymentReceipt $receipt)
     {
-        if (! $receipt->file_path || ! Storage::disk('local')->exists($receipt->file_path)) {
-            abort(404);
+        // Receipts are uploaded by the client portal onto its own private disk,
+        // reachable here via the client_local mount. Check the admin disk too
+        // in case a file was ever stored locally.
+        $disk = null;
+        if ($receipt->file_path) {
+            foreach (['client_local', 'local'] as $candidate) {
+                if (Storage::disk($candidate)->exists($receipt->file_path)) {
+                    $disk = $candidate;
+                    break;
+                }
+            }
         }
 
-        return Storage::disk('local')->download(
+        abort_if($disk === null, 404);
+
+        return Storage::disk($disk)->download(
             $receipt->file_path,
             $receipt->file_name ?: ('receipt-'.$receipt->id.'.'.pathinfo($receipt->file_path, PATHINFO_EXTENSION))
         );

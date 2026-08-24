@@ -10,11 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Receipt-of-payment uploaded by a customer's Accounts user against an
  * invoice. Lifecycle: pending → verified (admin) | rejected (admin).
  *
- * verification_note is admin-only; never expose to the client portal.
+ * verification_note has two audiences depending on the transition:
+ *  - on VERIFY it is an internal admin note and must not be shown to the client;
+ *  - on REJECT it is the customer-facing rejection reason — the client portal
+ *    renders it on rejected receipts so the customer knows what to fix.
  */
 class InvoicePaymentReceipt extends Model
 {
     use HasHashid;
+
     protected $fillable = [
         'invoice_id', 'uploaded_by_customer_user_id',
         'file_path', 'file_name',
@@ -24,8 +28,8 @@ class InvoicePaymentReceipt extends Model
 
     protected $casts = [
         'amount_claimed' => 'decimal:2',
-        'paid_on'        => 'date',
-        'verified_at'    => 'datetime',
+        'paid_on' => 'date',
+        'verified_at' => 'datetime',
     ];
 
     public const STATUSES = ['pending', 'verified', 'rejected'];
@@ -63,10 +67,10 @@ class InvoicePaymentReceipt extends Model
     public function statusBadgeClass(): string
     {
         return match ($this->status) {
-            'pending'  => 'badge-yellow',
+            'pending' => 'badge-yellow',
             'verified' => 'badge-green',
             'rejected' => 'badge-red',
-            default    => 'badge-gray',
+            default => 'badge-gray',
         };
     }
 }

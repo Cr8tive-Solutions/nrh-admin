@@ -695,7 +695,13 @@
 
         @forelse($request->candidates as $candidate)
         @php
-            $statusCfg = $statusMap[$candidate->status] ?? $statusMap['new'];
+            // Candidates use their own status vocabulary (new|in_progress|flagged|complete);
+            // 'flagged' has no entry in the request-status map, so give it an explicit red badge
+            // matching the client portal's severity signalling.
+            $candidateStatusMap = $statusMap + [
+                'flagged' => ['label' => 'Flagged', 'color' => 'var(--danger)', 'bg' => '#fbeeec', 'icon' => 'x'],
+            ];
+            $statusCfg = $candidateStatusMap[$candidate->status] ?? $candidateStatusMap['new'];
         @endphp
         <div class="rq-cand" x-data="{ open: false, consentOpen: false }" :class="open ? 'is-open' : ''">
             <div class="rq-cand-avatar {{ $candidate->status }}">

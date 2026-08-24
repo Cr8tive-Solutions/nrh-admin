@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Customer extends Model
 {
     use HasHashid;
+
     protected $fillable = [
         'name', 'registration_no', 'address', 'country',
         'industry', 'contact_name', 'contact_email', 'contact_phone', 'balance',
@@ -64,8 +65,21 @@ class Customer extends Model
         return $this->hasMany(Package::class);
     }
 
+    /**
+     * The agreement that governs billing right now: the unexpired agreement
+     * with the latest expiry date, falling back to the most recently expired
+     * one so a lapsed customer keeps their billing mode instead of silently
+     * flipping to monthly/credit. Keep in sync with the client portal's
+     * Customer::currentAgreement().
+     */
     public function activeAgreement(): ?Agreement
     {
-        return $this->agreements()->latest('start_date')->first();
+        $agreements = $this->relationLoaded('agreements') ? $this->agreements : $this->agreements()->get();
+
+        return $agreements
+            ->filter(fn ($a) => $a->expiry_date && $a->expiry_date->isFuture())
+            ->sortByDesc('expiry_date')
+            ->first()
+            ?? $agreements->sortByDesc('expiry_date')->first();
     }
 }
