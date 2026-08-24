@@ -333,8 +333,11 @@
             <div class="ch-stat-label">Unpaid</div>
         </div>
         <div class="ch-stat">
-            <div class="ch-stat-value">MYR {{ number_format($customer->balance, 2) }}</div>
-            <div class="ch-stat-label">Balance</div>
+            @php $ledgerBalance = $customer->ledgerBalance(); @endphp
+            <div class="ch-stat-value" title="Derived from the transactions ledger (topups + adjustments − payments). '—' means no prepaid credit on file.">
+                {{ $ledgerBalance !== null ? 'MYR '.number_format($ledgerBalance, 2) : '—' }}
+            </div>
+            <div class="ch-stat-label">Prepaid credit</div>
         </div>
     </div>
 </div>
@@ -409,8 +412,10 @@
                 <div class="ch-info-value {{ $customer->address ? '' : 'muted' }}" style="white-space: pre-line;">{{ $customer->address ?? 'No address on file' }}</div>
             </div>
             <div>
-                <div class="ch-info-label">Account Balance</div>
-                <div class="ch-info-value mono" style="font-weight: 500;">MYR {{ number_format($customer->balance, 2) }}</div>
+                <div class="ch-info-label">Prepaid Credit</div>
+                <div class="ch-info-value mono" style="font-weight: 500;" title="Derived from the transactions ledger (topups + adjustments − payments).">
+                    {{ ($ledgerBalance ?? $customer->ledgerBalance()) !== null ? 'MYR '.number_format($ledgerBalance ?? $customer->ledgerBalance(), 2) : '—' }}
+                </div>
             </div>
             <div>
                 <div class="ch-info-label">Customer Since</div>

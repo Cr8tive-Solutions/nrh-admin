@@ -42,7 +42,7 @@ class RequestQueueController extends Controller
 
     public function show(ScreeningRequest $screeningRequest)
     {
-        $screeningRequest->load(['customer.agreements', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes', 'candidates.latestConsent.capturedBy']);
+        $screeningRequest->load(['customer.agreements', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes', 'candidates.latestConsent.capturedBy', 'candidates.documents']);
 
         $candidateStats = [
             'total' => $screeningRequest->candidates->count(),

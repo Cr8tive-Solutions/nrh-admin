@@ -56,6 +56,12 @@ class RequestCandidate extends Model
         return $this->hasMany(ConsentRecord::class);
     }
 
+    /** Customer-uploaded documents (NRIC, resume, consent…) from the client portal. */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(CandidateDocument::class);
+    }
+
     public function latestConsent(): HasOne
     {
         return $this->hasOne(ConsentRecord::class)->latestOfMany('consented_at');

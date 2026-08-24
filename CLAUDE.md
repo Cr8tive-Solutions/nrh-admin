@@ -41,9 +41,21 @@ npm run build
 
 # First-time setup
 composer setup
+
+# Flip unpaid invoices past due_at to 'overdue' (also scheduled daily 07:30 MYT)
+php artisan invoices:mark-overdue
+
+# Pad legacy 3-digit invoice numbers to 4-digit (dry run; add --apply to persist)
+php artisan invoices:normalize-numbers
 ```
 
 The app runs at `http://nrh-admin.test` under Laravel Herd. Migrations run against the live Supabase DB — there is no local SQLite fallback.
+
+### Cross-app storage & URL ids
+
+- The two portals read each other's private files through mount disks: this app's `client_local` disk points at the client portal's `storage/app/private` (env `CLIENT_STORAGE_PATH`); the client portal's `admin_local` disk points at this app's (env `ADMIN_STORAGE_PATH`). Payment slips, invoice receipts, candidate documents, and client-captured consent evidence live client-side; report PDFs live admin-side. **In production both env vars must point at the shared mount** or those downloads 404.
+- Hashid URL ids salt from `HASHIDS_SALT` (falls back to `APP_KEY` — see `config/hashids.php`). Salts are app-local by design; a hashid from one portal never resolves in the other.
+- Scheduled jobs live in `routes/console.php`: PDPA purge (02:30), invoice overdue flip (07:30), notifications (08:00), annual holiday sync.
 
 ---
 

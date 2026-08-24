@@ -18,6 +18,9 @@
         </include>
     </source>
     <php>
+        <!-- Report tests render real PDFs via dompdf; the suite overruns a 128M
+             default php.ini limit as it grows. Pin a limit that fits. -->
+        <ini name="memory_limit" value="512M"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

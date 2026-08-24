@@ -6,6 +6,7 @@ use App\Http\Controllers\AgreementController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\CandidateDocumentController;
 use App\Http\Controllers\Compliance\ConsentController;
 use App\Http\Controllers\Compliance\DataSubjectRequestController;
 use App\Http\Controllers\Compliance\RetentionController;
@@ -15,13 +16,13 @@ use App\Http\Controllers\Config\ScopeTypeController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestQueueController;
 use App\Http\Controllers\ScopePricingController;
 use App\Http\Controllers\StaffController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
@@ -73,6 +74,10 @@ Route::middleware('admin.auth')->group(function () {
 
     Route::get('/requests/{screeningRequest}/report/versions/{version}/view', [ReportController::class, 'view'])
         ->name('requests.report.view');
+
+    // Customer-uploaded candidate documents (NRIC, resume, consent…) — served via client_local.
+    Route::get('/requests/{screeningRequest}/candidates/{candidateId}/documents/{documentId}', [CandidateDocumentController::class, 'download'])
+        ->name('requests.candidates.documents.download');
 
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
 

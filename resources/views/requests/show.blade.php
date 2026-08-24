@@ -747,6 +747,21 @@
                     </button>
                     @endallowed
                 </div>
+
+                @if($candidate->documents->isNotEmpty())
+                <div style="margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span style="font-size: 10px; color: var(--ink-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;">Documents:</span>
+                    @foreach($candidate->documents as $doc)
+                    <a href="{{ route('requests.candidates.documents.download', [$request, $candidate->id, $doc->id]) }}"
+                       title="{{ $doc->original_name }}"
+                       style="font-size: 10px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--line);
+                              color: var(--ink-700); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                        {{ str_replace('_', ' ', ucfirst($doc->type)) }}
+                    </a>
+                    @endforeach
+                </div>
+                @endif
             </div>
             <div class="rq-cand-actions">
                 @allowed('request.update')

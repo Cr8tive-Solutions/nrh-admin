@@ -66,6 +66,32 @@ class Customer extends Model
     }
 
     /**
+     * Prepaid credit balance derived from the transactions ledger:
+     * topups + adjustments − payments (completed rows only). The stored
+     * `balance` column is never maintained by either portal, so the ledger is
+     * the source of truth. Returns null when the customer has no topup or
+     * adjustment rows — customers billed purely per-invoice/per-request have
+     * no prepaid balance, and showing −(sum of payments) would be misleading.
+     */
+    public function ledgerBalance(): ?float
+    {
+        $totals = $this->transactions()
+            ->where('status', 'completed')
+            ->selectRaw('type, coalesce(sum(amount), 0) as total')
+            ->groupBy('type')
+            ->pluck('total', 'type');
+
+        if (! isset($totals['topup']) && ! isset($totals['adjustment'])) {
+            return null;
+        }
+
+        return round(
+            (float) ($totals['topup'] ?? 0) + (float) ($totals['adjustment'] ?? 0) - (float) ($totals['payment'] ?? 0),
+            2
+        );
+    }
+
+    /**
      * The agreement that governs billing right now: the unexpired agreement
      * with the latest expiry date, falling back to the most recently expired
      * one so a lapsed customer keeps their billing mode instead of silently

@@ -21,6 +21,13 @@ Schedule::command('holidays:sync')
     ->timezone('Asia/Kuala_Lumpur')
     ->onOneServer();
 
+// Flip unpaid invoices past due_at to 'overdue'. Runs before notifications:generate
+// so freshly-overdue invoices are picked up by the same morning's alert fan-out.
+Schedule::command('invoices:mark-overdue')
+    ->dailyAt('07:30')
+    ->timezone('Asia/Kuala_Lumpur')
+    ->onOneServer();
+
 // Daily system alert notifications: TAT overdue, expiring agreements, overdue invoices.
 Schedule::command('notifications:generate')
     ->dailyAt('08:00')
