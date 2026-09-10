@@ -13,13 +13,20 @@ use Illuminate\Support\Facades\DB;
  *   Four groups are consolidated into single scopes (AML/CTF, Securities Commission,
  *   Bursa Malaysia, Global Sanctions), reducing 32 Data Report scopes to 22.
  * - Other countries (2-6): same naming convention + ordering; the 3 sanctions scopes
- *   (OFAC / UN / World Bank) are consolidated into one "Global Sanctions - Global Risk".
+ *   (OFAC / UN / World Bank) are consolidated into one "Global Sanctions - Global Risk",
+ *   which now covers 7 sanctions bodies (see GLOBAL_SANCTIONS_DESCRIPTION).
  *
  * sort_order drives the listing order everywhere (config, pricing, request, PDF report).
  * The Personal Data ID/MyKAD verification scope is always sort_order 1 within its country.
  */
 class DataReportScopeSeeder extends Seeder
 {
+    /**
+     * Sanctions bodies covered by the consolidated "Global Sanctions - Global Risk" scope.
+     * Same wording for every country — the scope is a global check, not a per-country one.
+     */
+    public const GLOBAL_SANCTIONS_DESCRIPTION = 'Screening conducted against international sanctions and watchlist databases including the OFAC Blocked Persons List & SDN List, United Nations Security Council Sanctions List, European Union (EU) Sanctions List, UK HM Treasury Sanctions List, Australia DFAT Consolidated List, Canada OSFI Sanctions List, and Switzerland SECO Sanctions List to identify global sanctions, blocked persons, or international restrictions.';
+
     public function run(): void
     {
         // [id => [name, sort_order, description|null]]  — description null = leave unchanged.
@@ -34,7 +41,7 @@ class DataReportScopeSeeder extends Seeder
             124 => ['Anti-Money Laundering & Counter-Terrorism Financing', 6, 'Screening conducted against AML/CTF databases maintained by MACC, Bank Negara Malaysia (BNM), Securities Commission, and KDN listings to identify money laundering or terrorism financing offences or investigations.'],
             128 => ['Securities Commission Malaysia – Criminal/Civil Enforcement', 7, 'Screening conducted against Securities Commission Malaysia (SC) databases to identify capital market offences, financial fraud, breach of trust, insider trading, or securities trading violations.'],
             132 => ['Bursa Malaysia Berhad – Market Conduct & Listing Compliance', 8, "Screening conducted against Bursa Malaysia Berhad's enforcement and disciplinary databases to identify securities-related offences, insider trading, market manipulation, or listing violations."],
-            135 => ['Global Sanctions - Global Risk', 9, 'Screening conducted against international sanctions databases including OFAC (SDN List), UN Security Council Consolidated Sanctions List, and World Bank Debarment List to identify global sanctions, blocked persons, or international restrictions.'],
+            135 => ['Global Sanctions - Global Risk', 9, self::GLOBAL_SANCTIONS_DESCRIPTION],
             138 => ['Politically Exposed Persons (PEP)', 10, 'Screening conducted against global PEP databases to identify politically exposed persons, close associates, or family members of PEPs.'],
             139 => ['Civil Summons & Credit Default', 11, 'Screening conducted against civil court summons and judgment databases to identify civil summons or credit default records.'],
             140 => ['Bankruptcy / Insolvency', 12, 'Screening conducted against official bankruptcy and insolvency registries at Jabatan Insolvensi Malaysia (JIM) to identify records of bankruptcy adjudications, insolvency proceedings, or related restrictions.'],
@@ -67,26 +74,26 @@ class DataReportScopeSeeder extends Seeder
         // Singapore 160, Indonesia 179, Thailand 198, Philippines 217, Vietnam 236.
         $foreignBases = [160, 179, 198, 217, 236];
 
-        // Offset-from-base => [name, sort_order, deleteFlag]
+        // Offset-from-base => [name, sort_order, description|null]  — description null = leave unchanged.
         // Sanctions (OFAC kept, UN + World Bank removed → "Global Sanctions - Global Risk").
         $foreignTemplate = [
-            0 => ['Personal Data – ID Verification', 1],                          // ID verification (first)
-            1 => ['Crime Risk Integrity Screening', 2],
-            3 => ['Corruption Record', 3],
-            2 => ['INTERPOL Global Crime Data', 4],
-            4 => ['National Counter-Terrorism Record', 5],
-            5 => ['Anti-Money Laundering & Counter-Terrorism Financing', 6],
-            6 => ['Global Sanctions - Global Risk', 7],                            // was OFAC
-            9 => ['Politically Exposed Persons (PEP)', 8],
-            10 => ['Civil Summons & Credit Default', 9],
-            11 => ['Bankruptcy / Insolvency', 10],
-            12 => ['Directorship & Shareholding Risk', 11],
-            13 => ['Social Media & Deep Web Intelligence', 12],
-            14 => ['Dark Web Risk Intelligence Report', 13],
-            15 => ['One Academic Credential Verification', 14],
-            16 => ['One Professional Body Membership Record', 15],
-            17 => ['One Employment Verification', 16],
-            18 => ['Two Reference Reviews', 17],
+            0 => ['Personal Data – ID Verification', 1, null],                     // ID verification (first)
+            1 => ['Crime Risk Integrity Screening', 2, null],
+            3 => ['Corruption Record', 3, null],
+            2 => ['INTERPOL Global Crime Data', 4, null],
+            4 => ['National Counter-Terrorism Record', 5, null],
+            5 => ['Anti-Money Laundering & Counter-Terrorism Financing', 6, null],
+            6 => ['Global Sanctions - Global Risk', 7, self::GLOBAL_SANCTIONS_DESCRIPTION],  // was OFAC
+            9 => ['Politically Exposed Persons (PEP)', 8, null],
+            10 => ['Civil Summons & Credit Default', 9, null],
+            11 => ['Bankruptcy / Insolvency', 10, null],
+            12 => ['Directorship & Shareholding Risk', 11, null],
+            13 => ['Social Media & Deep Web Intelligence', 12, null],
+            14 => ['Dark Web Risk Intelligence Report', 13, null],
+            15 => ['One Academic Credential Verification', 14, null],
+            16 => ['One Professional Body Membership Record', 15, null],
+            17 => ['One Employment Verification', 16, null],
+            18 => ['Two Reference Reviews', 17, null],
         ];
         $foreignDeleteOffsets = [7, 8]; // UN Security Council Sanction, World Bank Sanction
 
@@ -114,11 +121,12 @@ class DataReportScopeSeeder extends Seeder
 
             // 3. Rename + order foreign countries.
             foreach ($foreignBases as $base) {
-                foreach ($foreignTemplate as $offset => [$name, $order]) {
-                    ScopeType::where('id', $base + $offset)->update([
-                        'name' => mb_strtoupper($name),
-                        'sort_order' => $order,
-                    ]);
+                foreach ($foreignTemplate as $offset => [$name, $order, $desc]) {
+                    $update = ['name' => mb_strtoupper($name), 'sort_order' => $order];
+                    if ($desc !== null) {
+                        $update['description'] = $desc;
+                    }
+                    ScopeType::where('id', $base + $offset)->update($update);
                 }
             }
         });

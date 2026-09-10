@@ -15,6 +15,7 @@ use App\Http\Controllers\Config\CountryController;
 use App\Http\Controllers\Config\ScopeTypeController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GuideController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentReceiptController;
@@ -42,6 +43,10 @@ Route::middleware('admin.auth')->group(function () {
 
     // Dashboard — any authenticated admin
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Staff guide — documentation only, available to every authenticated admin.
+    Route::get('/guide', [GuideController::class, 'show'])->name('guide.show');
+    Route::get('/guide/download', [GuideController::class, 'download'])->name('guide.download');
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

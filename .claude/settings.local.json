@@ -153,7 +153,22 @@
       "Bash(./vendor/bin/pint tests/)",
       "Bash(./vendor/bin/pint app/Http/Controllers/PaymentReceiptController.php app/Services/ReportSnapshot.php tests/)",
       "Bash(xargs -I{} echo \"pending count: {}\")",
-      "Bash(./vendor/bin/pint tests/Feature/DueDiligenceDisabledTest.php routes/client.php)"
+      "Bash(./vendor/bin/pint tests/Feature/DueDiligenceDisabledTest.php routes/client.php)",
+      "PowerShell(php artisan tinker tmp_scopes.php)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(php vendor/bin/pint database/seeders/DataReportScopeSeeder.php database/seeders/GlobalSanctionsScopeSeeder.php)",
+      "PowerShell(php -l app\\\\Http\\\\Controllers\\\\GuideController.php; php -l app\\\\Support\\\\AdminGuide.php; php artisan route:list --path=guide)",
+      "PowerShell(php artisan tinker tmp_render_guide.php)",
+      "PowerShell(php -d extension=gd artisan tinker tmp_render_guide.php)",
+      "PowerShell(php artisan tinker tmp_check_links.php)",
+      "PowerShell(Select-String -Path vendor\\\\dompdf\\\\dompdf\\\\src\\\\Helpers.php -Pattern 'function build_url' -Context 0,40 | ForEach-Object { $_.Context.PostContext -join \"`n\" })",
+      "PowerShell(Select-String -Path vendor\\\\dompdf\\\\dompdf\\\\lib\\\\Cpdf.php -Pattern 'function addInternalLink|function addDestination|function addLink|case .dest.|/S /GoTo|GoTo' | ForEach-Object { $_.LineNumber.ToString\\(\\) + ': ' + $_.Line.Trim\\(\\) } | Select-Object -First 20)",
+      "PowerShell(php artisan tinker tmp_blade_check.php)",
+      "PowerShell(php -d extension=gd artisan test tests/Feature/GuideTest.php 2>&1 | Select-Object -First 40)",
+      "PowerShell(php artisan tinker tmp_guide_assertions.php)",
+      "PowerShell(foreach \\($p in 80,8000,8080,3000\\) { $r = Test-NetConnection -ComputerName 127.0.0.1 -Port $p -WarningAction SilentlyContinue; \"$p : $\\($r.TcpTestSucceeded\\)\" })",
+      "PowerShell(curl.exe -s -o NUL -w \"guide: %{http_code} -> %{redirect_url}\\\\n\" http://localhost:8003/guide; curl.exe -s -o NUL -w \"login: %{http_code}\\\\n\" http://localhost:8003/login)",
+      "PowerShell(docker exec *)"
     ]
   }
 }
