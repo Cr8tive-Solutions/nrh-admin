@@ -108,6 +108,18 @@ class Pii
         return hash_hmac('sha256', $normalized, self::rawKey());
     }
 
+    /**
+     * 32-byte key for at-rest file encryption (EncryptedFilesystemAdapter),
+     * derived from the PII key so the column and file ciphers never share a
+     * raw key. Null when encryption is disabled.
+     */
+    public static function fileKey(): ?string
+    {
+        $key = self::rawKey();
+
+        return $key === null ? null : hash_hkdf('sha256', $key, 32, 'nrh-file-encryption-v1');
+    }
+
     /** Test seam: forget memoised key/encrypter after config changes. */
     public static function flush(): void
     {

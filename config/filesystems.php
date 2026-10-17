@@ -30,8 +30,12 @@ return [
 
     'disks' => [
 
+        // Private storage: report PDFs, consent & DSAR evidence. Encrypted at
+        // rest under the shared PII_KEY (EncryptedFilesystemAdapter via the
+        // `local_mount` driver); no-op while PII_KEY is empty.
         'local' => [
-            'driver' => 'local',
+            'driver' => 'local_mount',
+            'encrypt' => true,
             'root' => storage_path('app/private'),
             // serve:false — nothing links private files through the framework's
             // /storage route; disabling it removes the signature-gated GET/PUT
@@ -65,6 +69,7 @@ return [
         // separate containers have no sibling directory to find.
         'client_local' => [
             'driver' => 'local_mount',
+            'encrypt' => true,
             'root' => env('CLIENT_STORAGE_PATH') ?: base_path('../nrh-intelligence/storage/app/private'),
             'serve' => false,
             'throw' => false,

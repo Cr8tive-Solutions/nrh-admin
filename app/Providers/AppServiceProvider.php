@@ -22,6 +22,7 @@ use App\Models\Transaction;
 use App\Observers\AuditObserver;
 use App\Observers\PaymentReceiptNotificationObserver;
 use App\Observers\ScreeningRequestNotificationObserver;
+use App\Support\EncryptedFilesystemAdapter;
 use Hashids\Hashids;
 use Illuminate\Filesystem\LocalFilesystemAdapter;
 use Illuminate\Foundation\Console\ServeCommand;
@@ -135,6 +136,11 @@ class AppServiceProvider extends ServiceProvider
                 null,
                 lazyRootCreation: true,
             );
+
+            // 'encrypt' => true seals files at rest (see EncryptedFilesystemAdapter).
+            if ($config['encrypt'] ?? false) {
+                $adapter = new EncryptedFilesystemAdapter($adapter);
+            }
 
             return new LocalFilesystemAdapter(
                 new Flysystem($adapter, $config),
