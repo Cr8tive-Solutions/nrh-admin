@@ -13,6 +13,7 @@ use App\Models\CustomerUserInvitation;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoicePaymentReceipt;
+use App\Models\Package;
 use App\Models\Permission;
 use App\Models\RequestCandidate;
 use App\Models\ScopeType;
@@ -22,9 +23,15 @@ use App\Observers\AuditObserver;
 use App\Observers\PaymentReceiptNotificationObserver;
 use App\Observers\ScreeningRequestNotificationObserver;
 use Hashids\Hashids;
+use Illuminate\Filesystem\LocalFilesystemAdapter;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use League\Flysystem\Filesystem as Flysystem;
+use League\Flysystem\Local\LocalFilesystemAdapter as LocalAdapter;
+use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
+use League\Flysystem\Visibility;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -40,6 +47,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerLocalMountDriver();
+
         // @allowed('invoice.manage') ... @endallowed — RBAC/UBAC permission check.
         Blade::if('allowed', function (string $key) {
             return admin_can($key);
@@ -60,6 +69,7 @@ class AppServiceProvider extends ServiceProvider
             Country::class,
             Permission::class,
             CustomerScopePrice::class,
+            Package::class,
             Admin::class,
         ];
 
@@ -78,6 +88,51 @@ class AppServiceProvider extends ServiceProvider
                 ? AdminNotification::where('admin_id', $admin->id)->whereNull('read_at')->count()
                 : 0;
             $view->with('unreadNotificationCount', $count);
+        });
+    }
+
+    /**
+     * A `local` driver that does NOT create its root directory on resolution.
+     *
+     * Flysystem's LocalFilesystemAdapter creates its root eagerly in the
+     * constructor, and Laravel's built-in local driver gives no way to opt out.
+     * For the cross-app mount disks (`client_local` here, `admin_local` on the
+     * client portal) that means merely calling Storage::disk() throws
+     * UnableToCreateDirectory whenever the mount is absent — which is the normal
+     * case in Docker, where the sibling-path default cannot resolve.
+     *
+     * That defeated the graceful fallbacks the download controllers already
+     * have: they try the mount, then the local disk, then 404 with a message
+     * naming the mount. With lazy root creation the disk resolves, `exists()`
+     * simply returns false, and a missing mount degrades to that clean 404
+     * instead of a 500 — and nothing is ever created in the wrong place.
+     */
+    private function registerLocalMountDriver(): void
+    {
+        Storage::extend('local_mount', function ($app, array $config) {
+            $visibility = PortableVisibilityConverter::fromArray(
+                $config['permissions'] ?? [],
+                $config['directory_visibility'] ?? $config['visibility'] ?? Visibility::PRIVATE
+            );
+
+            $links = ($config['links'] ?? null) === 'skip'
+                ? LocalAdapter::SKIP_LINKS
+                : LocalAdapter::DISALLOW_LINKS;
+
+            $adapter = new LocalAdapter(
+                $config['root'],
+                $visibility,
+                $config['lock'] ?? LOCK_EX,
+                $links,
+                null,
+                lazyRootCreation: true,
+            );
+
+            return new LocalFilesystemAdapter(
+                new Flysystem($adapter, $config),
+                $adapter,
+                $config
+            );
         });
     }
 }

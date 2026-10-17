@@ -13,7 +13,7 @@ class ScreeningRequest extends Model
     use HasHashid;
 
     protected $fillable = [
-        'customer_id', 'customer_user_id', 'invoice_id', 'reference',
+        'customer_id', 'customer_user_id', 'package_id', 'invoice_id', 'reference',
         'status', 'type', 'meta', 'rejection_reason',
         'payment_slip_path', 'payment_slip_uploaded_at',
         'payment_verified_at', 'payment_verified_by',
@@ -61,6 +61,18 @@ class ScreeningRequest extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    /**
+     * The package this request was ordered from, or null for an ad-hoc scope
+     * selection. Written by the client portal only when the submitted cart
+     * exactly matched the package's scopes, and nulled if the package is later
+     * deleted — so a non-null value is trustworthy, but absence is not proof
+     * that no package was involved.
+     */
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(Package::class);
     }
 
     public function statusBadgeClass(): string

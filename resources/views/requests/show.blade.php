@@ -618,6 +618,14 @@
                     Submitted by {{ $request->customerUser->name ?? '—' }}
                 </span>
                 <span class="rq-meta-sep"></span>
+                {{-- Only set when the ordered scopes exactly matched a package. --}}
+                @if($request->package)
+                <span class="rq-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+                    <b style="color: var(--ink-700); font-weight: 500;">{{ $request->package->name }}</b>
+                </span>
+                <span class="rq-meta-sep"></span>
+                @endif
                 <span class="rq-meta-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                     {{ $request->created_at->format('d M Y, H:i') }} · {{ $request->created_at->diffForHumans() }}

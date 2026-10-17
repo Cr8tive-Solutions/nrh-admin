@@ -168,7 +168,10 @@
       "PowerShell(php artisan tinker tmp_guide_assertions.php)",
       "PowerShell(foreach \\($p in 80,8000,8080,3000\\) { $r = Test-NetConnection -ComputerName 127.0.0.1 -Port $p -WarningAction SilentlyContinue; \"$p : $\\($r.TcpTestSucceeded\\)\" })",
       "PowerShell(curl.exe -s -o NUL -w \"guide: %{http_code} -> %{redirect_url}\\\\n\" http://localhost:8003/guide; curl.exe -s -o NUL -w \"login: %{http_code}\\\\n\" http://localhost:8003/login)",
-      "PowerShell(docker exec *)"
+      "PowerShell(docker exec *)",
+      "PowerShell(curl.exe -s -o NUL -w \"live :8001 /login  -> %{http_code}`n\" http://localhost:8001/login)",
+      "PowerShell(curl.exe -s -o NUL -w \"live :8001 /guide  -> %{http_code}`n\" http://localhost:8001/guide)",
+      "PowerShell(\"--- backup retained ---\")"
     ]
   }
 }

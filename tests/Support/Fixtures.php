@@ -3,6 +3,7 @@
 namespace Tests\Support;
 
 use App\Models\Admin;
+use App\Models\CustomerUser;
 use App\Models\Permission;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +43,30 @@ class Fixtures
             'role' => 'super_admin',
             'status' => 'active',
         ], $attrs));
+    }
+
+    /**
+     * Seed the client portal's roles into the shared `roles` table.
+     *
+     * These rows are owned by the client portal (which manages them through
+     * spatie/laravel-permission); this app only assigns them, so the fixture
+     * inserts them directly rather than pulling in that package.
+     */
+    public static function portalRoles(): void
+    {
+        foreach (CustomerUser::PORTAL_ROLES as $name) {
+            $exists = DB::table('roles')
+                ->where(['name' => $name, 'guard_name' => CustomerUser::GUARD])
+                ->exists();
+
+            if (! $exists) {
+                DB::table('roles')->insert([
+                    'name' => $name,
+                    'guard_name' => CustomerUser::GUARD,
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
+        }
     }
 
     public static function country(array $attrs = []): int
@@ -108,6 +133,35 @@ class Fixtures
             'price' => 100.00,
             'created_at' => now(), 'updated_at' => now(),
         ], $attrs));
+    }
+
+    public static function package(int $customerId, int $countryId, array $attrs = []): int
+    {
+        return DB::table('packages')->insertGetId(array_merge([
+            'customer_id' => $customerId,
+            'country_id' => $countryId,
+            'name' => 'Standard Screening '.self::uniq(),
+            'created_at' => now(), 'updated_at' => now(),
+        ], $attrs));
+    }
+
+    /** `package_scope_type` has a composite PK and no timestamps. */
+    public static function attachPackageScope(int $packageId, int $scopeTypeId): void
+    {
+        DB::table('package_scope_type')->insert([
+            'package_id' => $packageId,
+            'scope_type_id' => $scopeTypeId,
+        ]);
+    }
+
+    public static function customerScopePrice(int $customerId, int $scopeTypeId, float $price): int
+    {
+        return DB::table('customer_scope_prices')->insertGetId([
+            'customer_id' => $customerId,
+            'scope_type_id' => $scopeTypeId,
+            'price' => $price,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
     }
 
     public static function screeningRequest(int $customerId, int $customerUserId, array $attrs = []): int

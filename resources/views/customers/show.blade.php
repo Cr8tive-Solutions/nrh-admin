@@ -230,9 +230,53 @@
         color: var(--gold-700, #b8860b);
         border-color: rgba(212,175,55,0.35);
     }
+
+    /* ── Package cards ── */
+    .ch-package {
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--line);
+    }
+    .ch-package:last-child { border-bottom: none; }
+    .ch-package-head {
+        display: flex; align-items: baseline; gap: 10px;
+        margin-bottom: 10px;
+    }
+    .ch-package-name { font-size: 14px; font-weight: 600; color: var(--ink-900); }
+    .ch-package-meta {
+        font-size: 11px; color: var(--ink-500);
+        font-family: 'JetBrains Mono', monospace;
+        text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .ch-package-total {
+        margin-left: auto;
+        font-size: 12px; font-weight: 600; color: var(--ink-900);
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+    }
+    .ch-scope-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ch-scope-pill {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 9px;
+        border-radius: 99px;
+        font-size: 11px;
+        background: var(--paper-2);
+        color: var(--ink-700);
+        border: 1px solid var(--line);
+    }
+    .ch-scope-pill.unpriced {
+        background: rgba(212,175,55,0.10);
+        color: var(--gold-700, #b8860b);
+        border-color: rgba(212,175,55,0.35);
+    }
 </style>
 
-<div x-data="{ tab: '{{ session('invitation_url') ? 'team' : 'info' }}' }">
+@php
+    // A failed invite redirects back here; land on Team with the form open and
+    // the errors visible, rather than on Company Info with the form hidden.
+    $inviteFailed = $errors->any();
+    $initialTab = ($inviteFailed || session('invitation_url')) ? 'team' : 'info';
+@endphp
+<div x-data="{ tab: '{{ $initialTab }}', inviteOpen: {{ $inviteFailed ? 'true' : 'false' }} }">
 
 {{-- ── Invitation link banner (one-shot, after create or resend) ── --}}
 @if(session('invitation_url'))
@@ -352,6 +396,11 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
         Agreement
         <span class="count">{{ $customer->agreements->count() }}</span>
+    </button>
+    <button @click="tab = 'packages'" :class="tab === 'packages' ? 'active' : ''" class="ch-tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+        Packages
+        <span class="count">{{ $customer->packages->count() }}</span>
     </button>
     <button @click="tab = 'team'" :class="tab === 'team' ? 'active' : ''" class="ch-tab">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
@@ -545,6 +594,94 @@
     </div>
 </div>
 
+{{-- ── Packages ── --}}
+<div x-show="tab === 'packages'" x-cloak>
+    <div class="ch-section">
+        <div class="ch-section-head">
+            <div class="ch-section-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+            </div>
+            <div class="ch-section-title">Scope Packages</div>
+            @allowed('customer.manage')
+            <a href="{{ route('customers.packages.create', $customer) }}" class="nrh-btn nrh-btn-primary ch-section-action" style="font-size: 11px; padding: 5px 12px;">
+                + New Package
+            </a>
+            @endallowed
+        </div>
+
+        <div style="padding: 12px 22px 0; font-size: 12px; color: var(--ink-500); line-height: 1.5;">
+            Named scope bundles this customer can pick in the client portal's request wizard. Selecting a package
+            pre-fills the cart with its scopes — nothing stores a package reference, so edits here never alter
+            requests already submitted.
+        </div>
+
+        @forelse($customer->packages as $package)
+        @php
+            $unpricedIds = $packageUnpriced[$package->id] ?? [];
+            $total = $packageTotals[$package->id] ?? null;
+            $currency = $package->country?->currency ?? 'MYR';
+        @endphp
+        <div class="ch-package">
+            <div class="ch-package-head">
+                <div class="ch-package-name">{{ $package->name }}</div>
+                <div class="ch-package-meta">
+                    {{ $package->country?->flag }} {{ $package->country?->name ?? '—' }}
+                    · {{ $package->scopeTypes->count() }} {{ Str::plural('scope', $package->scopeTypes->count()) }}
+                </div>
+                <div class="ch-package-total">
+                    @if($total === null)
+                        <span style="color: var(--gold-700, #b8860b);">Not quotable</span>
+                    @else
+                        {{ $currency }} {{ number_format($total, 2) }}
+                    @endif
+                    @allowed('customer.manage')
+                    <a href="{{ route('customers.packages.edit', [$customer, $package]) }}"
+                       style="margin-left: 10px; font-size: 11px; color: var(--emerald-700); font-weight: 600; text-decoration: none;">Edit →</a>
+                    @endallowed
+                </div>
+            </div>
+
+            @if($package->scopeTypes->isEmpty())
+                <div style="font-size: 12px; color: var(--danger); font-style: italic;">
+                    This package has no scopes — the client portal will show it as empty. Edit it to add scopes, or delete it.
+                </div>
+            @else
+                <div class="ch-scope-pills">
+                    @foreach($package->scopeTypes as $scope)
+                        @php $isUnpriced = in_array($scope->id, $unpricedIds, true); @endphp
+                        <span class="ch-scope-pill {{ $isUnpriced ? 'unpriced' : '' }}"
+                              title="{{ $isUnpriced
+                                  ? 'Price on request with no override for this customer'
+                                  : $currency.' '.number_format((float) ($scopePrices[$scope->id] ?? $scope->price), 2) }}">
+                            {{ $scope->name }}
+                        </span>
+                    @endforeach
+                </div>
+            @endif
+
+            @if(count($unpricedIds) > 0)
+            <div style="font-size: 11px; color: var(--gold-700, #b8860b); margin-top: 8px; line-height: 1.5;">
+                {{ count($unpricedIds) }} {{ Str::plural('scope', count($unpricedIds)) }} priced on request with no
+                override for this customer — the client portal will reject any request using this package.
+                @allowed('pricing.manage')
+                <a href="{{ route('pricing.index', ['customer_id' => $customer->id]) }}"
+                   style="color: var(--emerald-700); font-weight: 600; text-decoration: none;">Set pricing →</a>
+                @endallowed
+            </div>
+            @endif
+        </div>
+        @empty
+        <div class="ch-empty">
+            <div class="ch-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+            </div>
+            <div class="ch-empty-title">No packages yet</div>
+            <div class="ch-empty-sub">Bundle this customer's commonly-ordered scopes so their team can add them in one click.</div>
+        </div>
+        @endforelse
+    </div>
+</div>
+
 {{-- ── Team ── --}}
 <div x-show="tab === 'team'" x-cloak>
     <div class="ch-section">
@@ -556,7 +693,69 @@
             <span style="margin-left: auto; font-size: 11px; color: var(--ink-500); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.1em;">
                 {{ $stats['team_members'] }} {{ Str::plural('member', $stats['team_members']) }}
             </span>
+            @allowed('customer.manage')
+            <button @click="inviteOpen = !inviteOpen" type="button"
+                    class="nrh-btn nrh-btn-primary" style="margin-left: 12px; font-size: 11px; padding: 5px 12px;">
+                + Invite User
+            </button>
+            @endallowed
         </div>
+
+        @allowed('customer.manage')
+        {{-- Inline invite. Opens automatically when validation sent us back. --}}
+        <div x-show="inviteOpen" x-cloak style="padding: 16px 22px; border-bottom: 1px solid var(--line); background: var(--paper-2);">
+            <form method="POST" action="{{ route('customers.users.invite', $customer) }}">
+                @csrf
+                <div style="display: grid; grid-template-columns: 1.2fr 1.6fr 0.9fr auto; gap: 10px; align-items: end;">
+                    <div>
+                        <label class="ch-info-label" style="display: block; margin-bottom: 4px;">Full Name</label>
+                        <input type="text" name="name" value="{{ old('name') }}" required maxlength="255"
+                               placeholder="e.g. Siti Nurhaliza"
+                               style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink-900);">
+                    </div>
+                    <div>
+                        <label class="ch-info-label" style="display: block; margin-bottom: 4px;">Email</label>
+                        <input type="email" name="email" value="{{ old('email') }}" required maxlength="255"
+                               placeholder="name@company.com"
+                               style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink-900);">
+                    </div>
+                    <div>
+                        <label class="ch-info-label" style="display: block; margin-bottom: 4px;">Portal Role</label>
+                        <select name="portal_role" required
+                                style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink-900);">
+                            @foreach(\App\Models\CustomerUser::PORTAL_ROLES as $roleOption)
+                                <option value="{{ $roleOption }}" {{ old('portal_role', 'HR') === $roleOption ? 'selected' : '' }}>
+                                    {{ $roleOption }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="submit" class="nrh-btn nrh-btn-primary" style="font-size: 11px; padding: 7px 14px;">
+                            Send invitation
+                        </button>
+                        <button type="button" @click="inviteOpen = false"
+                                style="font-size: 11px; color: var(--ink-500); background: none; border: none; cursor: pointer;">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <p style="font-size: 11px; color: var(--ink-500); margin: 10px 0 0; line-height: 1.5;">
+                    Creates a suspended account and emails a 14-day invitation link where they set their own password.
+                    <b>HR</b> is the usual choice for recruiters — it can submit orders but cannot see prices.
+                </p>
+
+                @if($errors->any())
+                <ul style="margin: 10px 0 0; padding-left: 16px; font-size: 12px; color: var(--danger);">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                @endif
+            </form>
+        </div>
+        @endallowed
 
         @if($customer->customerUsers->isEmpty())
         <div class="ch-empty">
@@ -600,12 +799,39 @@
             </thead>
             <tbody>
                 @foreach($customer->customerUsers as $user)
-                @php $inv = $user->latestInvitation; @endphp
+                @php
+                    $inv = $user->latestInvitation;
+                    // The real portal role (Owner/Admin/Accounts/HR/Viewer). The
+                    // `role` column is only a coarse admin/user flag.
+                    $portalRole = $user->portalRoleName();
+                @endphp
                 <tr>
                     <td style="font-weight: 500; color: var(--ink-900);">{{ $user->name }}</td>
                     <td style="color: var(--ink-500);">{{ $user->email }}</td>
                     <td>
-                        <span class="badge {{ $user->role === 'admin' ? 'badge-blue' : 'badge-gray' }}">{{ $user->role }}</span>
+                        @allowed('customer.manage')
+                        <form method="POST" action="{{ route('customers.users.role', [$customer, $user]) }}" class="inline">
+                            @csrf
+                            @method('PATCH')
+                            <select name="portal_role" onchange="this.form.submit()"
+                                    style="font-size: 11px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--card); color: var(--ink-900);">
+                                @if(! $portalRole)
+                                    <option value="" selected disabled>No role — assign one</option>
+                                @endif
+                                @foreach(\App\Models\CustomerUser::PORTAL_ROLES as $roleOption)
+                                    <option value="{{ $roleOption }}" {{ $portalRole === $roleOption ? 'selected' : '' }}>
+                                        {{ $roleOption }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </form>
+                        @else
+                            @if($portalRole)
+                                <span class="badge {{ in_array($portalRole, ['Owner', 'Admin']) ? 'badge-blue' : 'badge-gray' }}">{{ $portalRole }}</span>
+                            @else
+                                <span class="badge badge-red" title="This user can log in but every page is permission-gated, so they will see almost nothing.">no role</span>
+                            @endif
+                        @endallowed
                     </td>
                     <td>
                         <span class="badge {{ $user->status === 'active' ? 'badge-green' : 'badge-gray' }}">{{ $user->status }}</span>
@@ -622,7 +848,7 @@
                         @endif
                     </td>
                     @allowed('customer.manage')
-                    <td style="text-align: right;">
+                    <td style="text-align: right; white-space: nowrap;">
                         @if($inv && !$inv->isAccepted())
                         <form method="POST" action="{{ route('customers.users.resend-invitation', [$customer, $user]) }}" class="inline"
                               onsubmit="return confirm('Send a fresh invitation to {{ $user->email }}? Any previous invitation will be revoked.');">
@@ -632,6 +858,20 @@
                             </button>
                         </form>
                         @endif
+
+                        <form method="POST" action="{{ route('customers.users.status', [$customer, $user]) }}" class="inline"
+                              style="margin-left: 10px;"
+                              onsubmit="return confirm('{{ $user->isActive()
+                                  ? 'Suspend portal access for '.$user->name.'? They will not be able to log in.'
+                                  : 'Restore portal access for '.$user->name.'?' }}');">
+                            @csrf
+                            @method('PATCH')
+                            <input type="hidden" name="status" value="{{ $user->isActive() ? 'inactive' : 'active' }}">
+                            <button type="submit"
+                                    style="font-size: 11px; font-weight: 600; background: none; border: none; cursor: pointer; padding: 0; color: {{ $user->isActive() ? 'var(--danger)' : 'var(--emerald-700)' }};">
+                                {{ $user->isActive() ? 'Suspend' : 'Restore' }}
+                            </button>
+                        </form>
                     </td>
                     @endallowed
                 </tr>

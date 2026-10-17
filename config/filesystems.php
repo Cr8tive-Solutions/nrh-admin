@@ -51,14 +51,24 @@ return [
             'report' => false,
         ],
 
-        // Client portal's private storage — payment slips uploaded by customers live here.
-        // In development this defaults to the sibling nrh-intelligence project.
-        // In production, set CLIENT_STORAGE_PATH to the shared storage mount.
+        // Client portal's private storage — payment slips, candidate documents
+        // and client-captured consent evidence live here.
+        //
+        // `local_mount` (see AppServiceProvider) instead of `local`: the stock
+        // local driver creates its root directory the moment the disk is
+        // resolved, so an absent mount threw UnableToCreateDirectory before any
+        // code could fall back. Containers never have the sibling path, so that
+        // turned a missing mount into a 500 on every document download.
+        //
+        // Dev (both projects checked out side by side) resolves the sibling.
+        // Docker / production MUST set CLIENT_STORAGE_PATH to the shared mount —
+        // separate containers have no sibling directory to find.
         'client_local' => [
-            'driver' => 'local',
-            'root' => env('CLIENT_STORAGE_PATH', realpath(base_path('../nrh-intelligence/storage/app/private')) ?: base_path('../nrh-intelligence/storage/app/private')),
+            'driver' => 'local_mount',
+            'root' => env('CLIENT_STORAGE_PATH') ?: base_path('../nrh-intelligence/storage/app/private'),
             'serve' => false,
             'throw' => false,
+            'report' => false,
         ],
 
         's3' => [

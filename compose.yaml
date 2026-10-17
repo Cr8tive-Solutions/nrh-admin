@@ -17,8 +17,17 @@ services:
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
             IGNITION_LOCAL_SITES_PATH: '${PWD}'
+            # Cross-app storage mount (config/filesystems.php -> client_local).
+            # Set here rather than in .env because the value describes the
+            # container layout below; a host-served run (Herd) must NOT use it,
+            # since there the sibling-path default already resolves.
+            CLIENT_STORAGE_PATH: /mnt/client-storage
         volumes:
             - '.:/var/www/html'
+            # The client portal's private storage: payment slips, candidate
+            # documents and client-captured consent evidence. Read-write — PDPA
+            # erasure (RedactionService) deletes customer files through this disk.
+            - '../stg-nrh-intelligence/storage/app/private:/mnt/client-storage'
         networks:
             - sail
 networks:

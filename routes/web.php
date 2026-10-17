@@ -18,6 +18,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuideController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\ReportController;
@@ -88,6 +89,10 @@ Route::middleware('admin.auth')->group(function () {
 
     Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
 
+    // Central packages page with a company picker. Read-only for any admin;
+    // the create/edit routes below are gated on customer.manage.
+    Route::get('/packages', [PackageController::class, 'index'])->name('packages.index');
+
     Route::get('/pricing', [ScopePricingController::class, 'index'])->name('pricing.index');
     Route::get('/pricing/{customer}/scopes', [ScopePricingController::class, 'scopesJson'])->name('pricing.scopes-json');
 
@@ -124,13 +129,36 @@ Route::middleware('admin.auth')->group(function () {
             ->whereNumber('user')
             ->name('customers.users.resend-invitation');
 
+        // Portal role + access management, so NRH can fix a customer who has
+        // locked themselves out of their own Settings → Users.
+        Route::patch('/customers/{customer}/users/{user}/role', [CustomerController::class, 'updateUserRole'])
+            ->whereNumber('user')
+            ->name('customers.users.role');
+
+        Route::patch('/customers/{customer}/users/{user}/status', [CustomerController::class, 'updateUserStatus'])
+            ->whereNumber('user')
+            ->name('customers.users.status');
+
         Route::post('/customers/{customer}/provision-primary-user', [CustomerController::class, 'provisionPrimaryUser'])
             ->name('customers.provision-primary-user');
+
+        // Invite an additional portal user (any role), unlike the primary-user
+        // provision flow which only works for a customer with no users yet.
+        Route::post('/customers/{customer}/users', [CustomerController::class, 'inviteUser'])
+            ->name('customers.users.invite');
 
         Route::get('/customers/{customer}/agreements/create', [AgreementController::class, 'create'])->name('customers.agreements.create');
         Route::post('/customers/{customer}/agreements', [AgreementController::class, 'store'])->name('customers.agreements.store');
         Route::get('/customers/{customer}/agreements/{agreement}/edit', [AgreementController::class, 'edit'])->name('customers.agreements.edit');
         Route::put('/customers/{customer}/agreements/{agreement}', [AgreementController::class, 'update'])->name('customers.agreements.update');
+
+        // Scope packages are authored here and read-only in the client portal.
+        // Listing is the Packages tab on customers.show.
+        Route::get('/customers/{customer}/packages/create', [PackageController::class, 'create'])->name('customers.packages.create');
+        Route::post('/customers/{customer}/packages', [PackageController::class, 'store'])->name('customers.packages.store');
+        Route::get('/customers/{customer}/packages/{package}/edit', [PackageController::class, 'edit'])->name('customers.packages.edit');
+        Route::put('/customers/{customer}/packages/{package}', [PackageController::class, 'update'])->name('customers.packages.update');
+        Route::delete('/customers/{customer}/packages/{package}', [PackageController::class, 'destroy'])->name('customers.packages.destroy');
     });
 
     // ── pricing.manage ───────────────────────────────────────────────────────

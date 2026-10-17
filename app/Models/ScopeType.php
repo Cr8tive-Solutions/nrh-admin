@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasHashid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ScopeType extends Model
 {
@@ -37,6 +38,16 @@ class ScopeType extends Model
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);
+    }
+
+    /**
+     * Customer packages that bundle this scope. Check this before retiring a
+     * scope — `package_scope_type` rows are cascade-deleted with the scope and
+     * would silently shrink every package that included it.
+     */
+    public function packages(): BelongsToMany
+    {
+        return $this->belongsToMany(Package::class, 'package_scope_type');
     }
 
     /**

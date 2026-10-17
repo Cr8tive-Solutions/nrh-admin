@@ -327,6 +327,12 @@
                     Customers
                 </a>
 
+                <a href="{{ route('packages.index') }}"
+                   class="sb-link {{ request()->routeIs('packages.*') ? 'active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+                    Packages
+                </a>
+
                 <div class="sb-section-label">Finance</div>
 
                 <a href="{{ route('pricing.index') }}"

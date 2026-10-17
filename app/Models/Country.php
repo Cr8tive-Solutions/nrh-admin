@@ -13,4 +13,9 @@ class Country extends Model
     {
         return $this->hasMany(ScopeType::class);
     }
+
+    public function packages(): HasMany
+    {
+        return $this->hasMany(Package::class);
+    }
 }
