@@ -45,6 +45,13 @@
         <env name="DB_USERNAME" value="nrh_test"/>
         <env name="DB_PASSWORD" value="nrh_test"/>
         <env name="DB_URL" value=""/>
+        <!-- Never let a test reach the real cross-app mount (compose.yaml sets
+             CLIENT_STORAGE_PATH in the container). A test that forgot
+             Storage::fake('client_local') once deleted real staging uploads.
+             Both lines are needed: Laravel's env() reads $_SERVER before $_ENV,
+             and <env> alone leaves the container's value in $_SERVER. -->
+        <env name="CLIENT_STORAGE_PATH" value="/tmp/nrh-admin-test-client-storage" force="true"/>
+        <server name="CLIENT_STORAGE_PATH" value="/tmp/nrh-admin-test-client-storage" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

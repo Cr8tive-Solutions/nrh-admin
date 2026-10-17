@@ -93,6 +93,10 @@ it('sweeps finance/compliance prefixes too (receipts, payment slips)', function 
 });
 
 it('never touches report PDFs', function () {
+    // Both disks MUST be faked: --delete sweeps client_local too, and an unfaked
+    // client_local is the real mounted client storage, where nothing is
+    // referenced by the test DB — so every real file would look orphaned.
+    Storage::fake('client_local');
     Storage::fake('local');
 
     $report = "reports/{$this->requestId}/full-v1.pdf";
