@@ -35,7 +35,7 @@ class AgreementController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'type'        => 'required|string|max:100',
             'start_date'  => 'required|date',
             'expiry_date' => 'required|date|after:start_date',
@@ -43,5 +43,12 @@ class AgreementController extends Controller
             'billing'     => ['required', Rule::in(['monthly', 'per_request'])],
             'payment'     => 'nullable|string|max:100',
         ]);
+
+        // sla_tat and payment are optional in the form but NOT NULL columns;
+        // store an empty string rather than null when left blank.
+        $data['sla_tat'] = $data['sla_tat'] ?? '';
+        $data['payment'] = $data['payment'] ?? '';
+
+        return $data;
     }
 }
