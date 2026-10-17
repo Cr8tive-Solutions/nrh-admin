@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AdminAuditLog;
 use App\Models\InvoicePaymentReceipt;
 use App\Models\Transaction;
+use App\Support\InlineFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -158,7 +159,8 @@ class PaymentReceiptController extends Controller
             'invoice_id' => $receipt->invoice_id,
         ]);
 
-        return Storage::disk($disk)->download(
+        return InlineFile::response(
+            Storage::disk($disk),
             $receipt->file_path,
             $receipt->file_name ?: ('receipt-'.$receipt->id.'.'.pathinfo($receipt->file_path, PATHINFO_EXTENSION))
         );

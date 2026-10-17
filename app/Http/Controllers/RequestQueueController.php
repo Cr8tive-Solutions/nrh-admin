@@ -8,6 +8,7 @@ use App\Models\ScopeType;
 use App\Models\ScreeningRequest;
 use App\Models\Transaction;
 use App\Services\ReportSnapshot;
+use App\Support\InlineFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -169,7 +170,8 @@ class RequestQueueController extends Controller
     }
 
     /**
-     * Stream the customer-uploaded payment slip privately to admins. The slip
+     * Show the customer-uploaded payment slip privately to admins (inline in the
+     * browser for PDF/images — see InlineFile). The slip
      * lives on the customer portal's local disk; production must mount that
      * storage shared between the two apps.
      */
@@ -193,7 +195,7 @@ class RequestQueueController extends Controller
             'reference' => $screeningRequest->reference,
         ]);
 
-        return $disk->download($screeningRequest->payment_slip_path, $filename);
+        return InlineFile::response($disk, $screeningRequest->payment_slip_path, $filename);
     }
 
     public function updateStatus(Request $request, ScreeningRequest $screeningRequest)

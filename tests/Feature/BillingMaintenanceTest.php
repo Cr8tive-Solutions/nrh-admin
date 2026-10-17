@@ -127,3 +127,42 @@ it('404s for a document belonging to another candidate', function () {
         ->get(route('requests.candidates.documents.download', [ScreeningRequest::find($requestId), $candidateId, $documentId]))
         ->assertNotFound();
 });
+
+// ── Payment slip view ────────────────────────────────────────────────────────
+
+it('opens a PDF payment slip inline in the browser instead of downloading it', function () {
+    Storage::fake('client_local');
+
+    $userId = Fixtures::customerUser($this->customerId);
+    $path = "payment-slips/{$this->customerId}/slip.pdf";
+    Storage::disk('client_local')->put($path, '%PDF-1.4 test');
+    $requestId = Fixtures::screeningRequest($this->customerId, $userId, [
+        'payment_slip_path' => $path,
+        'payment_slip_uploaded_at' => now(),
+    ]);
+
+    $response = ($this->as)()
+        ->get(route('requests.payment-slip.download', ScreeningRequest::find($requestId)))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf');
+
+    expect($response->headers->get('Content-Disposition'))->toStartWith('inline;');
+});
+
+it('still forces a download for a payment slip that is not a PDF or image', function () {
+    Storage::fake('client_local');
+
+    $userId = Fixtures::customerUser($this->customerId);
+    $path = "payment-slips/{$this->customerId}/slip.html";
+    Storage::disk('client_local')->put($path, '<script>alert(1)</script>');
+    $requestId = Fixtures::screeningRequest($this->customerId, $userId, [
+        'payment_slip_path' => $path,
+        'payment_slip_uploaded_at' => now(),
+    ]);
+
+    $response = ($this->as)()
+        ->get(route('requests.payment-slip.download', ScreeningRequest::find($requestId)))
+        ->assertOk();
+
+    expect($response->headers->get('Content-Disposition'))->toStartWith('attachment;');
+});

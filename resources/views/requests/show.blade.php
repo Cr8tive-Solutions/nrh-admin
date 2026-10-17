@@ -572,12 +572,12 @@
             · file: <span style="font-family: 'JetBrains Mono', monospace;">{{ basename($request->payment_slip_path) }}</span>
         </div>
     </div>
-    <a href="{{ route('requests.payment-slip.download', $request) }}"
+    <a href="{{ route('requests.payment-slip.download', $request) }}" target="_blank" rel="noopener"
        style="background: var(--ink-900); color: white; border-radius: 8px;
               padding: 8px 14px; font-size: 11px; font-weight: 600;
               text-decoration: none; text-transform: uppercase; letter-spacing: 0.08em;
               display: inline-flex; align-items: center; gap: 6px;">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         View slip
     </a>
 </div>
