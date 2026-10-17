@@ -91,11 +91,11 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">
                 Package Price <span class="text-red-500">*</span>
             </label>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
                 <span class="text-sm text-gray-500 font-mono" x-text="currency"></span>
                 <input type="number" name="price" step="0.01" min="0" required
-                       x-model="price" placeholder="0.00"
-                       class="w-40 border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                       x-model="price" placeholder="0.00" style="width:10rem;"
+                       class="border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-600">
                 <button type="button" x-show="total !== null && selected.length > 0"
                         @click="price = total.toFixed(2)"
                         class="text-xs text-emerald-700 font-medium hover:underline">
@@ -207,7 +207,7 @@
             <button type="submit" class="nrh-btn nrh-btn-primary" :disabled="selected.length === 0">
                 {{ $submitLabel }}
             </button>
-            <a href="{{ $cancelUrl }}" class="text-sm text-gray-500 hover:text-gray-700 self-center">
+            <a href="{{ $cancelUrl }}" class="nrh-btn nrh-btn-ghost">
                 Cancel
             </a>
         </div>

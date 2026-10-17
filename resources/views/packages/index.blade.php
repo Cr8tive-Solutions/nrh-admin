@@ -49,7 +49,7 @@
         border: 1px solid var(--line);
     }
     .pk-pill.unpriced {
-        background: rgba(212,175,55,0.10); color: var(--gold-700, #b8860b);
+        background: rgba(212,175,55,0.10); color: var(--gold-700, #9c7a1e);
         border-color: rgba(212,175,55,0.35);
     }
 
