@@ -36,9 +36,12 @@ return [
     ],
 
     'client_portal' => [
-        // Base URL of the customer-facing nrh-intelligence app.
-        // Invitation links are built as {url}/invitation/{token}
-        'url' => env('CLIENT_PORTAL_URL', 'https://app.nrhintelligence.com'),
+        // Base URL of the customer-facing nrh-intelligence app. Invitation and
+        // registration links are built as {url}/invitation/{token} and
+        // {url}/register/{token}. Always set CLIENT_PORTAL_URL per environment
+        // (prod portal.*, staging stg-portal.*); the default is the production
+        // portal as a safe fallback.
+        'url' => env('CLIENT_PORTAL_URL', 'https://portal.nrhintelligence.com'),
     ],
 
     'calendarific' => [
