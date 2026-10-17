@@ -44,6 +44,7 @@ class ScopeTypeController extends Controller
         $data['price_on_request'] = $request->boolean('price_on_request');
         $data['requires_signed_consent'] = $request->boolean('requires_signed_consent');
         $data['required_documents'] = $this->normaliseDocuments($request->input('required_documents', []));
+        $data['turnaround'] = $this->resolveTurnaround($data['turnaround'] ?? null, $data['turnaround_hours'] ?? null);
 
         ScopeType::create($data);
 
@@ -76,10 +77,37 @@ class ScopeTypeController extends Controller
         $data['price_on_request'] = $request->boolean('price_on_request');
         $data['requires_signed_consent'] = $request->boolean('requires_signed_consent');
         $data['required_documents'] = $this->normaliseDocuments($request->input('required_documents', []));
+        $data['turnaround'] = $this->resolveTurnaround($data['turnaround'] ?? null, $data['turnaround_hours'] ?? null);
 
         $scope->update($data);
 
         return redirect()->route('config.scopes.index')->with('success', 'Scope type updated.');
+    }
+
+    /**
+     * The client-facing `turnaround` string is a NOT NULL column, but the form
+     * leaves it optional (the SLA is driven by `turnaround_hours`). When staff
+     * leave the display text blank, derive a sensible one from the SLA hours so
+     * the insert never violates the constraint — and clients still see a value.
+     */
+    private function resolveTurnaround(?string $turnaround, ?int $hours): string
+    {
+        $turnaround = trim((string) $turnaround);
+
+        if ($turnaround !== '') {
+            return $turnaround;
+        }
+
+        if ($hours) {
+            // config/business_hours.php: a working day is 09:00–18:00 = 9 hours.
+            $perDay = 9;
+
+            return $hours % $perDay === 0 && $hours >= $perDay
+                ? ($d = $hours / $perDay).' business '.($d === 1 ? 'day' : 'days')
+                : $hours.' business '.($hours === 1 ? 'hour' : 'hours');
+        }
+
+        return 'By arrangement';
     }
 
     /**
