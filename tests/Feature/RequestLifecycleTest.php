@@ -161,6 +161,64 @@ it('drops blank records instead of storing them', function () {
     expect($findings)->not->toHaveKey('records');
 });
 
+it('saves multiple employment entries under employments[]', function () {
+    $empScope = Fixtures::scopeType($this->countryId, ['name' => 'Employment Verification']);
+    Fixtures::attachScope($this->candidateId, $empScope);
+
+    ($this->as)()->patchJson(
+        route('requests.scope.findings', [$this->req, $this->candidateId, $empScope]),
+        [
+            'result_type' => 'clean',
+            'structured_json' => json_encode(['employments' => [
+                ['employer' => 'ABC Sdn Bhd', 'verifier' => 'HR Dept', 'validation' => [
+                    ['aspect' => 'JOB TITLE', 'provided' => 'Engineer', 'verified' => 'Engineer', 'match' => 'match', 'risk' => 'low', 'interpretation' => 'Verified.'],
+                ], 'overall_risk' => 'low', 'overall_action' => 'Safe to proceed.'],
+                ['employer' => 'XYZ Bhd', 'validation' => [
+                    ['aspect' => 'DATES OF EMPLOYMENT', 'verified' => '2019–2021', 'match' => 'partial', 'risk' => 'moderate'],
+                ]],
+            ]]),
+        ]
+    )->assertOk();
+
+    $findings = json_decode(
+        DB::table('candidate_scope_type')->where('request_candidate_id', $this->candidateId)->where('scope_type_id', $empScope)->value('findings'),
+        true
+    );
+
+    expect($findings['employments'])->toHaveCount(2)
+        ->and($findings['employments'][0]['employer'])->toBe('ABC Sdn Bhd')
+        ->and($findings['employments'][0]['validation'])->toHaveCount(1)
+        ->and($findings['employments'][0]['overall_risk'])->toBe('low')
+        ->and($findings['employments'][1]['employer'])->toBe('XYZ Bhd')
+        ->and($findings)->not->toHaveKey('employer'); // nothing left at the legacy top level
+});
+
+it('migrates a legacy single-object employment payload into employments[]', function () {
+    $empScope = Fixtures::scopeType($this->countryId, ['name' => 'Employment Verification']);
+    Fixtures::attachScope($this->candidateId, $empScope);
+
+    ($this->as)()->patchJson(
+        route('requests.scope.findings', [$this->req, $this->candidateId, $empScope]),
+        [
+            'result_type' => 'clean',
+            'structured_json' => json_encode([
+                'employer' => 'Legacy Corp',
+                'validation' => [['aspect' => 'EMPLOYER', 'verified' => 'Legacy Corp', 'match' => 'match', 'risk' => 'low']],
+            ]),
+        ]
+    )->assertOk();
+
+    $findings = json_decode(
+        DB::table('candidate_scope_type')->where('request_candidate_id', $this->candidateId)->where('scope_type_id', $empScope)->value('findings'),
+        true
+    );
+
+    expect($findings['employments'])->toHaveCount(1)
+        ->and($findings['employments'][0]['employer'])->toBe('Legacy Corp')
+        ->and($findings['employments'][0]['validation'])->toHaveCount(1)
+        ->and($findings)->not->toHaveKey('employer');
+});
+
 it('blocks a viewer from changing status', function () {
     $viewer = Fixtures::admin(['role' => 'viewer']);
 

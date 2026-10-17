@@ -517,18 +517,33 @@ class RequestQueueController extends Controller
         $out = [];
 
         if ($kind === 'employment') {
-            // Single employer entry per scope.
-            if ($str($s['employer'] ?? '') !== '') {
-                $out['employer'] = $str($s['employer']);
+            // Multiple employment entries per scope. Legacy single-object payloads
+            // (top-level employer/validation) are migrated into a one-element array.
+            $sources = (isset($s['employments']) && is_array($s['employments']))
+                ? $s['employments']
+                : [$s];
+
+            $employments = [];
+            foreach ($sources as $e) {
+                $emp = [];
+                if ($str($e['employer'] ?? '') !== '') {
+                    $emp['employer'] = $str($e['employer']);
+                }
+                if ($str($e['verifier'] ?? '') !== '') {
+                    $emp['verifier'] = $str($e['verifier']);
+                }
+                $rows = $validation($e['validation'] ?? [], true);
+                if (! empty($rows)) {
+                    $emp['validation'] = $rows;
+                }
+                $emp = array_merge($emp, $overall($e));
+                if (! empty($emp)) {
+                    $employments[] = $emp;
+                }
             }
-            if ($str($s['verifier'] ?? '') !== '') {
-                $out['verifier'] = $str($s['verifier']);
+            if (! empty($employments)) {
+                $out['employments'] = $employments;
             }
-            $rows = $validation($s['validation'] ?? [], true);
-            if (! empty($rows)) {
-                $out['validation'] = $rows;
-            }
-            $out = array_merge($out, $overall($s));
         } elseif ($kind === 'academic') {
             // Multiple credentials per scope.
             $credentials = [];

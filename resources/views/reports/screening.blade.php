@@ -1029,12 +1029,18 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     $eF = $eScope->pivot->findings ?? [];
     $eSt = $eScope->pivot->status ?? 'new';
     $eT  = $getResultType($eSt, $eF);
-    $eValidation  = $eF['validation']   ?? null;
-    $eEmployer    = $eF['employer']     ?? $eScope->name;
-    $eVerifier    = $eF['verifier']     ?? null;
-    $eOverallRisk = $eF['overall_risk'] ?? null;
-    $eOverallAct  = $eF['overall_action'] ?? null;
     $eComment     = $eF['comment'] ?? null;
+    // New: array of employments. Legacy: single employment from top-level fields.
+    $eEmployments = $eF['employments'] ?? null;
+    if ($eEmployments === null && (!empty($eF['validation']) || !empty($eF['employer']) || !empty($eF['verifier']))) {
+        $eEmployments = [[
+            'employer'       => $eF['employer'] ?? null,
+            'verifier'       => $eF['verifier'] ?? null,
+            'validation'     => $eF['validation'] ?? null,
+            'overall_risk'   => $eF['overall_risk'] ?? null,
+            'overall_action' => $eF['overall_action'] ?? null,
+        ]];
+    }
 @endphp
 @if($loop->first)
 <div class="sh-gld" style="margin-top:8px; page-break-before:always;">EMPLOYMENT VALIDATION</div>
@@ -1082,84 +1088,107 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 @endif
 
 {{-- Each employer is its own result → starts on a new page (after the first). --}}
-<div @unless($loop->first)style="page-break-before:always;"@endunless>
-
-@if($eValidation)
-{{-- Employer info: VALIDATION | CANDIDATE PROVIDED | NRH VERIFIED INFORMATION --}}
-<table class="cmt" style="margin-top:8px;">
-    <tr><td class="cm-gold" colspan="3">EMPLOYMENT VALIDATION</td></tr>
-    <tr><td class="cm-crm" colspan="3">{{ strtoupper($eEmployer) }}</td></tr>
-    <tr>
-        <th style="width:33%;">VALIDATION</th>
-        <th style="width:30%;">CANDIDATE PROVIDED</th>
-        <th style="width:37%;">NRH VERIFIED INFORMATION</th>
-    </tr>
-    @foreach($eValidation as $ev)
-    <tr>
-        <td class="bold">{{ strtoupper($ev['aspect'] ?? '') }}</td>
-        <td class="bold">{{ strtoupper($ev['provided'] ?? '-') }}</td>
-        <td class="bold">{{ strtoupper($ev['verified'] ?? 'NO RECORD') }}</td>
-    </tr>
-    @endforeach
-    @if($eVerifier)
-    <tr>
-        <td class="bold">VERIFIER</td>
-        <td class="bold" colspan="2">{{ strtoupper($eVerifier) }}</td>
-    </tr>
-    @endif
-</table>
-
-{{-- ERM risk matrix --}}
-<div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:8.5pt; letter-spacing:0.05em; color:#000; margin:6px 0 2px;">EMPLOYMENT ERM RISK MATRIX</div>
-<table class="cmt" style="margin-top:0;">
-    <tr>
-        <th style="width:23%;">ASPECT</th>
-        <th style="width:19%;">VERIFIED INFORMATION</th>
-        <th style="width:10%; text-align:center;">COLOR</th>
-        <th style="width:10%;">TERM</th>
-        <th style="width:12%;">RISK</th>
-        <th style="width:26%;">INTERPRETATION</th>
-    </tr>
-    @foreach($eValidation as $ev)
+@if(!empty($eEmployments))
+    @foreach($eEmployments as $emp)
     @php
-        $evMatch = strtolower($ev['match'] ?? 'match');
-        $evRisk  = strtolower($ev['risk'] ?? 'low');
-        $evDotC  = match($evMatch) { 'match'=>'#00B050', 'partial'=>'#00B0F0', 'no_record'=>'#FFC000', 'discrepancy'=>'#CC0000', default=>'#BFBFBF' };
-        $evTerm  = match($evMatch) { 'match'=>'Match', 'partial'=>'Partial Match', 'no_record'=>'No Record', 'discrepancy'=>'Discrepancy', default=>strtoupper($evMatch) };
+        $eValidation  = $emp['validation']   ?? null;
+        $eEmployer    = $emp['employer']     ?? $eScope->name;
+        $eVerifier    = $emp['verifier']     ?? null;
+        $eOverallRisk = $emp['overall_risk'] ?? null;
+        $eOverallAct  = $emp['overall_action'] ?? null;
     @endphp
-    <tr>
-        <td class="bold">{{ strtoupper($ev['aspect'] ?? '') }}</td>
-        <td>{{ $ev['verified'] ?? '–' }}</td>
-        <td style="text-align:center;">{!! $dot($evDotC) !!}</td>
-        <td>{{ $evTerm }}</td>
-        <td class="bold">{{ ucfirst($evRisk) }}</td>
-        <td class="bold small">{{ $ev['interpretation'] ?? '' }}</td>
-    </tr>
+    {{-- First employer of the first employment scope stays on the current page; every other employer starts a new one. --}}
+    <div @unless($loop->parent->first && $loop->first)style="page-break-before:always;"@endunless>
+    @if($eValidation)
+    {{-- Employer info: VALIDATION | CANDIDATE PROVIDED | NRH VERIFIED INFORMATION --}}
+    <table class="cmt" style="margin-top:8px;">
+        <tr><td class="cm-gold" colspan="3">EMPLOYMENT VALIDATION</td></tr>
+        <tr><td class="cm-crm" colspan="3">{{ strtoupper($eEmployer) }}</td></tr>
+        <tr>
+            <th style="width:33%;">VALIDATION</th>
+            <th style="width:30%;">CANDIDATE PROVIDED</th>
+            <th style="width:37%;">NRH VERIFIED INFORMATION</th>
+        </tr>
+        @foreach($eValidation as $ev)
+        <tr>
+            <td class="bold">{{ strtoupper($ev['aspect'] ?? '') }}</td>
+            <td class="bold">{{ strtoupper($ev['provided'] ?? '-') }}</td>
+            <td class="bold">{{ strtoupper($ev['verified'] ?? 'NO RECORD') }}</td>
+        </tr>
+        @endforeach
+        @if($eVerifier)
+        <tr>
+            <td class="bold">VERIFIER</td>
+            <td class="bold" colspan="2">{{ strtoupper($eVerifier) }}</td>
+        </tr>
+        @endif
+    </table>
+
+    {{-- ERM risk matrix --}}
+    <div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:8.5pt; letter-spacing:0.05em; color:#000; margin:6px 0 2px;">EMPLOYMENT ERM RISK MATRIX</div>
+    <table class="cmt" style="margin-top:0;">
+        <tr>
+            <th style="width:23%;">ASPECT</th>
+            <th style="width:19%;">VERIFIED INFORMATION</th>
+            <th style="width:10%; text-align:center;">COLOR</th>
+            <th style="width:10%;">TERM</th>
+            <th style="width:12%;">RISK</th>
+            <th style="width:26%;">INTERPRETATION</th>
+        </tr>
+        @foreach($eValidation as $ev)
+        @php
+            $evMatch = strtolower($ev['match'] ?? 'match');
+            $evRisk  = strtolower($ev['risk'] ?? 'low');
+            $evDotC  = match($evMatch) { 'match'=>'#00B050', 'partial'=>'#00B0F0', 'no_record'=>'#FFC000', 'discrepancy'=>'#CC0000', default=>'#BFBFBF' };
+            $evTerm  = match($evMatch) { 'match'=>'Match', 'partial'=>'Partial Match', 'no_record'=>'No Record', 'discrepancy'=>'Discrepancy', default=>strtoupper($evMatch) };
+        @endphp
+        <tr>
+            <td class="bold">{{ strtoupper($ev['aspect'] ?? '') }}</td>
+            <td>{{ $ev['verified'] ?? '–' }}</td>
+            <td style="text-align:center;">{!! $dot($evDotC) !!}</td>
+            <td>{{ $evTerm }}</td>
+            <td class="bold">{{ ucfirst($evRisk) }}</td>
+            <td class="bold small">{{ $ev['interpretation'] ?? '' }}</td>
+        </tr>
+        @endforeach
+    </table>
+
+    @if($eOverallRisk)
+    <table class="cmt">
+        <tr>
+            <td class="cm-gold" style="width:23%;">OVERALL ERM RISK</td>
+            <td class="t-blue" style="width:20%;">{{ strtoupper($eOverallRisk) }} RISK {!! $riskDot($eOverallRisk) !!}</td>
+            <td class="bold" style="width:57%;">{{ $eOverallAct }}</td>
+        </tr>
+    </table>
+    @endif
+    @else
+    <table class="cmt" style="margin-top:8px;">
+        <tr><td class="cm-gold" colspan="3">EMPLOYMENT VALIDATION</td></tr>
+        <tr><td class="cm-crm" colspan="3">{{ strtoupper($eEmployer) }}</td></tr>
+    </table>
+    <table class="rt" style="margin-top:4px;">
+        <tr><th class="lbl" style="width:22%;">RESULT</th><td class="val {{ $resultCss($eT) }}">{{ $resultLabel($eT) }}</td></tr>
+        <tr><th class="lbl">NOTE</th><td class="val muted ital small">Employment verification pending confirmation from the referenced organisation.</td></tr>
+    </table>
+    @endif
+    </div>
     @endforeach
-</table>
-
-@if($eOverallRisk)
-<table class="cmt">
-    <tr>
-        <td class="cm-gold" style="width:23%;">OVERALL ERM RISK</td>
-        <td class="t-blue" style="width:20%;">{{ strtoupper($eOverallRisk) }} RISK {!! $riskDot($eOverallRisk) !!}</td>
-        <td class="bold" style="width:57%;">{{ $eOverallAct }}</td>
-    </tr>
-</table>
-@endif
-
 @elseif($eComment)
+<div @unless($loop->first)style="page-break-before:always;"@endunless>
 <table class="rt" style="margin-top:4px;">
     <tr><th class="lbl" style="width:22%;">RESULT</th><td class="val {{ $resultCss($eT) }}">{{ $resultLabel($eT) }}</td></tr>
     <tr><th class="lbl">DETAILS</th><td class="val">{!! nl2br(e($eComment)) !!}</td></tr>
 </table>
+</div>
 @else
+<div @unless($loop->first)style="page-break-before:always;"@endunless>
 <table class="rt" style="margin-top:4px;">
     <tr><th class="lbl" style="width:22%;">RESULT</th><td class="val {{ $resultCss($eT) }}">{{ $resultLabel($eT) }}</td></tr>
     <tr><th class="lbl">NOTE</th><td class="val muted ital small">Employment verification pending confirmation from the referenced organisation.</td></tr>
 </table>
-@endif
 </div>
+@endif
 @endforeach
 
 @endforeach

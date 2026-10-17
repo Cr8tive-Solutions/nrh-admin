@@ -949,12 +949,31 @@
                             'risk_level'              => $r['risk_level'] ?? 'low',
                         ];
 
-                        // Employment (single entry per scope)
-                        $exEmployer        = $findings['employer'] ?? '';
-                        $exVerifier        = $findings['verifier'] ?? '';
-                        $exEmpValidation   = $mapValidation($findings['validation'] ?? []);
-                        $exEmpOverallRisk  = $findings['overall_risk'] ?? '';
-                        $exEmpOverallAction= $findings['overall_action'] ?? '';
+                        // Employment (array of employments) — back-compat from legacy single top-level fields
+                        $rawEmployments = $findings['employments'] ?? null;
+                        if ($rawEmployments === null && $scopeKind === 'employment'
+                            && (!empty($findings['employer']) || !empty($findings['validation']) || !empty($findings['verifier']))) {
+                            $rawEmployments = [[
+                                'employer'       => $findings['employer'] ?? '',
+                                'verifier'       => $findings['verifier'] ?? '',
+                                'validation'     => $findings['validation'] ?? [],
+                                'overall_risk'   => $findings['overall_risk'] ?? '',
+                                'overall_action' => $findings['overall_action'] ?? '',
+                            ]];
+                        }
+                        $exEmployments = array_map(fn ($e) => [
+                            'employer'       => $e['employer'] ?? '',
+                            'verifier'       => $e['verifier'] ?? '',
+                            'validation'     => $mapValidation($e['validation'] ?? []),
+                            'overall_risk'   => $e['overall_risk'] ?? '',
+                            'overall_action' => $e['overall_action'] ?? '',
+                        ], $rawEmployments ?? []);
+                        if ($scopeKind === 'employment' && empty($exEmployments)) {
+                            $exEmployments = [[
+                                'employer' => '', 'verifier' => '', 'validation' => [],
+                                'overall_risk' => '', 'overall_action' => '',
+                            ]];
+                        }
 
                         // Academic (array of credentials) — back-compat from legacy single top-level fields
                         $rawCredentials = $findings['credentials'] ?? null;
@@ -1030,12 +1049,8 @@
                             verification_method: @js($existingVerificationMethod),
                             scope_description: @js($existingScopeDescription),
                             records: @js($existingRecords),
-                            /* employment (single entry per scope) */
-                            employer: @js($exEmployer),
-                            verifier: @js($exVerifier),
-                            empValidation: @js($exEmpValidation),
-                            empOverallRisk: @js($exEmpOverallRisk),
-                            empOverallAction: @js($exEmpOverallAction),
+                            /* employment (multiple employments) */
+                            employments: @js($exEmployments),
                             /* academic (multiple credentials) */
                             credentials: @js($exCredentials),
                             /* referee (multiple referees) */
@@ -1047,12 +1062,15 @@
                             addField(idx) { this.records[idx].fields.push({ key: '', value: '' }); },
                             removeField(idx, fIdx) { this.records[idx].fields.splice(fIdx, 1); },
                             blankValidationRow() { return { aspect: '', provided: '', verified: '', match: 'match', risk: 'low', interpretation: '' }; },
-                            /* employment validation matrix */
-                            addEmpValidation() { this.empValidation.push(this.blankValidationRow()); },
-                            removeEmpValidation(idx) { this.empValidation.splice(idx, 1); },
-                            loadEmploymentAspects() {
-                                if (this.empValidation.length && !confirm('Replace the current rows with the standard aspects?')) return;
-                                this.empValidation = ['EMPLOYER','JOB TITLE','DATES OF EMPLOYMENT','REASON FOR LEAVING','SALARY/BENEFITS','PERFORMANCE & CONDUCT'].map(a => ({ ...this.blankValidationRow(), aspect: a }));
+                            /* employment (multiple employments) */
+                            blankEmployment() { return { employer: '', verifier: '', validation: [], overall_risk: '', overall_action: '' }; },
+                            addEmployment() { this.employments.push(this.blankEmployment()); },
+                            removeEmployment(ei) { this.employments.splice(ei, 1); },
+                            addEmpValidation(ei) { this.employments[ei].validation.push(this.blankValidationRow()); },
+                            removeEmpValidation(ei, vi) { this.employments[ei].validation.splice(vi, 1); },
+                            loadEmploymentAspects(ei) {
+                                if (this.employments[ei].validation.length && !confirm('Replace the current rows with the standard aspects?')) return;
+                                this.employments[ei].validation = ['EMPLOYER','JOB TITLE','DATES OF EMPLOYMENT','REASON FOR LEAVING','SALARY/BENEFITS','PERFORMANCE & CONDUCT'].map(a => ({ ...this.blankValidationRow(), aspect: a }));
                             },
                             /* academic credentials */
                             blankCredential() { return { institution: '', verifier: '', validation: [], recognition: { scenario: '', institution_recognition: '', program_accreditation: '', risk_level: 'low' }, overall_risk: '', overall_action: '' }; },
@@ -1260,85 +1278,98 @@
                                     </template>
                                 </div>
 
-                                {{-- ══ EMPLOYMENT VALIDATION (single entry) ══ --}}
+                                {{-- ══ EMPLOYMENT VALIDATION (multiple) ══ --}}
                                 <div class="rq-findings-section" x-show="scopeKind === 'employment'" x-cloak>
-                                    <div class="rq-findings-label" style="margin:0 0 6px;">Employment Validation</div>
-                                    <div class="rq-findings-grid-2">
-                                        <div>
-                                            <span class="rq-findings-sublabel" style="margin-top:0;">Employer</span>
-                                            <input type="text" x-model="employer" placeholder="e.g. ABC Technologies Sdn Bhd" class="rq-findings-input">
-                                        </div>
-                                        <div>
-                                            <span class="rq-findings-sublabel" style="margin-top:0;">Verifier</span>
-                                            <input type="text" x-model="verifier" placeholder="e.g. HR Dept – Ms. Nur Aisyah (HR Officer)" class="rq-findings-input">
-                                        </div>
+                                    <div class="rq-findings-section-head">
+                                        <div class="rq-findings-label" style="margin:0;">Employment Validation</div>
+                                        <button type="button" @click="addEmployment()" class="rq-add-btn">+ Add Employment</button>
                                     </div>
 
-                                    <div class="rq-findings-section-head" style="margin-top:10px;">
-                                        <span class="rq-findings-sublabel" style="margin:0;">Validation Matrix</span>
-                                        <span style="display:inline-flex;gap:6px;">
-                                            <button type="button" @click="loadEmploymentAspects()" class="rq-add-btn">Standard aspects</button>
-                                            <button type="button" @click="addEmpValidation()" class="rq-add-btn">+ Aspect</button>
-                                        </span>
-                                    </div>
-                                    <template x-if="empValidation.length === 0">
-                                        <p style="font-size:11px;color:var(--ink-400);font-style:italic;margin:8px 0 0;">No aspects added yet.</p>
-                                    </template>
-                                    <template x-for="(v, vIdx) in empValidation" :key="vIdx">
-                                        <div class="rq-rec-card">
+                                    <template x-for="(emp, ei) in employments" :key="ei">
+                                        <div class="rq-rec-card" style="border-left:3px solid var(--brand, #0a5);">
                                             <div class="rq-rec-card-head">
-                                                <input type="text" x-model="v.aspect" placeholder="ASPECT (e.g. JOB TITLE)" class="rq-findings-input" style="max-width:60%;">
-                                                <button type="button" @click="removeEmpValidation(vIdx)" class="rq-rec-rm-btn">× Remove</button>
+                                                <span class="rq-rec-label" x-text="`Employment ${ei + 1}`"></span>
+                                                <button type="button" @click="removeEmployment(ei)" class="rq-rec-rm-btn" x-show="employments.length > 1">× Remove</button>
                                             </div>
+
                                             <div class="rq-findings-grid-2">
                                                 <div>
-                                                    <span class="rq-findings-sublabel">Candidate Provided</span>
-                                                    <input type="text" x-model="v.provided" class="rq-findings-input">
+                                                    <span class="rq-findings-sublabel" style="margin-top:0;">Employer</span>
+                                                    <input type="text" x-model="emp.employer" placeholder="e.g. ABC Technologies Sdn Bhd" class="rq-findings-input">
                                                 </div>
                                                 <div>
-                                                    <span class="rq-findings-sublabel">NRH Verified</span>
-                                                    <input type="text" x-model="v.verified" class="rq-findings-input">
+                                                    <span class="rq-findings-sublabel" style="margin-top:0;">Verifier</span>
+                                                    <input type="text" x-model="emp.verifier" placeholder="e.g. HR Dept – Ms. Nur Aisyah (HR Officer)" class="rq-findings-input">
                                                 </div>
-                                                <div>
-                                                    <span class="rq-findings-sublabel">Match</span>
-                                                    <select x-model="v.match" class="rq-findings-select">
-                                                        <option value="match">Match</option>
-                                                        <option value="partial">Partial Match</option>
-                                                        <option value="no_record">No Record</option>
-                                                        <option value="discrepancy">Discrepancy</option>
-                                                    </select>
+                                            </div>
+
+                                            <div class="rq-findings-section-head" style="margin-top:10px;">
+                                                <span class="rq-findings-sublabel" style="margin:0;">Validation Matrix</span>
+                                                <span style="display:inline-flex;gap:6px;">
+                                                    <button type="button" @click="loadEmploymentAspects(ei)" class="rq-add-btn">Standard aspects</button>
+                                                    <button type="button" @click="addEmpValidation(ei)" class="rq-add-btn">+ Aspect</button>
+                                                </span>
+                                            </div>
+                                            <template x-if="emp.validation.length === 0">
+                                                <p style="font-size:11px;color:var(--ink-400);font-style:italic;margin:8px 0 0;">No aspects added yet.</p>
+                                            </template>
+                                            <template x-for="(v, vIdx) in emp.validation" :key="vIdx">
+                                                <div class="rq-rec-card">
+                                                    <div class="rq-rec-card-head">
+                                                        <input type="text" x-model="v.aspect" placeholder="ASPECT (e.g. JOB TITLE)" class="rq-findings-input" style="max-width:60%;">
+                                                        <button type="button" @click="removeEmpValidation(ei, vIdx)" class="rq-rec-rm-btn">× Remove</button>
+                                                    </div>
+                                                    <div class="rq-findings-grid-2">
+                                                        <div>
+                                                            <span class="rq-findings-sublabel">Candidate Provided</span>
+                                                            <input type="text" x-model="v.provided" class="rq-findings-input">
+                                                        </div>
+                                                        <div>
+                                                            <span class="rq-findings-sublabel">NRH Verified</span>
+                                                            <input type="text" x-model="v.verified" class="rq-findings-input">
+                                                        </div>
+                                                        <div>
+                                                            <span class="rq-findings-sublabel">Match</span>
+                                                            <select x-model="v.match" class="rq-findings-select">
+                                                                <option value="match">Match</option>
+                                                                <option value="partial">Partial Match</option>
+                                                                <option value="no_record">No Record</option>
+                                                                <option value="discrepancy">Discrepancy</option>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <span class="rq-findings-sublabel">Risk</span>
+                                                            <select x-model="v.risk" class="rq-findings-select">
+                                                                <option value="low">Low</option>
+                                                                <option value="moderate">Moderate</option>
+                                                                <option value="high">High</option>
+                                                                <option value="critical">Critical</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <span class="rq-findings-sublabel">Interpretation</span>
+                                                    <input type="text" x-model="v.interpretation" placeholder="e.g. Verified. Safe to proceed." class="rq-findings-input">
                                                 </div>
+                                            </template>
+
+                                            <div class="rq-findings-grid-2" style="margin-top:8px;">
                                                 <div>
-                                                    <span class="rq-findings-sublabel">Risk</span>
-                                                    <select x-model="v.risk" class="rq-findings-select">
+                                                    <span class="rq-findings-sublabel">Overall ERM Risk</span>
+                                                    <select x-model="emp.overall_risk" class="rq-findings-select">
+                                                        <option value="">—</option>
                                                         <option value="low">Low</option>
                                                         <option value="moderate">Moderate</option>
                                                         <option value="high">High</option>
                                                         <option value="critical">Critical</option>
                                                     </select>
                                                 </div>
+                                                <div>
+                                                    <span class="rq-findings-sublabel">Overall Action</span>
+                                                    <input type="text" x-model="emp.overall_action" placeholder="e.g. Acceptable with caution. Suggest pay slip." class="rq-findings-input">
+                                                </div>
                                             </div>
-                                            <span class="rq-findings-sublabel">Interpretation</span>
-                                            <input type="text" x-model="v.interpretation" placeholder="e.g. Verified. Safe to proceed." class="rq-findings-input">
                                         </div>
                                     </template>
-
-                                    <div class="rq-findings-grid-2" style="margin-top:8px;">
-                                        <div>
-                                            <span class="rq-findings-sublabel">Overall ERM Risk</span>
-                                            <select x-model="empOverallRisk" class="rq-findings-select">
-                                                <option value="">—</option>
-                                                <option value="low">Low</option>
-                                                <option value="moderate">Moderate</option>
-                                                <option value="high">High</option>
-                                                <option value="critical">Critical</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <span class="rq-findings-sublabel">Overall Action</span>
-                                            <input type="text" x-model="empOverallAction" placeholder="e.g. Acceptable with caution. Suggest pay slip." class="rq-findings-input">
-                                        </div>
-                                    </div>
                                 </div>
 
                                 {{-- ══ ACADEMIC CREDENTIALS (multiple) ══ --}}
@@ -1575,7 +1606,7 @@
                                 {{-- Serialise arrays as JSON for submission --}}
                                 <input type="hidden" name="records_json" :value="JSON.stringify(records)">
                                 <input type="hidden" name="structured_json" :value="JSON.stringify(
-                                    scopeKind === 'employment' ? { employer, verifier, validation: empValidation, overall_risk: empOverallRisk, overall_action: empOverallAction } :
+                                    scopeKind === 'employment' ? { employments } :
                                     scopeKind === 'academic'   ? { credentials } :
                                     scopeKind === 'referee'    ? { referees } :
                                     {}
