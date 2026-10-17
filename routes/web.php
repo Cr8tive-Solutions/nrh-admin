@@ -21,6 +21,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PaymentReceiptController;
 use App\Http\Controllers\PermissionsController;
+use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequestQueueController;
 use App\Http\Controllers\ScopePricingController;
@@ -163,6 +164,16 @@ Route::middleware('admin.auth')->group(function () {
         Route::get('/customers/{customer}/packages/{package}/edit', [PackageController::class, 'edit'])->name('customers.packages.edit');
         Route::put('/customers/{customer}/packages/{package}', [PackageController::class, 'update'])->name('customers.packages.update');
         Route::delete('/customers/{customer}/packages/{package}', [PackageController::class, 'destroy'])->name('customers.packages.destroy');
+
+        // Invite-to-register onboarding: invite by email, the invitee registers
+        // on the client portal, staff review and approve or reject here.
+        Route::get('/registrations', [RegistrationController::class, 'index'])->name('registrations.index');
+        Route::post('/registrations', [RegistrationController::class, 'store'])->name('registrations.store');
+        Route::get('/registrations/{registration}', [RegistrationController::class, 'show'])->name('registrations.show');
+        Route::post('/registrations/{registration}/resend', [RegistrationController::class, 'resend'])->name('registrations.resend');
+        Route::post('/registrations/{registration}/cancel', [RegistrationController::class, 'cancel'])->name('registrations.cancel');
+        Route::post('/registrations/{registration}/approve', [RegistrationController::class, 'approve'])->name('registrations.approve');
+        Route::post('/registrations/{registration}/reject', [RegistrationController::class, 'reject'])->name('registrations.reject');
     });
 
     // ── pricing.manage ───────────────────────────────────────────────────────

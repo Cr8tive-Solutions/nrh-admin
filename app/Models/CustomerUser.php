@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CustomerUser extends Model
 {
@@ -80,5 +82,46 @@ class CustomerUser extends Model
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    /**
+     * Point the user at exactly one portal role, writing Spatie's pivot directly
+     * (this app does not ship spatie/laravel-permission) and keeping the legacy
+     * `role` column in step so both portals agree on who is an admin. Returns
+     * false (and logs) when the role does not exist.
+     */
+    public function assignPortalRole(string $roleName): bool
+    {
+        $role = PortalRole::forPortal()->where('name', $roleName)->first();
+
+        if (! $role) {
+            Log::warning('Portal role missing; cannot assign', [
+                'customer_user_id' => $this->id,
+                'role' => $roleName,
+            ]);
+
+            return false;
+        }
+
+        DB::transaction(function () use ($role, $roleName) {
+            DB::table('model_has_roles')
+                ->where('model_type', self::ROLE_MODEL_TYPE)
+                ->where('model_id', $this->id)
+                ->delete();
+
+            DB::table('model_has_roles')->insert([
+                'role_id' => $role->id,
+                'model_type' => self::ROLE_MODEL_TYPE,
+                'model_id' => $this->id,
+            ]);
+
+            $this->update([
+                'role' => in_array($roleName, self::ADMIN_PORTAL_ROLES, true) ? 'admin' : 'user',
+            ]);
+        });
+
+        $this->unsetRelation('portalRoles');
+
+        return true;
     }
 }

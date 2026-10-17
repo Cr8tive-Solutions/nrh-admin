@@ -55,6 +55,7 @@ The app runs at `http://nrh-admin.test` under Laravel Herd. Migrations run again
 
 - The two portals read each other's private files through mount disks: this app's `client_local` disk points at the client portal's `storage/app/private` (env `CLIENT_STORAGE_PATH`); the client portal's `admin_local` disk points at this app's (env `ADMIN_STORAGE_PATH`). Payment slips, invoice receipts, candidate documents, and client-captured consent evidence live client-side; report PDFs live admin-side. **In production both env vars must point at the shared mount** or those downloads 404.
 - Hashid URL ids salt from `HASHIDS_SALT` (falls back to `APP_KEY` — see `config/hashids.php`). Salts are app-local by design; a hashid from one portal never resolves in the other.
+- **Invite-to-register onboarding** (`customer_registrations`, migration in this repo): staff invite an email at `/registrations` → the invitee fills in company/contact details and a password on the client portal at `/register/{token}` (only the token's SHA-256 is stored) → staff approve here, which creates the `customers` row and an active Owner login carrying the invitee's password hash, or reject with an emailed reason. Status: `invited → submitted → approved | rejected`, or `cancelled`. Tests: `CustomerRegistrationTest` in both repos.
 - Scheduled jobs live in `routes/console.php`: PDPA purge (02:30), invoice overdue flip (07:30), notifications (08:00), annual holiday sync.
 
 ---

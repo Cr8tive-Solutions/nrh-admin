@@ -327,6 +327,17 @@
                     Customers
                 </a>
 
+                @allowed('customer.manage')
+                <a href="{{ route('registrations.index') }}"
+                   class="sb-link {{ request()->routeIs('registrations.*') ? 'active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+                    Registrations
+                    @if(($pendingRegistrationCount ?? 0) > 0)
+                    <span class="sb-count alert">{{ $pendingRegistrationCount }}</span>
+                    @endif
+                </a>
+                @endallowed
+
                 <a href="{{ route('packages.index') }}"
                    class="sb-link {{ request()->routeIs('packages.*') ? 'active' : '' }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>

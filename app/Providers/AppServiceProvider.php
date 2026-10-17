@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Admin;
 use App\Models\AdminNotification;
+use App\Models\CustomerRegistration;
 use App\Models\Agreement;
 use App\Models\Country;
 use App\Models\Customer;
@@ -97,6 +98,11 @@ class AppServiceProvider extends ServiceProvider
                 ? AdminNotification::where('admin_id', $admin->id)->whereNull('read_at')->count()
                 : 0;
             $view->with('unreadNotificationCount', $count);
+
+            // Customer registrations waiting for staff to verify and approve.
+            $view->with('pendingRegistrationCount', $admin?->can('customer.manage')
+                ? CustomerRegistration::where('status', 'submitted')->count()
+                : 0);
         });
     }
 

@@ -335,42 +335,9 @@ class CustomerController extends Controller
             ->every(fn (CustomerUser $other) => $other->portalRoleName() !== 'Owner');
     }
 
-    /**
-     * Point the user at exactly one portal role, writing Spatie's pivot directly
-     * (this app does not ship spatie/laravel-permission) and keeping the legacy
-     * `role` column in step so both portals agree on who is an admin.
-     */
     private function assignPortalRole(CustomerUser $user, string $roleName): void
     {
-        $role = PortalRole::forPortal()->where('name', $roleName)->first();
-
-        if (! $role) {
-            Log::warning('Portal role missing; cannot assign', [
-                'customer_user_id' => $user->id,
-                'role' => $roleName,
-            ]);
-
-            return;
-        }
-
-        DB::transaction(function () use ($user, $role, $roleName) {
-            DB::table('model_has_roles')
-                ->where('model_type', CustomerUser::ROLE_MODEL_TYPE)
-                ->where('model_id', $user->id)
-                ->delete();
-
-            DB::table('model_has_roles')->insert([
-                'role_id' => $role->id,
-                'model_type' => CustomerUser::ROLE_MODEL_TYPE,
-                'model_id' => $user->id,
-            ]);
-
-            $user->update([
-                'role' => in_array($roleName, CustomerUser::ADMIN_PORTAL_ROLES, true) ? 'admin' : 'user',
-            ]);
-        });
-
-        $user->unsetRelation('portalRoles');
+        $user->assignPortalRole($roleName);
     }
 
     /**

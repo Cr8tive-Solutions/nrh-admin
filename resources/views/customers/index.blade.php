@@ -5,6 +5,9 @@
 
 @section('header-actions')
     @allowed('customer.manage')
+    <a href="{{ route('registrations.index') }}" class="nrh-btn nrh-btn-ghost">
+        Invite to register
+    </a>
     <a href="{{ route('customers.create') }}"
        class="nrh-btn nrh-btn-primary">
         + New Customer
