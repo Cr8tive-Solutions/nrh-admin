@@ -24,8 +24,16 @@ it('renders the guide as a PDF', function () {
 
     $response->assertOk()->assertHeader('Content-Type', 'application/pdf');
 
+    // The controller buffers the PDF (it post-renders page numbers) and returns
+    // it as a plain response, so read getContent(). Only pull streamedContent()
+    // for an actual StreamedResponse — on a buffered one it hard-fails instead
+    // of falling through.
+    $body = $response->baseResponse instanceof \Symfony\Component\HttpFoundation\StreamedResponse
+        ? $response->streamedContent()
+        : $response->getContent();
+
     // dompdf output, not an error page rendered with a PDF content type.
-    expect(substr($response->streamedContent() ?: $response->getContent(), 0, 5))->toBe('%PDF-');
+    expect(substr($body, 0, 5))->toBe('%PDF-');
 });
 
 it('gives every section a unique anchor so the contents page links resolve', function () {
