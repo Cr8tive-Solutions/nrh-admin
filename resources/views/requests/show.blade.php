@@ -6,10 +6,12 @@
 
 @section('header-actions')
     <a href="{{ route('requests.index') }}" class="nrh-btn nrh-btn-ghost">← Back to Queue</a>
+    @if(admin_can('report.view'))
     <a href="{{ route('requests.report.preview', $request) }}" target="_blank" class="nrh-btn nrh-btn-ghost">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Preview Report
     </a>
+    @endif
 @endsection
 
 @section('content')
@@ -1848,10 +1850,12 @@
                         </div>
                         @endif
                     </div>
+                    @if(admin_can('report.view'))
                     <div class="rq-version-actions">
                         <a href="{{ route('requests.report.view', [$request, $v]) }}" target="_blank" class="rq-version-action-btn" title="Open in new tab">View</a>
                         <a href="{{ route('requests.report.download', [$request, $v]) }}" class="rq-version-action-btn" title="Download exact bytes">Download</a>
                     </div>
+                    @endif
                     @if(! $isSuperseded)
                     <button type="button" class="rq-version-action-btn"
                             @click="openSupersede({ id: {{ $v->id }}, type: '{{ $v->type }}', label: '{{ $v->label() }}' })"

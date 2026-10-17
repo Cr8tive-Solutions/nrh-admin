@@ -126,6 +126,7 @@ class AdminGuide
                 ]],
                 ['type' => 'sub', 'text' => 'Permission keys'],
                 ['type' => 'table', 'head' => ['Permission key', 'Grants'], 'widths' => ['30%', '70%'], 'rows' => [
+                    ['<code>report.view</code>', 'Preview the live report and view or download issued report PDFs.'],
                     ['<code>request.update</code>', 'Change request, candidate and scope statuses; edit findings and report metadata; issue reports.'],
                     ['<code>customer.manage</code>', 'Create and edit customers, provision and re-invite customer users, manage agreements.'],
                     ['<code>pricing.manage</code>', 'Set per-customer scope prices.'],
@@ -305,7 +306,7 @@ class AdminGuide
         return [
             'id' => 'reports',
             'title' => 'Reports & Versioning',
-            'permission' => 'Preview for all roles; issuing needs request.update',
+            'permission' => 'Preview/view/download needs report.view; issuing needs request.update',
             'summary' => 'Preview, issue, supersede, and the rules that stop duplicate versions.',
             'blocks' => [
                 ['type' => 'p', 'text' => 'There are two distinct things you can do with a report, and the difference matters.'],
@@ -659,6 +660,7 @@ class AdminGuide
                     ['Invoice will not flip to paid', 'Verified receipts do not yet cover the total. Check the claimed amounts on each verified receipt against the invoice total.'],
                     ['A request is stuck at <code>new</code>', 'It is cash-billed and the payment slip has not been verified. Verifying it releases the request.'],
                     ['TAT looks frozen', 'The request is at <code>rejected</code>, which pauses the clock by design.'],
+                    ['No Preview / View / Download report buttons', 'Report PDFs require <code>report.view</code>, which is separate from read access.'],
                     ['Cannot download a candidate document', 'Downloading requires <code>pdpa.documents</code>, which is separate from read access.'],
                     ['A report download returns an error', 'The stored PDF is missing from disk. Issued versions are never re-rendered — raise it with the project owner.'],
                     ['Cannot execute an erasure', 'The DSAR must be type <code>erasure</code> and at status <code>in_progress</code>, meaning identity has been verified.'],

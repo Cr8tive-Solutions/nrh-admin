@@ -168,15 +168,20 @@ it('serves a live preview without persisting a version', function () {
     expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(0);
 });
 
-it('lets a viewer preview but not generate', function () {
+it('blocks a viewer from previewing, viewing, downloading or generating reports', function () {
+    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    $version = ReportVersion::where('screening_request_id', $this->requestId)->firstOrFail();
+
     $viewer = Fixtures::admin(['role' => 'viewer']);
 
-    Fixtures::actingAs($this, $viewer)->get(route('requests.report.preview', $this->req))->assertOk();
+    Fixtures::actingAs($this, $viewer)->get(route('requests.report.preview', $this->req))->assertForbidden();
+    Fixtures::actingAs($this, $viewer)->get(route('requests.report.view', [$this->req, $version]))->assertForbidden();
+    Fixtures::actingAs($this, $viewer)->get(route('requests.report.download', [$this->req, $version]))->assertForbidden();
     Fixtures::actingAs($this, $viewer)
         ->post(route('requests.report.generate', $this->req), ['type' => 'full'])
         ->assertForbidden();
 
-    expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(0);
+    expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(1);
 });
 
 it('re-downloads the exact stored bytes of a version', function () {

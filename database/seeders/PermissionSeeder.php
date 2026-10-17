@@ -13,6 +13,7 @@ class PermissionSeeder extends Seeder
         $permissions = [
             // Operations
             ['key' => 'request.update',     'label' => 'Update request & candidate status', 'group' => 'Operations', 'sort' => 10],
+            ['key' => 'report.view',        'label' => 'Preview, view & download screening reports', 'group' => 'Operations', 'sort' => 15],
             ['key' => 'customer.manage',    'label' => 'Create & edit customers and agreements', 'group' => 'Operations', 'sort' => 20],
 
             // Finance
@@ -41,7 +42,7 @@ class PermissionSeeder extends Seeder
 
         $defaults = [
             'super_admin' => Permission::pluck('id')->all(),
-            'operations' => Permission::whereIn('key', ['request.update', 'customer.manage', 'pdpa.consent', 'pdpa.dsar', 'pdpa.documents'])->pluck('id')->all(),
+            'operations' => Permission::whereIn('key', ['request.update', 'report.view', 'customer.manage', 'pdpa.consent', 'pdpa.dsar', 'pdpa.documents'])->pluck('id')->all(),
             'finance' => Permission::whereIn('key', ['pricing.manage', 'invoice.manage', 'transaction.manage'])->pluck('id')->all(),
             'viewer' => [],
         ];

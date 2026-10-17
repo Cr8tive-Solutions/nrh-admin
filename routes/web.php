@@ -70,16 +70,20 @@ Route::middleware('admin.auth')->group(function () {
     // ── Read-only routes (any admin role, including viewer) ──────────────────
     Route::get('/requests', [RequestQueueController::class, 'index'])->name('requests.index');
     Route::get('/requests/{screeningRequest}', [RequestQueueController::class, 'show'])->name('requests.show');
-    // Live preview — never persists. Anyone with read access can see it.
-    Route::get('/requests/{screeningRequest}/report/preview', [ReportController::class, 'preview'])
-        ->name('requests.report.preview');
+    // Report PDFs carry the full screening findings — gated by report.view,
+    // not open to every read-only role.
+    Route::middleware('admin.can:report.view')->group(function () {
+        // Live preview — never persists.
+        Route::get('/requests/{screeningRequest}/report/preview', [ReportController::class, 'preview'])
+            ->name('requests.report.preview');
 
-    // Re-download a persisted version's exact bytes.
-    Route::get('/requests/{screeningRequest}/report/versions/{version}/download', [ReportController::class, 'download'])
-        ->name('requests.report.download');
+        // Re-download a persisted version's exact bytes.
+        Route::get('/requests/{screeningRequest}/report/versions/{version}/download', [ReportController::class, 'download'])
+            ->name('requests.report.download');
 
-    Route::get('/requests/{screeningRequest}/report/versions/{version}/view', [ReportController::class, 'view'])
-        ->name('requests.report.view');
+        Route::get('/requests/{screeningRequest}/report/versions/{version}/view', [ReportController::class, 'view'])
+            ->name('requests.report.view');
+    });
 
     // Customer-uploaded candidate documents (NRIC, resume, consent…) — served via client_local.
     // Gated: raw identity documents are the most sensitive PII, not for viewer/finance roles.
