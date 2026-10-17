@@ -141,6 +141,7 @@ class Fixtures
             'customer_id' => $customerId,
             'country_id' => $countryId,
             'name' => 'Standard Screening '.self::uniq(),
+            'price' => 100.00,
             'created_at' => now(), 'updated_at' => now(),
         ], $attrs));
     }

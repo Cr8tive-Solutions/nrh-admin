@@ -22,7 +22,11 @@ class Package extends Model
 {
     use HasHashid;
 
-    protected $fillable = ['customer_id', 'country_id', 'name'];
+    protected $fillable = ['customer_id', 'country_id', 'name', 'price'];
+
+    protected $casts = [
+        'price' => 'decimal:2',
+    ];
 
     public function customer(): BelongsTo
     {

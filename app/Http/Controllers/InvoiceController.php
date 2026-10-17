@@ -397,7 +397,7 @@ class InvoiceController extends Controller
 
     private function buildItemsForCustomer(int $customerId, Carbon $start, Carbon $end): array
     {
-        $requests = ScreeningRequest::with(['candidates'])
+        $requests = ScreeningRequest::with(['candidates', 'package'])
             ->where('customer_id', $customerId)
             ->whereIn('status', ['in_progress', 'complete', 'updated'])
             ->whereNull('invoice_id')
@@ -431,6 +431,20 @@ class InvoiceController extends Controller
 
         foreach ($requests as $req) {
             $candidateIdsForReq = $req->candidates->pluck('id');
+
+            // Package orders bill as a single bundle line at the package's fixed
+            // price, one unit per candidate — not line-by-line per scope.
+            if ($req->package && (float) $req->package->price > 0 && $candidateIdsForReq->isNotEmpty()) {
+                $items[] = [
+                    'description' => "{$req->package->name} (package) – {$req->reference}",
+                    'qty' => $candidateIdsForReq->count(),
+                    'unit_price' => number_format((float) $req->package->price, 2, '.', ''),
+                ];
+                $requestList[] = ['id' => $req->id, 'reference' => $req->reference];
+
+                continue;
+            }
+
             $reqScopeIds = $scopeRows
                 ->whereIn('request_candidate_id', $candidateIdsForReq->toArray())
                 ->pluck('scope_type_id');

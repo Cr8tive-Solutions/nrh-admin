@@ -84,6 +84,7 @@ class PackageController extends Controller
             $package = $customer->packages()->create([
                 'country_id' => $data['country_id'],
                 'name' => $data['name'],
+                'price' => $data['price'],
             ]);
 
             $package->scopeTypes()->sync($data['scope_type_ids']);
@@ -119,6 +120,7 @@ class PackageController extends Controller
             $package->update([
                 'country_id' => $data['country_id'],
                 'name' => $data['name'],
+                'price' => $data['price'],
             ]);
 
             $package->scopeTypes()->sync($data['scope_type_ids']);
@@ -179,10 +181,14 @@ class PackageController extends Controller
                     ->where('country_id', $request->input('country_id'))
                     ->ignore($package?->id),
             ],
+            // Explicit bundle price — what the customer is billed when they order
+            // this package, overriding the per-scope sum in both portals.
+            'price' => 'required|numeric|min:0|max:99999999.99',
             'scope_type_ids' => 'required|array|min:1',
             'scope_type_ids.*' => 'integer|exists:scope_types,id',
         ], [
             'name.unique' => 'This customer already has a package with that name for the selected country.',
+            'price.required' => 'Set the package price (what the customer pays for the bundle).',
             'scope_type_ids.required' => 'Select at least one scope for the package.',
             'scope_type_ids.min' => 'Select at least one scope for the package.',
         ]);
@@ -204,6 +210,7 @@ class PackageController extends Controller
         return [
             'country_id' => (int) $data['country_id'],
             'name' => $data['name'],
+            'price' => round((float) $data['price'], 2),
             'scope_type_ids' => $scopeIds,
         ];
     }

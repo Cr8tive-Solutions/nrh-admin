@@ -17,6 +17,7 @@
 <div class="bg-white rounded-lg border border-gray-200 p-6 max-w-2xl"
      x-data="{
          countryId: {{ $selectedCountry }},
+         price: '{{ old('price', $package?->price !== null ? number_format((float) $package->price, 2, '.', '') : '') }}',
          selected: {{ json_encode($selectedScopes) }},
          {{-- Cast to object so a country-id-keyed map never encodes as a JS array. --}}
          scopes: {{ json_encode((object) $scopesByCountry->all()) }},
@@ -84,6 +85,27 @@
                    maxlength="255" placeholder="e.g. Standard Screening"
                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
             <p class="text-xs text-gray-400 mt-1">Shown to {{ $customer->name }} in the request wizard.</p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Package Price <span class="text-red-500">*</span>
+            </label>
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-500 font-mono" x-text="currency"></span>
+                <input type="number" name="price" step="0.01" min="0" required
+                       x-model="price" placeholder="0.00"
+                       class="w-40 border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                <button type="button" x-show="total !== null && selected.length > 0"
+                        @click="price = total.toFixed(2)"
+                        class="text-xs text-emerald-700 font-medium hover:underline">
+                    Use scopes total (<span x-text="currency"></span> <span x-text="(total ?? 0).toFixed(2)"></span>)
+                </button>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">
+                The fixed price {{ $customer->name }} pays for this bundle — this is what gets billed (before 6% SST),
+                overriding the sum of the individual scope prices. Charged per candidate.
+            </p>
         </div>
 
         <div>
@@ -157,22 +179,27 @@
             </p>
         </div>
 
-        {{-- Package total, mirroring what the client portal will show. --}}
+        {{-- Reference only: the sum of the individual scope prices. The customer
+             is billed the Package Price above, not this figure. --}}
         <div class="rounded-md border border-gray-200 bg-gray-50 px-3 py-3" x-show="selected.length > 0">
             <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-gray-700">Package total</span>
+                <span class="text-sm font-medium text-gray-700">Scopes total <span class="text-gray-400 font-normal">(reference)</span></span>
                 <span class="text-sm font-mono font-semibold text-gray-900">
                     <template x-if="total !== null">
                         <span><span x-text="currency"></span> <span x-text="total.toFixed(2)"></span></span>
                     </template>
                     <template x-if="total === null">
-                        <span class="text-amber-700">Not quotable</span>
+                        <span class="text-amber-700">—</span>
                     </template>
                 </span>
             </div>
+            <p class="text-xs text-gray-500 mt-2">
+                Sum of the selected scopes at this customer's prices, for comparison. The bundle is billed at the
+                <strong>Package Price</strong> set above regardless.
+            </p>
             <p class="text-xs text-amber-700 mt-2" x-show="unpricedCount > 0">
-                <span x-text="unpricedCount"></span> selected scope(s) are price-on-request with no override for this
-                customer. The client portal will <strong>reject any request</strong> using this package until a price is set.
+                <span x-text="unpricedCount"></span> selected scope(s) are price-on-request with no per-scope override —
+                that's fine here: the fixed package price covers them.
             </p>
         </div>
 

@@ -147,7 +147,8 @@
         @forelse($customer->packages as $package)
             @php
                 $unpricedIds = $packageUnpriced[$package->id] ?? [];
-                $total = $packageTotals[$package->id] ?? null;
+                $total = $packageTotals[$package->id] ?? null; // scope-sum reference
+                $bundle = (float) $package->price;               // what the customer is billed
                 $currency = $package->country?->currency ?? 'MYR';
             @endphp
             <div class="pk-row">
@@ -158,10 +159,11 @@
                         · {{ $package->scopeTypes->count() }} {{ Str::plural('scope', $package->scopeTypes->count()) }}
                     </div>
                     <div class="pk-total">
-                        @if($total === null)
-                            <span style="color: var(--gold-700, #b8860b);">Not quotable</span>
-                        @else
-                            {{ $currency }} {{ number_format($total, 2) }}
+                        {{ $currency }} {{ number_format($bundle, 2) }}
+                        @if($total !== null && abs($total - $bundle) >= 0.01)
+                            <span style="font-size: 11px; color: var(--ink-500); font-weight: 400;" title="Sum of the individual scope prices">
+                                (scopes {{ $currency }} {{ number_format($total, 2) }})
+                            </span>
                         @endif
                         @if($canEdit)
                         <a href="{{ route('customers.packages.edit', ['customer' => $customer, 'package' => $package, 'from' => 'packages']) }}"
@@ -189,13 +191,9 @@
                 @endif
 
                 @if(count($unpricedIds) > 0)
-                <div style="font-size: 11px; color: var(--gold-700, #b8860b); margin-top: 8px; line-height: 1.5;">
+                <div style="font-size: 11px; color: var(--ink-500); margin-top: 8px; line-height: 1.5;">
                     {{ count($unpricedIds) }} {{ Str::plural('scope', count($unpricedIds)) }} priced on request with no
-                    override for this customer — the client portal will reject any request using this package.
-                    @allowed('pricing.manage')
-                    <a href="{{ route('pricing.index', ['customer_id' => $customer->id]) }}"
-                       style="color: var(--emerald-700); font-weight: 600; text-decoration: none;">Set pricing →</a>
-                    @endallowed
+                    per-scope override — the fixed package price above covers them.
                 </div>
                 @endif
             </div>
