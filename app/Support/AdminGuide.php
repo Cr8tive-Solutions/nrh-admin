@@ -216,7 +216,7 @@ class AdminGuide
             'permission' => 'Read for all roles; changes need request.update',
             'summary' => 'The core screening workflow, from intake to completion.',
             'blocks' => [
-                ['type' => 'p', 'text' => 'A <b>screening request</b> comes in from the client portal with a reference like <code>REQ-2026-0184</code>. It belongs to one customer, was raised by one of that customer\'s users, and contains one or more <b>candidates</b>. Each candidate carries a set of <b>scopes</b> — the individual checks to be run.'],
+                ['type' => 'p', 'text' => 'A <b>screening request</b> comes in from the client portal with a reference like <code>REP-2026-0184</code>. It belongs to one customer, was raised by one of that customer\'s users, and contains one or more <b>candidates</b>. Each candidate carries a set of <b>scopes</b> — the individual checks to be run.'],
                 ['type' => 'sub', 'text' => 'The queue list'],
                 ['type' => 'list', 'items' => [
                     'Filter by status, or use the <b>Pending payment</b> filter to isolate cash-billed requests waiting on a verified payment slip.',
@@ -615,7 +615,7 @@ class AdminGuide
                 ]],
                 ['type' => 'sub', 'text' => 'Formats and constants'],
                 ['type' => 'table', 'head' => ['Item', 'Value'], 'widths' => ['34%', '66%'], 'rows' => [
-                    ['Request reference', '<code>REQ-YYYY-NNNN</code>'],
+                    ['Request reference', '<code>REP-YYYY-NNNN</code>'],
                     ['Invoice number', '<code>INV-YYYY-NNN</code>'],
                     ['Tax', '6% SST on invoice subtotals and cash request totals'],
                     ['Working hours', 'Mon–Fri, 09:00–18:00, Asia/Kuala_Lumpur'],
