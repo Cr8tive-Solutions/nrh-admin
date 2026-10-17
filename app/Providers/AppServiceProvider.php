@@ -24,6 +24,7 @@ use App\Observers\PaymentReceiptNotificationObserver;
 use App\Observers\ScreeningRequestNotificationObserver;
 use Hashids\Hashids;
 use Illuminate\Filesystem\LocalFilesystemAdapter;
+use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
@@ -43,6 +44,13 @@ class AppServiceProvider extends ServiceProvider
             config('hashids.salt') ?: config('app.key'),
             (int) config('hashids.min_length', 8),
         ));
+
+        // `artisan serve` (the Sail container's web server) strips every
+        // non-allow-listed env var from its PHP workers whenever a .env file
+        // exists. compose.yaml sets CLIENT_STORAGE_PATH in `environment:`, so
+        // without this the workers fell back to the sibling path and every
+        // client-side file download 404'd.
+        ServeCommand::$passthroughVariables[] = 'CLIENT_STORAGE_PATH';
     }
 
     public function boot(): void
