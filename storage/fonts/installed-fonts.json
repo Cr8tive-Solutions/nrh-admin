@@ -1,32 +1,32 @@
 {
     "arial rounded mt bold": {
-        "normal": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/arial_rounded_mt_bold_normal_95df52d17f0f3319f77335f3231ce569",
-        "bold": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/arial_rounded_mt_bold_bold_95df52d17f0f3319f77335f3231ce569",
-        "italic": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/arial_rounded_mt_bold_italic_95df52d17f0f3319f77335f3231ce569",
-        "bold_italic": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/arial_rounded_mt_bold_bold_italic_95df52d17f0f3319f77335f3231ce569"
+        "normal": "\/var\/www\/html\/storage\/fonts\/arial_rounded_mt_bold_normal_988fd436a12c08e0936cb6bba5ec324f",
+        "bold": "\/var\/www\/html\/storage\/fonts\/arial_rounded_mt_bold_bold_988fd436a12c08e0936cb6bba5ec324f",
+        "italic": "\/var\/www\/html\/storage\/fonts\/arial_rounded_mt_bold_italic_988fd436a12c08e0936cb6bba5ec324f",
+        "bold_italic": "arial_rounded_mt_bold_bold_italic_988fd436a12c08e0936cb6bba5ec324f"
     },
     "ibm plex serif": {
-        "normal": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/ibm_plex_serif_normal_430116938a427f407c0d1706653b6156",
-        "bold": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/ibm_plex_serif_bold_b10f887bf8e6c8000fbe791233d08f91",
-        "italic": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/ibm_plex_serif_italic_6b63ea8c6e58a03086ced81770c5825e",
-        "bold_italic": "ibm_plex_serif_bold_italic_813b27770c1ac1d4da9a0774bd6c0731"
+        "normal": "\/var\/www\/html\/storage\/fonts\/ibm_plex_serif_normal_e4f20304da5863487d170f670082434e",
+        "bold": "\/var\/www\/html\/storage\/fonts\/ibm_plex_serif_bold_10484ba983998afc15282a0d68ede8c0",
+        "italic": "\/var\/www\/html\/storage\/fonts\/ibm_plex_serif_italic_fdb900e15d18e9bad0002b4d2602a226",
+        "bold_italic": "ibm_plex_serif_bold_italic_8481a404a230acf7468a60255522b00f"
     },
     "ibm plex sans condensed bold": {
-        "normal": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/ibm_plex_sans_condensed_bold_normal_bb5973ad94c37f8ec6478c26f0ee6cee",
-        "bold": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/ibm_plex_sans_condensed_bold_bold_bb5973ad94c37f8ec6478c26f0ee6cee",
-        "italic": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/ibm_plex_sans_condensed_bold_italic_bb5973ad94c37f8ec6478c26f0ee6cee",
-        "bold_italic": "ibm_plex_sans_condensed_bold_bold_italic_bb5973ad94c37f8ec6478c26f0ee6cee"
+        "normal": "\/var\/www\/html\/storage\/fonts\/ibm_plex_sans_condensed_bold_normal_dd8a472aaa01920ac20b932d53815870",
+        "bold": "\/var\/www\/html\/storage\/fonts\/ibm_plex_sans_condensed_bold_bold_dd8a472aaa01920ac20b932d53815870",
+        "italic": "\/var\/www\/html\/storage\/fonts\/ibm_plex_sans_condensed_bold_italic_dd8a472aaa01920ac20b932d53815870",
+        "bold_italic": "ibm_plex_sans_condensed_bold_bold_italic_dd8a472aaa01920ac20b932d53815870"
     },
     "courier prime": {
-        "normal": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/courier_prime_normal_2b39c228b278f518bc522268571f5136",
-        "bold": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/courier_prime_bold_506ae2adbe6ccedb1f10c663f81ee061",
-        "italic": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/courier_prime_italic_48be824fc646daf48ef99a6e0da5daa6",
-        "bold_italic": "courier_prime_bold_italic_e8507dd970c7ff04b85a9b097687669c"
+        "normal": "\/var\/www\/html\/storage\/fonts\/courier_prime_normal_f619c29fe029a61fb2fa3768741cd120",
+        "bold": "\/var\/www\/html\/storage\/fonts\/courier_prime_bold_2492b8585e49b6f1daa953ce4e91d314",
+        "italic": "\/var\/www\/html\/storage\/fonts\/courier_prime_italic_da75af780595ae4532ba700821e9175f",
+        "bold_italic": "courier_prime_bold_italic_2dee19d6b8f42a235cc87029cecd33e9"
     },
     "oswald": {
-        "normal": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/oswald_normal_afc450fe6dc578920b7a4f5dbc3fa960",
-        "bold": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/oswald_bold_afc450fe6dc578920b7a4f5dbc3fa960",
-        "italic": "\/Users\/anwarsaad\/Herd\/nrh-admin\/storage\/fonts\/oswald_italic_afc450fe6dc578920b7a4f5dbc3fa960",
-        "bold_italic": "oswald_bold_italic_afc450fe6dc578920b7a4f5dbc3fa960"
+        "normal": "\/var\/www\/html\/storage\/fonts\/oswald_normal_44a2c92e001ef75b5821eb8828a18428",
+        "bold": "\/var\/www\/html\/storage\/fonts\/oswald_bold_44a2c92e001ef75b5821eb8828a18428",
+        "italic": "\/var\/www\/html\/storage\/fonts\/oswald_italic_44a2c92e001ef75b5821eb8828a18428",
+        "bold_italic": "oswald_bold_italic_44a2c92e001ef75b5821eb8828a18428"
     }
 }
