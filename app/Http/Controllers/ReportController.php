@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdminAuditLog;
+use App\Models\RequestCandidate;
 use App\Models\ReportVersion;
 use App\Models\ScreeningRequest;
 use App\Services\ReportSnapshot;
@@ -16,20 +17,21 @@ use Illuminate\Validation\ValidationException;
 class ReportController extends Controller
 {
     /**
-     * Live preview / on-the-fly download.
+     * Live preview / on-the-fly download for one candidate.
      * Renders from current state, never persists a version.
      */
-    public function preview(Request $request, ScreeningRequest $screeningRequest)
+    public function preview(Request $request, ScreeningRequest $screeningRequest, RequestCandidate $candidate)
     {
+        $this->assertCandidate($screeningRequest, $candidate);
         $screeningRequest->load(['customer', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes', 'candidates.latestConsent']);
 
-        $pdf = $this->renderPdf($screeningRequest, [
+        $pdf = $this->renderPdf($screeningRequest, $candidate, [
             'reportType' => null,
             'reportVersion' => null,
             'reportHash' => null,
         ]);
 
-        $filename = 'NRH-Report-Preview-'.$screeningRequest->reference.'.pdf';
+        $filename = 'NRH-Report-Preview-'.$screeningRequest->reference.'-'.$this->candidateSlug($candidate).'.pdf';
 
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
@@ -38,12 +40,14 @@ class ReportController extends Controller
     }
 
     /**
-     * Create a persisted version of the report (Basic / Prelim / Full).
-     * Refuses if the content_hash matches the latest version of the same type
-     * (no changes since last issue) unless explicitly superseding.
+     * Create a persisted version of one candidate's report (Prelim / Full).
+     * Refuses if the content_hash matches that candidate's latest version of
+     * the same type (no changes since last issue) unless explicitly superseding.
      */
-    public function generate(Request $request, ScreeningRequest $screeningRequest)
+    public function generate(Request $request, ScreeningRequest $screeningRequest, RequestCandidate $candidate)
     {
+        $this->assertCandidate($screeningRequest, $candidate);
+
         $data = $request->validate([
             'type' => 'required|in:prelim,full',
             'supersedes_id' => 'nullable|integer|exists:report_versions,id',
@@ -56,8 +60,7 @@ class ReportController extends Controller
         $supersedesId = $data['supersedes_id'] ?? null;
 
         // Auto-fill completion_* date BEFORE the snapshot, so the hash is stable
-        // across subsequent generate clicks (otherwise the post-snapshot fill would
-        // make every later snapshot look "changed").
+        // across subsequent generate clicks. Request-level meta, shared on the cover.
         $metaKey = match ($type) {
             'prelim' => 'completion_prelim',
             'full' => 'completion_full',
@@ -72,43 +75,40 @@ class ReportController extends Controller
             $completionAutofilled = true;
         }
 
-        $snapshot = ReportSnapshot::build($screeningRequest);
+        $snapshot = ReportSnapshot::build($screeningRequest, $candidate);
         $contentHash = ReportSnapshot::hash($snapshot);
 
-        $latest = ReportVersion::where('screening_request_id', $screeningRequest->id)
+        $latest = ReportVersion::where('request_candidate_id', $candidate->id)
             ->where('type', $type)
             ->orderByDesc('version')
             ->first();
 
-        // Hash check: if nothing has changed since the last version of this type
-        // and the user isn't explicitly superseding it, reject the duplicate.
+        // Hash check: nothing changed for this candidate since the last version.
         if ($latest && $latest->content_hash === $contentHash && ! $supersedesId) {
-            // Roll back the autofill if we did it just for this attempt — keep state pristine.
             if ($completionAutofilled) {
                 $rollback = $screeningRequest->meta ?? [];
                 unset($rollback[$metaKey]);
                 $screeningRequest->update(['meta' => $rollback]);
             }
             throw ValidationException::withMessages([
-                'type' => "No changes since {$latest->label()} (issued {$latest->generated_at->diffForHumans()}). Edit findings or metadata first, or use Supersede to issue a corrected version.",
+                'type' => "No changes to {$candidate->name} since {$latest->label()} (issued {$latest->generated_at->diffForHumans()}). Edit findings or metadata first, or use Supersede to issue a corrected version.",
             ]);
         }
 
-        // Validate supersedes_id belongs to same request + same type
         if ($supersedesId) {
             $sup = ReportVersion::find($supersedesId);
-            if (! $sup || $sup->screening_request_id !== $screeningRequest->id || $sup->type !== $type) {
+            if (! $sup || $sup->request_candidate_id !== $candidate->id || $sup->type !== $type) {
                 throw ValidationException::withMessages([
-                    'supersedes_id' => 'Superseded version must be from the same request and the same type.',
+                    'supersedes_id' => 'Superseded version must be from the same candidate and the same type.',
                 ]);
             }
         }
 
         $newVersion = ($latest?->version ?? 0) + 1;
 
-        // Pre-create the model so its id can be stamped into the PDF.
         $version = new ReportVersion([
             'screening_request_id' => $screeningRequest->id,
+            'request_candidate_id' => $candidate->id,
             'type' => $type,
             'version' => $newVersion,
             'generated_at' => now(),
@@ -117,53 +117,47 @@ class ReportController extends Controller
             'snapshot' => $snapshot,
             'supersedes_id' => $supersedesId,
             'supersede_reason' => $data['supersede_reason'] ?? null,
-            'file_path' => '',         // filled below
-            'file_sha256' => '',         // filled below
+            'file_path' => '',
+            'file_sha256' => '',
         ]);
 
-        // Render PDF with the version label + (placeholder) hash on the cover.
-        // Reorder: hash is computed from final file bytes, so placeholder for now.
-        $pdfBytes = $this->renderPdf($screeningRequest, [
-            'reportType' => $type,
-            'reportVersion' => $newVersion,
-            'reportHash' => null, // first render — see below
+        // First render (placeholder hash), then re-render with the file hash embedded.
+        $pdfBytes = $this->renderPdf($screeningRequest, $candidate, [
+            'reportType' => $type, 'reportVersion' => $newVersion, 'reportHash' => null,
+        ]);
+        $fileSha256 = hash('sha256', $pdfBytes);
+        $pdfBytes = $this->renderPdf($screeningRequest, $candidate, [
+            'reportType' => $type, 'reportVersion' => $newVersion, 'reportHash' => substr($fileSha256, 0, 8),
         ]);
         $fileSha256 = hash('sha256', $pdfBytes);
 
-        // Re-render with the actual file hash embedded so it's traceable on the artifact itself.
-        $pdfBytes = $this->renderPdf($screeningRequest, [
-            'reportType' => $type,
-            'reportVersion' => $newVersion,
-            'reportHash' => substr($fileSha256, 0, 8),
-        ]);
-        // file_sha256 reflects the final bytes that get persisted/downloaded.
-        $fileSha256 = hash('sha256', $pdfBytes);
-
-        $relPath = "reports/{$screeningRequest->id}/{$type}-v{$newVersion}.pdf";
+        $relPath = "reports/{$screeningRequest->id}/candidate-{$candidate->id}/{$type}-v{$newVersion}.pdf";
         Storage::disk('local')->put($relPath, $pdfBytes);
 
         $version->file_path = $relPath;
         $version->file_sha256 = $fileSha256;
 
-        // Map report types to the request workflow status they imply.
-        // Basic reports are bookkeeping artefacts (typically a quick-turn
-        // intermediate doc) and don't move the request forward.
         $previousStatus = $screeningRequest->status;
-        $statusFlip = null;
-        if ($type === 'full') {
-            $statusFlip = in_array($previousStatus, ['complete', 'updated'], true) ? 'updated' : 'complete';
-        }
 
-        DB::transaction(function () use ($version, $supersedesId, $screeningRequest, $statusFlip, $previousStatus) {
+        DB::transaction(function () use ($version, $supersedesId, $screeningRequest, $candidate, $type, $previousStatus, &$statusFlip) {
             $version->save();
 
-            if ($statusFlip && $statusFlip !== $previousStatus) {
-                $screeningRequest->update(['status' => $statusFlip]);
+            $statusFlip = null;
+            if ($type === 'full') {
+                // The request completes once EVERY candidate has at least one
+                // full report. Re-issuing a full after completion marks it updated.
+                if ($this->allCandidatesHaveFullReport($screeningRequest)) {
+                    $statusFlip = in_array($previousStatus, ['complete', 'updated'], true) ? 'updated' : 'complete';
+                }
+                if ($statusFlip && $statusFlip !== $previousStatus) {
+                    $screeningRequest->update(['status' => $statusFlip]);
+                }
             }
 
             if ($supersedesId) {
                 AdminAuditLog::record('report.version_superseded', null, [
                     'request_id' => $version->screening_request_id,
+                    'candidate_id' => $candidate->id,
                     'type' => $version->type,
                     'new_version' => $version->version,
                     'superseded_version' => $supersedesId,
@@ -173,21 +167,21 @@ class ReportController extends Controller
 
             AdminAuditLog::record('report.version_issued', null, [
                 'request_id' => $version->screening_request_id,
+                'candidate_id' => $candidate->id,
                 'type' => $version->type,
                 'version' => $version->version,
                 'file_sha256' => $version->file_sha256,
                 'content_hash' => $version->content_hash,
                 'supersedes_id' => $supersedesId,
                 'status_flip' => $statusFlip && $statusFlip !== $previousStatus
-                    ? ['from' => $previousStatus, 'to' => $statusFlip]
-                    : null,
+                    ? ['from' => $previousStatus, 'to' => $statusFlip] : null,
             ]);
         });
 
         if ($request->expectsJson()) {
             return response()->json([
                 'ok' => true,
-                'message' => "{$version->label()} issued.",
+                'message' => "{$version->label()} issued for {$candidate->name}.",
                 'version_id' => $version->id,
                 'label' => $version->label(),
                 'short_hash' => $version->shortHash(),
@@ -195,7 +189,7 @@ class ReportController extends Controller
         }
 
         return redirect()->route('requests.show', $screeningRequest)
-            ->with('success', "{$version->label()} issued.");
+            ->with('success', "{$version->label()} issued for {$candidate->name}.");
     }
 
     /**
@@ -211,10 +205,12 @@ class ReportController extends Controller
         }
 
         $bytes = Storage::disk('local')->get($version->file_path);
-        $filename = 'NRH-Report-'.$screeningRequest->reference.'-'.ucfirst($version->type).'-v'.$version->version.'.pdf';
+        $candidateSlug = $version->requestCandidate ? '-'.$this->candidateSlug($version->requestCandidate) : '';
+        $filename = 'NRH-Report-'.$screeningRequest->reference.$candidateSlug.'-'.ucfirst($version->type).'-v'.$version->version.'.pdf';
 
         AdminAuditLog::record('report.downloaded', null, [
             'request_id' => $screeningRequest->id,
+            'candidate_id' => $version->request_candidate_id,
             'version_id' => $version->id,
             'type' => $version->type,
             'version' => $version->version,
@@ -238,6 +234,7 @@ class ReportController extends Controller
 
         AdminAuditLog::record('report.viewed', null, [
             'request_id' => $screeningRequest->id,
+            'candidate_id' => $version->request_candidate_id,
             'version_id' => $version->id,
             'type' => $version->type,
             'version' => $version->version,
@@ -249,10 +246,38 @@ class ReportController extends Controller
         ]);
     }
 
+    /** True when every candidate in the request has at least one full report. */
+    private function allCandidatesHaveFullReport(ScreeningRequest $screeningRequest): bool
+    {
+        $candidateIds = $screeningRequest->candidates->pluck('id');
+        if ($candidateIds->isEmpty()) {
+            return false;
+        }
+
+        $withFull = ReportVersion::where('type', 'full')
+            ->whereIn('request_candidate_id', $candidateIds)
+            ->distinct()
+            ->pluck('request_candidate_id');
+
+        return $candidateIds->diff($withFull)->isEmpty();
+    }
+
+    private function assertCandidate(ScreeningRequest $screeningRequest, RequestCandidate $candidate): void
+    {
+        abort_unless($candidate->screening_request_id === $screeningRequest->id, 404);
+    }
+
+    private function candidateSlug(RequestCandidate $candidate): string
+    {
+        $name = preg_replace('/[^A-Za-z0-9]+/', '-', (string) $candidate->name);
+
+        return trim($name, '-') ?: ('candidate-'.$candidate->id);
+    }
+
     /**
-     * Render the screening report HTML to PDF bytes.
+     * Render the screening report HTML to PDF bytes for a single candidate.
      */
-    private function renderPdf(ScreeningRequest $screeningRequest, array $stamps = []): string
+    private function renderPdf(ScreeningRequest $screeningRequest, RequestCandidate $candidate, array $stamps = []): string
     {
         $logoPath = public_path('images/nrh-logo.png');
         $logoSrc = file_exists($logoPath)
@@ -264,11 +289,15 @@ class ReportController extends Controller
             ? Carbon::parse($meta[$key])->format('d F Y')
             : null;
 
+        // Only this candidate goes into the report — the template loops over the
+        // collection it's given, so a one-element collection yields an individual report.
+        $only = $screeningRequest->candidates->where('id', $candidate->id)->values();
+
         $data = [
             'request' => $screeningRequest,
             'reference' => $screeningRequest->reference,
             'customer' => $screeningRequest->customer,
-            'candidates' => $screeningRequest->candidates,
+            'candidates' => $only,
             'logoSrc' => $logoSrc,
             'completionBasic' => $fmtDate('completion_basic'),
             'completionPrelim' => $fmtDate('completion_prelim'),

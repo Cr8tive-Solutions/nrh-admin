@@ -30,7 +30,7 @@ beforeEach(function () {
 });
 
 it('generates a full report as version 1 and flips status to complete', function () {
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full'])
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full'])
         ->assertRedirect();
 
     $version = ReportVersion::where('screening_request_id', $this->requestId)->first();
@@ -71,15 +71,15 @@ it('generates a full report as version 1 and flips status to complete', function
  * change. The status is still kept in the stored snapshot.
  */
 it('blocks an unchanged full report on the very next click', function () {
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full']);
     expect(ScreeningRequest::find($this->requestId)->status)->toBe('complete');
 
     // The status flip must NOT read as a content change any more.
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full'])
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full'])
         ->assertSessionHasErrors('type');
 
     // ...and it stays blocked however many times it's clicked.
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full'])
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full'])
         ->assertSessionHasErrors('type');
 
     expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(1);
@@ -89,7 +89,7 @@ it('blocks an unchanged full report on the very next click', function () {
 });
 
 it('ignores the workflow status when fingerprinting, but keeps it in the snapshot', function () {
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full']);
     $version = ReportVersion::where('screening_request_id', $this->requestId)->firstOrFail();
 
     // Stored snapshot still records the status it was issued under...
@@ -97,7 +97,7 @@ it('ignores the workflow status when fingerprinting, but keeps it in the snapsho
 
     // ...but re-hashing the request now (status = 'complete') yields the same
     // fingerprint, which is exactly what makes the dedup guard reliable.
-    $current = ReportSnapshot::build(ScreeningRequest::find($this->requestId));
+    $current = ReportSnapshot::build(ScreeningRequest::find($this->requestId), App\Models\RequestCandidate::find($this->candidateId));
     expect($current['request']['status'])->toBe('complete')
         ->and(ReportSnapshot::hash($current))->toBe($version->content_hash);
 });
@@ -105,16 +105,16 @@ it('ignores the workflow status when fingerprinting, but keeps it in the snapsho
 it('blocks an unchanged prelim re-issue immediately', function () {
     // prelim does NOT flip request status, so its hash is stable and the
     // dedup guard behaves as documented.
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'prelim']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'prelim']);
 
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'prelim'])
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'prelim'])
         ->assertSessionHasErrors('type');
 
     expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(1);
 });
 
 it('allows a new version once the underlying data changes', function () {
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full']);
     $first = ReportVersion::where('screening_request_id', $this->requestId)->first();
 
     // Mutate a finding so the snapshot hash changes.
@@ -122,7 +122,7 @@ it('allows a new version once the underlying data changes', function () {
         ->where('request_candidate_id', $this->candidateId)
         ->update(['findings' => json_encode(['result_type' => 'clean', 'risk_level' => 'low'])]);
 
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full']);
 
     $versions = ReportVersion::where('screening_request_id', $this->requestId)
         ->orderBy('version')->get();
@@ -133,7 +133,7 @@ it('allows a new version once the underlying data changes', function () {
 });
 
 it('does not move the request status for a prelim report', function () {
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'prelim']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'prelim']);
 
     expect(ReportVersion::where('screening_request_id', $this->requestId)->first()->type)->toBe('prelim')
         // Only 'full' advances the workflow — prelim/basic are bookkeeping artefacts.
@@ -141,20 +141,20 @@ it('does not move the request status for a prelim report', function () {
 });
 
 it('flips complete to updated when a full report is re-issued', function () {
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full']);
     expect(ScreeningRequest::find($this->requestId)->status)->toBe('complete');
 
     DB::table('candidate_scope_type')
         ->where('request_candidate_id', $this->candidateId)
         ->update(['findings' => json_encode(['result_type' => 'clean'])]);
 
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full']);
     expect(ScreeningRequest::find($this->requestId)->status)->toBe('updated');
 });
 
 it('numbers prelim and full versions independently', function () {
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'prelim']);
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'prelim']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full']);
 
     $byType = ReportVersion::where('screening_request_id', $this->requestId)->get()->keyBy('type');
 
@@ -163,29 +163,29 @@ it('numbers prelim and full versions independently', function () {
 });
 
 it('serves a live preview without persisting a version', function () {
-    ($this->as)()->get(route('requests.report.preview', $this->req))->assertOk();
+    ($this->as)()->get(route('requests.report.preview', [$this->req, $this->candidateId]))->assertOk();
 
     expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(0);
 });
 
 it('blocks a viewer from previewing, viewing, downloading or generating reports', function () {
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full']);
     $version = ReportVersion::where('screening_request_id', $this->requestId)->firstOrFail();
 
     $viewer = Fixtures::admin(['role' => 'viewer']);
 
-    Fixtures::actingAs($this, $viewer)->get(route('requests.report.preview', $this->req))->assertForbidden();
+    Fixtures::actingAs($this, $viewer)->get(route('requests.report.preview', [$this->req, $this->candidateId]))->assertForbidden();
     Fixtures::actingAs($this, $viewer)->get(route('requests.report.view', [$this->req, $version]))->assertForbidden();
     Fixtures::actingAs($this, $viewer)->get(route('requests.report.download', [$this->req, $version]))->assertForbidden();
     Fixtures::actingAs($this, $viewer)
-        ->post(route('requests.report.generate', $this->req), ['type' => 'full'])
+        ->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full'])
         ->assertForbidden();
 
     expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(1);
 });
 
 it('re-downloads the exact stored bytes of a version', function () {
-    ($this->as)()->post(route('requests.report.generate', $this->req), ['type' => 'full']);
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full']);
     $version = ReportVersion::where('screening_request_id', $this->requestId)->firstOrFail();
 
     $response = ($this->as)()->get(route('requests.report.download', [$this->req, $version]));
@@ -193,4 +193,30 @@ it('re-downloads the exact stored bytes of a version', function () {
 
     // download() returns the raw bytes, not a streamed response.
     expect(hash('sha256', $response->getContent()))->toBe($version->file_sha256);
+});
+
+it('tags each report to its candidate and completes the request only when all candidates have a full report', function () {
+    // Add a second candidate to the same request.
+    $identityTypeId = App\Models\RequestCandidate::find($this->candidateId)->identity_type_id;
+    $candidate2 = Fixtures::candidate($this->requestId, $identityTypeId);
+    Fixtures::attachScope($candidate2, $this->scopeTypeId, ['status' => 'complete', 'completed_at' => now()]);
+
+    // Full report for candidate 1 only — request must NOT complete yet.
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full'])
+        ->assertRedirect();
+
+    $v1 = ReportVersion::where('request_candidate_id', $this->candidateId)->firstOrFail();
+    expect($v1->type)->toBe('full')
+        ->and(ScreeningRequest::find($this->requestId)->status)->toBe('in_progress'); // candidate 2 still pending
+
+    // Full report for candidate 2 — now every candidate has one, so it completes.
+    ($this->as)()->post(route('requests.report.generate', [$this->req, $candidate2]), ['type' => 'full'])
+        ->assertRedirect();
+
+    expect(ReportVersion::where('request_candidate_id', $candidate2)->count())->toBe(1)
+        ->and(ScreeningRequest::find($this->requestId)->status)->toBe('complete');
+
+    // Versions are independently numbered per candidate (each is v1).
+    expect($v1->version)->toBe(1)
+        ->and(ReportVersion::where('request_candidate_id', $candidate2)->first()->version)->toBe(1);
 });

@@ -53,23 +53,32 @@ class RequestQueueController extends Controller
             'complete' => $screeningRequest->candidates->where('status', 'complete')->count(),
         ];
 
-        // Report versions, current snapshot hash, and per-type freshness for the Generate panel.
-        $versions = ReportVersion::with('generatedBy', 'supersededBy')
+        // Reports are issued per individual candidate — assemble the version
+        // history, current snapshot hash, and per-type freshness for each one.
+        $allVersions = ReportVersion::with('generatedBy', 'supersededBy')
             ->where('screening_request_id', $screeningRequest->id)
             ->orderBy('type')
             ->orderByDesc('version')
-            ->get();
+            ->get()
+            ->groupBy('request_candidate_id');
 
-        $currentSnapshot = ReportSnapshot::build($screeningRequest);
-        $currentHash = ReportSnapshot::hash($currentSnapshot);
+        $reportByCandidate = $screeningRequest->candidates->mapWithKeys(function ($candidate) use ($screeningRequest, $allVersions) {
+            $versions = $allVersions->get($candidate->id, collect());
+            $hash = ReportSnapshot::hash(ReportSnapshot::build($screeningRequest, $candidate));
+            $latestPerType = $versions->groupBy('type')->map(fn ($g) => $g->sortByDesc('version')->first());
 
-        $latestPerType = $versions->groupBy('type')->map(fn ($g) => $g->sortByDesc('version')->first());
-        $reportFreshness = collect(ReportVersion::types())->mapWithKeys(function ($type) use ($latestPerType, $currentHash) {
-            $latest = $latestPerType->get($type);
+            $freshness = collect(ReportVersion::types())->mapWithKeys(fn ($type) => [
+                $type => [
+                    'latest' => $latestPerType->get($type),
+                    'has_changes' => $latestPerType->get($type) === null
+                        || $latestPerType->get($type)->content_hash !== $hash,
+                ],
+            ])->all();
 
-            return [$type => [
-                'latest' => $latest,
-                'has_changes' => $latest === null || $latest->content_hash !== $currentHash,
+            return [$candidate->id => [
+                'versions' => $versions,
+                'hash' => $hash,
+                'freshness' => $freshness,
             ]];
         })->all();
 
@@ -82,9 +91,7 @@ class RequestQueueController extends Controller
         return view('requests.show', [
             'request' => $screeningRequest,
             'candidateStats' => $candidateStats,
-            'versions' => $versions,
-            'currentHash' => $currentHash,
-            'reportFreshness' => $reportFreshness,
+            'reportByCandidate' => $reportByCandidate,
             'activeAgreement' => $activeAgreement,
             'isCashBilled' => $isCashBilled,
             'awaitingPayment' => $awaitingPayment,

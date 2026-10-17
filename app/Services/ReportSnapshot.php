@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\RequestCandidate;
 use App\Models\ScreeningRequest;
 
 /**
@@ -17,11 +18,18 @@ class ReportSnapshot
      * Build the snapshot array. Keys are sorted recursively so two semantically
      * identical inputs produce the same JSON encoding (and therefore the same hash).
      */
-    public static function build(ScreeningRequest $request): array
+    public static function build(ScreeningRequest $request, ?RequestCandidate $only = null): array
     {
         $request->loadMissing(['customer', 'customerUser', 'candidates.identityType', 'candidates.scopeTypes']);
 
-        $candidates = $request->candidates->map(function ($c) {
+        // Reports are issued per individual candidate: snapshot (and hash) only
+        // the one this report covers, so edits to a sibling candidate don't
+        // invalidate this candidate's report.
+        $source = $only
+            ? $request->candidates->where('id', $only->id)->values()
+            : $request->candidates;
+
+        $candidates = $source->map(function ($c) {
             $scopes = $c->scopeTypes->map(fn ($s) => [
                 'scope_type_id' => $s->id,
                 'name' => $s->name,

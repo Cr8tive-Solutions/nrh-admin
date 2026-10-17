@@ -12,7 +12,7 @@ class ReportVersion extends Model
     use HasHashid;
 
     protected $fillable = [
-        'screening_request_id', 'type', 'version',
+        'screening_request_id', 'request_candidate_id', 'type', 'version',
         'generated_at', 'generated_by_admin_id',
         'file_path', 'file_sha256', 'content_hash',
         'snapshot', 'supersedes_id', 'supersede_reason',
@@ -27,6 +27,11 @@ class ReportVersion extends Model
     public function screeningRequest(): BelongsTo
     {
         return $this->belongsTo(ScreeningRequest::class);
+    }
+
+    public function requestCandidate(): BelongsTo
+    {
+        return $this->belongsTo(RequestCandidate::class);
     }
 
     public function generatedBy(): BelongsTo

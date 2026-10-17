@@ -6,8 +6,8 @@
 
 @section('header-actions')
     <a href="{{ route('requests.index') }}" class="nrh-btn nrh-btn-ghost">← Back to Queue</a>
-    @if(admin_can('report.view'))
-    <a href="{{ route('requests.report.preview', $request) }}" target="_blank" class="nrh-btn nrh-btn-ghost">
+    @if(admin_can('report.view') && $request->candidates->count() === 1)
+    <a href="{{ route('requests.report.preview', [$request, $request->candidates->first()]) }}" target="_blank" class="nrh-btn nrh-btn-ghost">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Preview Report
     </a>
@@ -1724,9 +1724,11 @@
                 supersedeVersion: null,
                 supersedeType: '',
                 supersedeReason: '',
+                supersedeAction: '',
                 openSupersede(version) {
                     this.supersedeVersion = version.id;
                     this.supersedeType = version.type;
+                    this.supersedeAction = version.action;
                     this.supersedeReason = '';
                     this.supersedeOpen = true;
                 }
@@ -1739,140 +1741,161 @@
             </div>
 
             @allowed('request.update')
+            <p style="padding: 0 18px 10px; font-size: 11px; color: var(--ink-500); margin: 0;">
+                Reports are issued per individual candidate. Each candidate below has its own versions.
+            </p>
+
+            @foreach($request->candidates as $cand)
             @php
-                $fPrelim = $reportFreshness['prelim'];
-                $fFull   = $reportFreshness['full'];
+                $rc           = $reportByCandidate[$cand->id];
+                $cVersions    = $rc['versions'];
+                $fPrelim      = $rc['freshness']['prelim'];
+                $fFull        = $rc['freshness']['full'];
                 $latestPrelim = $fPrelim['latest'];
                 $latestFull   = $fFull['latest'];
+                $genUrl       = route('requests.report.generate', [$request, $cand]);
             @endphp
-            <div class="rq-gen-grid">
-                {{-- PRELIM --}}
-                <form method="POST" action="{{ route('requests.report.generate', $request) }}"
-                      x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
-                      @submit.prevent="submit($event)">
-                    @csrf
-                    <input type="hidden" name="type" value="prelim">
-                    @php $prelimDisabled = $latestPrelim && ! $fPrelim['has_changes']; @endphp
-                    <button type="submit" class="rq-gen-btn"
-                            :class="{ 'is-saving': state === 'saving' }"
-                            {{ $prelimDisabled ? 'disabled' : '' }}
-                            :disabled="state === 'saving'"
-                            title="{{ $prelimDisabled
-                                ? 'No changes since '.$latestPrelim->label().' · '.$latestPrelim->generated_at->diffForHumans()
-                                : ($latestPrelim ? 'Will issue Prelim v'.($latestPrelim->version + 1) : 'Will issue Prelim v1') }}">
-                        <template x-if="state !== 'saving'">
-                            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                                <span class="rq-gen-btn-label">Prelim</span>
-                                <span class="rq-gen-btn-sub">
-                                    @if($latestPrelim) @if($fPrelim['has_changes']) Issue v{{ $latestPrelim->version + 1 }} @else On v{{ $latestPrelim->version }} @endif
-                                    @else Issue v1 @endif
-                                </span>
-                            </div>
-                        </template>
-                        <template x-if="state === 'saving'">
-                            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0;">
-                                <div class="rq-gen-spinner"></div>
-                                <span class="rq-gen-btn-sub" style="color: var(--emerald-700);">Generating…</span>
-                            </div>
-                        </template>
-                    </button>
-                </form>
-
-                {{-- FULL --}}
-                <form method="POST" action="{{ route('requests.report.generate', $request) }}"
-                      x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
-                      @submit.prevent="submit($event)">
-                    @csrf
-                    <input type="hidden" name="type" value="full">
-                    @php $fullDisabled = $latestFull && ! $fFull['has_changes']; @endphp
-                    <button type="submit" class="rq-gen-btn"
-                            :class="{ 'is-saving': state === 'saving' }"
-                            {{ $fullDisabled ? 'disabled' : '' }}
-                            :disabled="state === 'saving'"
-                            title="{{ $fullDisabled
-                                ? 'No changes since '.$latestFull->label().' · '.$latestFull->generated_at->diffForHumans()
-                                : ($latestFull ? 'Will issue Full v'.($latestFull->version + 1) : 'Will issue Full v1') }}">
-                        <template x-if="state !== 'saving'">
-                            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                                <span class="rq-gen-btn-label">Full</span>
-                                <span class="rq-gen-btn-sub">
-                                    @if($latestFull) @if($fFull['has_changes']) Issue v{{ $latestFull->version + 1 }} @else On v{{ $latestFull->version }} @endif
-                                    @else Issue v1 @endif
-                                </span>
-                            </div>
-                        </template>
-                        <template x-if="state === 'saving'">
-                            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0;">
-                                <div class="rq-gen-spinner"></div>
-                                <span class="rq-gen-btn-sub" style="color: var(--emerald-700);">Generating…</span>
-                            </div>
-                        </template>
-                    </button>
-                </form>
-
-                {{-- UPDATED — supersedes the current full report --}}
-                @php $updatedDisabled = ! $latestFull; @endphp
-                <button type="button" class="rq-gen-btn"
-                        {{ $updatedDisabled ? 'disabled' : '' }}
-                        title="{{ $updatedDisabled
-                            ? 'Issue a Full report first before issuing an Updated version'
-                            : 'Supersede '.$latestFull->label().' with a corrected version' }}"
-                        @if(! $updatedDisabled)
-                        @click="openSupersede({ id: {{ $latestFull->id }}, type: 'full', label: '{{ $latestFull->label() }}' })"
-                        @endif>
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                        <span class="rq-gen-btn-label">Updated</span>
-                        <span class="rq-gen-btn-sub">
-                            @if($latestFull) Supersede v{{ $latestFull->version }} @else No full yet @endif
-                        </span>
-                    </div>
-                </button>
-            </div>
-
-            @if($versions->count())
-            <div style="border-top: 1px solid var(--line);">
-                @foreach($versions as $v)
-                @php $isSuperseded = $v->isSuperseded(); @endphp
-                <div class="rq-version-row {{ $isSuperseded ? 'is-superseded' : '' }}">
-                    <div>
-                        <div class="rq-version-label">
-                            {{ $v->label() }}
-                            @if($isSuperseded)
-                                <span class="rq-superseded-badge" title="Superseded by {{ $v->supersededBy->first()?->label() }}">superseded</span>
-                            @endif
-                        </div>
-                        <div class="rq-version-meta">
-                            {{ $v->generated_at->format('d M Y, H:i') }} · {{ $v->generatedBy?->name ?? 'Deleted admin' }} · SHA {{ $v->shortHash() }}
-                        </div>
-                        @if($v->supersedes_id && $v->supersede_reason)
-                        <div style="font-size: 10px; color: var(--ink-500); font-style: italic; margin-top: 3px;">
-                            Reason: {{ $v->supersede_reason }}
-                        </div>
-                        @endif
+            <div style="border-top: 1px solid var(--line); padding-top: 12px; margin-top: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 18px 8px;">
+                    <div style="font-size: 12px; font-weight: 700; color: var(--ink-900);">
+                        {{ $cand->name }}
+                        <span style="font-weight: 500; color: var(--ink-400);">· {{ optional($cand->identityType)->name }}</span>
                     </div>
                     @if(admin_can('report.view'))
-                    <div class="rq-version-actions">
-                        <a href="{{ route('requests.report.view', [$request, $v]) }}" target="_blank" class="rq-version-action-btn" title="Open in new tab">View</a>
-                        <a href="{{ route('requests.report.download', [$request, $v]) }}" class="rq-version-action-btn" title="Download exact bytes">Download</a>
-                    </div>
-                    @endif
-                    @if(! $isSuperseded)
-                    <button type="button" class="rq-version-action-btn"
-                            @click="openSupersede({ id: {{ $v->id }}, type: '{{ $v->type }}', label: '{{ $v->label() }}' })"
-                            title="Issue a corrected version that supersedes this one">
-                        Supersede…
-                    </button>
-                    @else
-                    <span></span>
+                    <a href="{{ route('requests.report.preview', [$request, $cand]) }}" target="_blank"
+                       class="rq-version-action-btn" title="Live preview (not saved)">Preview</a>
                     @endif
                 </div>
-                @endforeach
+                <div class="rq-gen-grid">
+                    {{-- PRELIM --}}
+                    <form method="POST" action="{{ $genUrl }}"
+                          x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
+                          @submit.prevent="submit($event)">
+                        @csrf
+                        <input type="hidden" name="type" value="prelim">
+                        @php $prelimDisabled = $latestPrelim && ! $fPrelim['has_changes']; @endphp
+                        <button type="submit" class="rq-gen-btn"
+                                :class="{ 'is-saving': state === 'saving' }"
+                                {{ $prelimDisabled ? 'disabled' : '' }}
+                                :disabled="state === 'saving'"
+                                title="{{ $prelimDisabled
+                                    ? 'No changes since '.$latestPrelim->label()
+                                    : ($latestPrelim ? 'Will issue Prelim v'.($latestPrelim->version + 1) : 'Will issue Prelim v1') }}">
+                            <template x-if="state !== 'saving'">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                    <span class="rq-gen-btn-label">Prelim</span>
+                                    <span class="rq-gen-btn-sub">
+                                        @if($latestPrelim) @if($fPrelim['has_changes']) Issue v{{ $latestPrelim->version + 1 }} @else On v{{ $latestPrelim->version }} @endif
+                                        @else Issue v1 @endif
+                                    </span>
+                                </div>
+                            </template>
+                            <template x-if="state === 'saving'">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0;">
+                                    <div class="rq-gen-spinner"></div>
+                                    <span class="rq-gen-btn-sub" style="color: var(--emerald-700);">Generating…</span>
+                                </div>
+                            </template>
+                        </button>
+                    </form>
+
+                    {{-- FULL --}}
+                    <form method="POST" action="{{ $genUrl }}"
+                          x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
+                          @submit.prevent="submit($event)">
+                        @csrf
+                        <input type="hidden" name="type" value="full">
+                        @php $fullDisabled = $latestFull && ! $fFull['has_changes']; @endphp
+                        <button type="submit" class="rq-gen-btn"
+                                :class="{ 'is-saving': state === 'saving' }"
+                                {{ $fullDisabled ? 'disabled' : '' }}
+                                :disabled="state === 'saving'"
+                                title="{{ $fullDisabled
+                                    ? 'No changes since '.$latestFull->label()
+                                    : ($latestFull ? 'Will issue Full v'.($latestFull->version + 1) : 'Will issue Full v1') }}">
+                            <template x-if="state !== 'saving'">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                    <span class="rq-gen-btn-label">Full</span>
+                                    <span class="rq-gen-btn-sub">
+                                        @if($latestFull) @if($fFull['has_changes']) Issue v{{ $latestFull->version + 1 }} @else On v{{ $latestFull->version }} @endif
+                                        @else Issue v1 @endif
+                                    </span>
+                                </div>
+                            </template>
+                            <template x-if="state === 'saving'">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 0;">
+                                    <div class="rq-gen-spinner"></div>
+                                    <span class="rq-gen-btn-sub" style="color: var(--emerald-700);">Generating…</span>
+                                </div>
+                            </template>
+                        </button>
+                    </form>
+
+                    {{-- UPDATED — supersedes this candidate's current full report --}}
+                    @php $updatedDisabled = ! $latestFull; @endphp
+                    <button type="button" class="rq-gen-btn"
+                            {{ $updatedDisabled ? 'disabled' : '' }}
+                            title="{{ $updatedDisabled
+                                ? 'Issue a Full report first before issuing an Updated version'
+                                : 'Supersede '.$latestFull->label().' with a corrected version' }}"
+                            @if(! $updatedDisabled)
+                            @click="openSupersede({ id: {{ $latestFull->id }}, type: 'full', label: '{{ $latestFull->label() }}', action: '{{ $genUrl }}' })"
+                            @endif>
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                            <span class="rq-gen-btn-label">Updated</span>
+                            <span class="rq-gen-btn-sub">
+                                @if($latestFull) Supersede v{{ $latestFull->version }} @else No full yet @endif
+                            </span>
+                        </div>
+                    </button>
+                </div>
+
+                @if($cVersions->count())
+                <div>
+                    @foreach($cVersions as $v)
+                    @php $isSuperseded = $v->isSuperseded(); @endphp
+                    <div class="rq-version-row {{ $isSuperseded ? 'is-superseded' : '' }}">
+                        <div>
+                            <div class="rq-version-label">
+                                {{ $v->label() }}
+                                @if($isSuperseded)
+                                    <span class="rq-superseded-badge" title="Superseded by {{ $v->supersededBy->first()?->label() }}">superseded</span>
+                                @endif
+                            </div>
+                            <div class="rq-version-meta">
+                                {{ $v->generated_at->format('d M Y, H:i') }} · {{ $v->generatedBy?->name ?? 'Deleted admin' }} · SHA {{ $v->shortHash() }}
+                            </div>
+                            @if($v->supersedes_id && $v->supersede_reason)
+                            <div style="font-size: 10px; color: var(--ink-500); font-style: italic; margin-top: 3px;">
+                                Reason: {{ $v->supersede_reason }}
+                            </div>
+                            @endif
+                        </div>
+                        @if(admin_can('report.view'))
+                        <div class="rq-version-actions">
+                            <a href="{{ route('requests.report.view', [$request, $v]) }}" target="_blank" class="rq-version-action-btn" title="Open in new tab">View</a>
+                            <a href="{{ route('requests.report.download', [$request, $v]) }}" class="rq-version-action-btn" title="Download exact bytes">Download</a>
+                        </div>
+                        @endif
+                        @if(! $isSuperseded)
+                        <button type="button" class="rq-version-action-btn"
+                                @click="openSupersede({ id: {{ $v->id }}, type: '{{ $v->type }}', label: '{{ $v->label() }}', action: '{{ $genUrl }}' })"
+                                title="Issue a corrected version that supersedes this one">
+                            Supersede…
+                        </button>
+                        @else
+                        <span></span>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+                @else
+                <div style="padding: 10px 18px 14px; font-size: 11px; color: var(--ink-400); font-style: italic;">
+                    No reports issued for this candidate yet.
+                </div>
+                @endif
             </div>
-            @else
-            <div style="padding: 24px 18px; text-align: center; font-size: 12px; color: var(--ink-400); font-style: italic; border-top: 1px solid var(--line);">
-                No reports issued yet.
-            </div>
-            @endif
+            @endforeach
 
             {{-- Supersede modal --}}
             <div x-show="supersedeOpen" x-cloak class="rq-modal-backdrop" @click.self="supersedeOpen = false">
@@ -1881,7 +1904,7 @@
                         <h3>Supersede &amp; reissue</h3>
                         <p>Issues a new version of the same type, marked as superseding the chosen one. The old version stays in the audit history.</p>
                     </div>
-                    <form method="POST" action="{{ route('requests.report.generate', $request) }}"
+                    <form method="POST" :action="supersedeAction"
                           x-data="ajaxForm({ onSuccess: () => { window.location.reload(); } })"
                           @submit.prevent="submit($event)">
                         @csrf

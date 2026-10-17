@@ -76,7 +76,7 @@ Route::middleware('admin.auth')->group(function () {
     // not open to every read-only role.
     Route::middleware('admin.can:report.view')->group(function () {
         // Live preview — never persists.
-        Route::get('/requests/{screeningRequest}/report/preview', [ReportController::class, 'preview'])
+        Route::get('/requests/{screeningRequest}/candidates/{candidate}/report/preview', [ReportController::class, 'preview'])
             ->name('requests.report.preview');
 
         // Re-download a persisted version's exact bytes.
@@ -118,7 +118,7 @@ Route::middleware('admin.auth')->group(function () {
         Route::patch('/requests/{screeningRequest}/meta', [RequestQueueController::class, 'updateMeta'])->name('requests.meta');
 
         // Issue a new persisted version (Basic / Prelim / Full).
-        Route::post('/requests/{screeningRequest}/report/generate', [ReportController::class, 'generate'])
+        Route::post('/requests/{screeningRequest}/candidates/{candidate}/report/generate', [ReportController::class, 'generate'])
             ->name('requests.report.generate');
     });
 
