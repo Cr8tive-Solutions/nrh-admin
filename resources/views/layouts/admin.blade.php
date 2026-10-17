@@ -367,7 +367,7 @@
                     Transactions
                 </a>
 
-                @if(admin_can('config.scopes') || admin_can('config.countries'))
+                @if(admin_can('config.scopes') || admin_can('config.countries') || admin_can('invoice.manage'))
                 <div class="sb-section-label">Configuration</div>
                 @endif
 
@@ -392,6 +392,14 @@
                    class="sb-link {{ request()->routeIs('config.holidays.*') ? 'active' : '' }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                     Holidays
+                </a>
+                @endallowed
+
+                @allowed('invoice.manage')
+                <a href="{{ route('config.billing.index') }}"
+                   class="sb-link {{ request()->routeIs('config.billing.*') ? 'active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Billing &amp; SST
                 </a>
                 @endallowed
 

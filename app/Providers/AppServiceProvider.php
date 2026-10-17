@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Admin;
+use App\Models\Setting;
 use App\Models\AdminNotification;
 use App\Models\CustomerRegistration;
 use App\Models\Agreement;
@@ -58,6 +59,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerLocalMountDriver();
+
+        // SST rate is admin-configurable (app_settings); override the static
+        // config default so every config('billing.sst_rate') call site uses it.
+        config(['billing.sst_rate' => Setting::sstRate((float) config('billing.sst_rate', 0.06))]);
 
         // @allowed('invoice.manage') ... @endallowed — RBAC/UBAC permission check.
         Blade::if('allowed', function (string $key) {

@@ -12,6 +12,7 @@ use App\Http\Controllers\Compliance\DataSubjectRequestController;
 use App\Http\Controllers\Compliance\RetentionController;
 use App\Http\Controllers\Config\BusinessHolidayController;
 use App\Http\Controllers\Config\CountryController;
+use App\Http\Controllers\Config\BillingSettingController;
 use App\Http\Controllers\Config\ScopeTypeController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -232,6 +233,12 @@ Route::middleware('admin.auth')->group(function () {
         Route::post('/config/holidays', [BusinessHolidayController::class, 'store'])->name('config.holidays.store');
         Route::delete('/config/holidays/{holiday}', [BusinessHolidayController::class, 'destroy'])->name('config.holidays.destroy');
         Route::post('/config/holidays/sync', [BusinessHolidayController::class, 'syncFromApi'])->name('config.holidays.sync');
+    });
+
+    // ── Billing settings (SST rate) — finance ─────────────────────────────────
+    Route::middleware('admin.can:invoice.manage')->group(function () {
+        Route::get('/config/billing', [BillingSettingController::class, 'index'])->name('config.billing.index');
+        Route::put('/config/billing', [BillingSettingController::class, 'update'])->name('config.billing.update');
     });
 
     // ── config.countries ─────────────────────────────────────────────────────
