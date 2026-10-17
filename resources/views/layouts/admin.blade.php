@@ -70,6 +70,9 @@
         });
     </script>
     <style>
+        /* Hide x-show/x-cloak elements until Alpine initialises, so they don't flash. */
+        [x-cloak] { display: none !important; }
+
         body { background: var(--paper); color: var(--ink-900); font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 
         /* ── Shell ── */

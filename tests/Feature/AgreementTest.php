@@ -45,6 +45,18 @@ it('keeps staff-entered payment and SLA values verbatim', function () {
     expect($agreement->payment)->toBe('Net 30');
 });
 
+it('renders the create form with the billing-driven payment toggle', function () {
+    $admin = Fixtures::admin();
+    $customer = Customer::findOrFail(Fixtures::customer());
+
+    Fixtures::actingAs($this, $admin)
+        ->get(route('customers.agreements.create', $customer))
+        ->assertOk()
+        ->assertSee('x-model="billing"', false)
+        ->assertSee("billing === 'monthly'", false)
+        ->assertSee('x-model="payment"', false);
+});
+
 it('rejects an expiry date that is not after the start date', function () {
     $admin = Fixtures::admin();
     $customer = Customer::findOrFail(Fixtures::customer());
