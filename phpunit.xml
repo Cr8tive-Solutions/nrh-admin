@@ -52,6 +52,11 @@
              and <env> alone leaves the container's value in $_SERVER. -->
         <env name="CLIENT_STORAGE_PATH" value="/tmp/nrh-admin-test-client-storage" force="true"/>
         <server name="CLIENT_STORAGE_PATH" value="/tmp/nrh-admin-test-client-storage" force="true"/>
+        <!-- Encryption off by default so tests are deterministic regardless of
+             the deployment's real PII_KEY in .env; encryption tests opt in by
+             setting config('pii.key') at runtime (see enablePii / FileEncryptionTest). -->
+        <env name="PII_KEY" value="" force="true"/>
+        <server name="PII_KEY" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
