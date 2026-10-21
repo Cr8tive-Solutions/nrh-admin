@@ -88,8 +88,9 @@
                     <span class="text-gray-500">Subtotal</span>
                     <span class="font-mono">MYR {{ number_format($invoice->subtotal, 2) }}</span>
                 </div>
+                @php $sstRate = $invoice->subtotal > 0 ? round($invoice->tax / $invoice->subtotal * 100) : 0; @endphp
                 <div class="flex justify-between">
-                    <span class="text-gray-500">SST (6%)</span>
+                    <span class="text-gray-500">SST ({{ $sstRate }}%)</span>
                     <span class="font-mono">MYR {{ number_format($invoice->tax, 2) }}</span>
                 </div>
                 <div class="flex justify-between font-bold border-t border-gray-200 pt-2 text-base">
