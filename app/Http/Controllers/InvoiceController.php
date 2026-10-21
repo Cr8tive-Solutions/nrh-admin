@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\ScreeningRequest;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -120,6 +121,42 @@ class InvoiceController extends Controller
         ]);
 
         return view('invoices.show', compact('invoice'));
+    }
+
+    /**
+     * Render the official invoice PDF (same template as the client portal) and
+     * stream it inline so staff can view it in a browser tab.
+     */
+    public function pdf(Invoice $invoice)
+    {
+        $invoice->load(['items', 'customer.agreements', 'screeningRequests']);
+
+        $logoPath = public_path('images/nrh-logo.png');
+        $logoSrc = file_exists($logoPath)
+            ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath))
+            : '';
+
+        $bank = config('billing.bank');
+        $company = config('billing.company');
+        $chequePayee = config('billing.cheque_payee');
+
+        // Cash (per-request) customers settle on issue; credit customers get the
+        // standard net term. Mirrors the client portal's Customer::isCashBilled().
+        $isCash = $invoice->customer?->agreements
+            ->sortByDesc('start_date')->first()?->isPerRequest() ?? false;
+        $paymentTerm = $isCash ? 'PAY ON REQUEST' : '30 DAYS';
+
+        $statusBadge = match ($invoice->status) {
+            'paid' => 'badge-paid',
+            'overdue' => 'badge-overdue',
+            default => 'badge-unpaid',
+        };
+
+        $pdf = Pdf::loadView('invoices.invoice-pdf', compact(
+            'invoice', 'logoSrc', 'bank', 'company', 'chequePayee', 'paymentTerm', 'statusBadge'
+        ))->setPaper('a4', 'portrait');
+
+        return $pdf->stream($invoice->number.'.pdf');
     }
 
     public function previewItems(Request $request)

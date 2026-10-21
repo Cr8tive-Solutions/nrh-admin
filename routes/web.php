@@ -308,5 +308,7 @@ Route::middleware('admin.auth')->group(function () {
     // `/invoices/bulk-generate`, etc. and 404 when the hashid decode fails.
     // Declaring them after every literal-segment route lets the literals win.
     Route::get('/customers/{customer}', [CustomerController::class, 'show'])->name('customers.show');
+    // Literal `/pdf` segment, so it never collides with the bare show route below.
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
 });
