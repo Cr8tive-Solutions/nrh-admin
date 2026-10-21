@@ -15,7 +15,7 @@
     autoLoading: false,
     autoError: '',
     get subtotal() { return this.items.reduce((s, i) => s + (parseFloat(i.qty) * parseFloat(i.unit_price) || 0), 0); },
-    get tax()      { return this.subtotal * 0.06; },
+    get tax()      { return this.subtotal * {{ config('billing.sst_rate') }}; },
     get total()    { return this.subtotal + this.tax; },
     addItem()      { this.items.push({ description: '', qty: 1, unit_price: '' }); },
     removeItem(i)  { if (this.items.length > 1) this.items.splice(i, 1); },
@@ -182,7 +182,7 @@
                     <span style="font-family:'JetBrains Mono',monospace; font-size:12px;" x-text="'MYR ' + subtotal.toFixed(2)"></span>
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
-                    <span style="color:var(--ink-500);">SST (6%)</span>
+                    <span style="color:var(--ink-500);">SST ({{ rtrim(rtrim(number_format(config('billing.sst_rate') * 100, 2), '0'), '.') }}%)</span>
                     <span style="font-family:'JetBrains Mono',monospace; font-size:12px;" x-text="'MYR ' + tax.toFixed(2)"></span>
                 </div>
                 <div style="border-top:1px solid var(--line); padding-top:10px; display:flex; justify-content:space-between; align-items:center;">

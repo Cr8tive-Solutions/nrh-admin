@@ -103,7 +103,7 @@
                 </button>
             </div>
             <p class="text-xs text-gray-400 mt-1">
-                The fixed price {{ $customer->name }} pays for this bundle — this is what gets billed (before 6% SST),
+                The fixed price {{ $customer->name }} pays for this bundle — this is what gets billed (before {{ rtrim(rtrim(number_format(config('billing.sst_rate') * 100, 2), '0'), '.') }}% SST),
                 overriding the sum of the individual scope prices. Charged per candidate.
             </p>
         </div>

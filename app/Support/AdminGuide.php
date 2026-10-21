@@ -210,6 +210,8 @@ class AdminGuide
 
     private static function requestQueue(): array
     {
+        $sst = rtrim(rtrim(number_format((float) config('billing.sst_rate', 0.06) * 100, 2), '0'), '.');
+
         return [
             'id' => 'requests',
             'title' => 'Request Queue',
@@ -248,7 +250,7 @@ class AdminGuide
                     'Select <b>Verify payment</b>.',
                     'The system records a transaction, flips the request to <code>in_progress</code>, and writes an audit entry — all in one database transaction, so it either all happens or none of it does.',
                 ]],
-                ['type' => 'warn', 'title' => 'The booked amount includes SST', 'text' => 'The transaction records the SST-inclusive total (subtotal plus 6% SST), not the bare subtotal. Check the slip against the SST-inclusive figure shown on the request.'],
+                ['type' => 'warn', 'title' => 'The booked amount includes SST', 'text' => 'The transaction records the SST-inclusive total (subtotal plus '.$sst.'% SST), not the bare subtotal. Check the slip against the SST-inclusive figure shown on the request.'],
                 ['type' => 'sub', 'text' => 'Candidate documents'],
                 ['type' => 'p', 'text' => 'Documents uploaded by the customer — identity documents, resumes, signed consent forms — are listed against each candidate and stream from the client portal\'s storage. Downloading them requires <code>pdpa.documents</code>. Every download is audit-logged.'],
                 ['type' => 'links', 'items' => [
@@ -396,13 +398,15 @@ class AdminGuide
 
     private static function invoices(): array
     {
+        $sst = rtrim(rtrim(number_format((float) config('billing.sst_rate', 0.06) * 100, 2), '0'), '.');
+
         return [
             'id' => 'invoices',
             'title' => 'Invoices & Payment Receipts',
             'permission' => 'Read for all roles; invoice.manage and transaction.manage to act',
             'summary' => 'Billing runs, invoice lifecycle, and verifying customer receipts.',
             'blocks' => [
-                ['type' => 'p', 'text' => 'Invoices are numbered <code>INV-YYYY-NNN</code> and carry a subtotal, 6% SST and a total. Statuses are <code>unpaid</code>, <code>paid</code> and <code>overdue</code>.'],
+                ['type' => 'p', 'text' => 'Invoices are numbered <code>INV-YYYY-NNN</code> and carry a subtotal, '.$sst.'% SST and a total. Statuses are <code>unpaid</code>, <code>paid</code> and <code>overdue</code>.'],
                 ['type' => 'sub', 'text' => 'Creating invoices'],
                 ['type' => 'list', 'items' => [
                     '<b>Single invoice</b> — choose the customer and period; billable requests for that period are pulled in as line items, which you can review before saving.',
@@ -596,6 +600,8 @@ class AdminGuide
 
     private static function reference(): array
     {
+        $sst = rtrim(rtrim(number_format((float) config('billing.sst_rate', 0.06) * 100, 2), '0'), '.');
+
         return [
             'id' => 'reference',
             'title' => 'Reference Tables',
@@ -617,7 +623,7 @@ class AdminGuide
                 ['type' => 'table', 'head' => ['Item', 'Value'], 'widths' => ['34%', '66%'], 'rows' => [
                     ['Request reference', '<code>REP-YYYY-NNNN</code>'],
                     ['Invoice number', '<code>INV-YYYY-NNN</code>'],
-                    ['Tax', '6% SST on invoice subtotals and cash request totals'],
+                    ['Tax', $sst.'% SST on invoice subtotals and cash request totals'],
                     ['Working hours', 'Mon–Fri, 09:00–18:00, Asia/Kuala_Lumpur'],
                     ['Agreement warning', '60 days to expiry (warning), 14 days (critical)'],
                 ]],

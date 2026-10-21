@@ -43,7 +43,7 @@
                 <th>Customer</th>
                 <th>Period</th>
                 <th>Subtotal</th>
-                <th>Tax (6%)</th>
+                <th>SST</th>
                 <th>Total</th>
                 <th>Status</th>
                 <th>Due</th>

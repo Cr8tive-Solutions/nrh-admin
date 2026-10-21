@@ -202,7 +202,7 @@
                     <span style="font-family:'JetBrains Mono',monospace; font-size:12px;" x-text="'MYR ' + subtotal.toFixed(2)"></span>
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
-                    <span style="color:var(--ink-500);">SST (6%)</span>
+                    <span style="color:var(--ink-500);">SST ({{ rtrim(rtrim(number_format(config('billing.sst_rate') * 100, 2), '0'), '.') }}%)</span>
                     <span style="font-family:'JetBrains Mono',monospace; font-size:12px;" x-text="'MYR ' + tax.toFixed(2)"></span>
                 </div>
                 <div style="border-top:1px solid var(--line); padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
@@ -219,7 +219,7 @@
 
         <div style="padding:12px 14px; border-radius:8px; background:rgba(4,108,78,0.05); border:1px solid rgba(4,108,78,0.12); font-size:11px; color:var(--ink-500); line-height:1.6;">
             Invoice number will be auto-generated.<br>
-            SST at 6% applied to subtotal.
+            SST at {{ rtrim(rtrim(number_format(config('billing.sst_rate') * 100, 2), '0'), '.') }}% applied to subtotal.
         </div>
     </div>
 
