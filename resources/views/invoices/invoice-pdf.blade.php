@@ -234,24 +234,23 @@
                 @php
                     // Two description shapes reach the invoice:
                     //   cash  → "{candidate} — {scope}"  (REP NO lives on the request)
-                    //   admin → "{REF} — {scope} (n candidates)"  (ref embedded, no name)
-                    // Resolve each into REP NO / CANDIDATE / SCOPE TYPE lines.
+                    //   admin → "{scope} – {REF}"        (ref embedded, no candidate)
+                    // Resolve each into REP NO / CANDIDATE lines; the scope type is
+                    // the billing kind, not the scope name — Package when the line was
+                    // generated from a bundle (tagged "(package)"), otherwise Ala Carte.
                     $desc = (string) $item->description;
                     $repNo = null;
                     $candidate = null;
-                    $scope = $desc;
 
                     if (preg_match('/\bRE[PQ]-\d{4}-\d+/u', $desc, $m)) {
                         $repNo = $m[0];
-                        $scope = str_replace($repNo, '', $desc);
                     } elseif (str_contains($desc, ' — ')) {
-                        [$candidate, $scope] = array_map('trim', explode(' — ', $desc, 2));
+                        [$candidate] = array_map('trim', explode(' — ', $desc, 2));
                     }
                     // Cash lines carry no embedded ref — take it from the linked request.
                     $repNo = $repNo ?: optional($invoice->screeningRequests->first())->reference;
 
-                    $scope = preg_replace('/\s*\(\s*\d+\s+candidates?\s*\)\s*$/iu', '', $scope);
-                    $scope = trim($scope, " \t\n\r\0\x0B—–-·");
+                    $scopeType = preg_match('/\(\s*package\s*\)/iu', $desc) ? 'Package' : 'Ala Carte';
                 @endphp
                 <tr>
                     <td class="col-item num">{{ $i + 1 }}</td>
@@ -262,7 +261,7 @@
                         @if($candidate)
                             <div class="line-scope"><span class="tag">Candidate:</span> {{ $candidate }}</div>
                         @endif
-                        <div class="line-scope"><span class="tag">Scope Type:</span> {{ $scope ?: '—' }}</div>
+                        <div class="line-scope"><span class="tag">Scope Type:</span> {{ $scopeType }}</div>
                     </td>
                     <td class="col-qty num">{{ $item->qty }}</td>
                     <td class="col-price num">{{ number_format($item->unit_price, 2) }}</td>
