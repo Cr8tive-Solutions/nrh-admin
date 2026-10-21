@@ -229,6 +229,19 @@
                 <th class="col-amt">Amount<br>(MYR)</th>
             </tr>
         </thead>
+        @php
+            // Monthly lines read "{REF} — {scope} (n candidates)" and don't name
+            // the candidates. Resolve every referenced request's candidates in one
+            // query so each such line can list them all.
+            $invoiceRefs = collect($invoice->items)
+                ->map(fn ($it) => preg_match('/\bRE[PQ]-\d{4}-\d+/u', (string) $it->description, $rm) ? $rm[0] : null)
+                ->filter()->unique()->values();
+            $candidatesByRef = $invoiceRefs->isNotEmpty()
+                ? \App\Models\ScreeningRequest::with('candidates')
+                    ->whereIn('reference', $invoiceRefs->all())->get()
+                    ->mapWithKeys(fn ($r) => [$r->reference => $r->candidates->pluck('name')->filter()->values()->all()])
+                : collect();
+        @endphp
         <tbody>
             @foreach($invoice->items as $i => $item)
                 @php
@@ -250,6 +263,12 @@
                     // Cash lines carry no embedded ref — take it from the linked request.
                     $repNo = $repNo ?: optional($invoice->screeningRequests->first())->reference;
 
+                    // Cash lines name one candidate; aggregated lines name all of the
+                    // referenced request's candidates.
+                    $candidateNames = $candidate !== null
+                        ? [$candidate]
+                        : ($repNo ? ($candidatesByRef[$repNo] ?? []) : []);
+
                     $scopeType = preg_match('/\(\s*package\s*\)/iu', $desc) ? 'Package' : 'Ala Carte';
                 @endphp
                 <tr>
@@ -258,8 +277,8 @@
                         @if($repNo)
                             <div class="line-rep">REP NO: {{ $repNo }}</div>
                         @endif
-                        @if($candidate)
-                            <div class="line-scope"><span class="tag">Candidate:</span> {{ $candidate }}</div>
+                        @if(! empty($candidateNames))
+                            <div class="line-scope"><span class="tag">{{ count($candidateNames) > 1 ? 'Candidates' : 'Candidate' }}:</span> {{ implode(', ', $candidateNames) }}</div>
                         @endif
                         <div class="line-scope"><span class="tag">Scope Type:</span> {{ $scopeType }}</div>
                     </td>
