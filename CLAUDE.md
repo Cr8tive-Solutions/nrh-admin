@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-**NRH Admin** is the internal operations portal for NRH Intelligence Sdn. Bhd. staff. It is a **separate Laravel project** that shares the same PostgreSQL (Supabase) database as the client-facing portal (`nrh-intelligence`).
+**KYRO Admin** (formerly NRH Admin) is the internal operations portal for NRH Intelligence Sdn. Bhd. staff. It is a **separate Laravel project** that shares the same PostgreSQL (Supabase) database as the client-facing KYRO portal (`nrh-intelligence`).
 
 - **Client portal** → `nrh-intelligence` project → `app.nrhintelligence.com`
 - **Admin portal** → `nrh-admin` project (this) → `admin.nrhintelligence.com`

@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\AdminGuide;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Tests\Support\Fixtures;
 
 it('redirects guests to login', function () {
@@ -13,7 +14,7 @@ it('is readable by every role, including viewer', function () {
     Fixtures::actingAs($this, $admin)
         ->get('/guide')
         ->assertOk()
-        ->assertSee('NRH Admin Portal')
+        ->assertSee('KYRO Admin Portal')
         ->assertSee('Recording Findings');
 });
 
@@ -28,7 +29,7 @@ it('renders the guide as a PDF', function () {
     // it as a plain response, so read getContent(). Only pull streamedContent()
     // for an actual StreamedResponse — on a buffered one it hard-fails instead
     // of falling through.
-    $body = $response->baseResponse instanceof \Symfony\Component\HttpFoundation\StreamedResponse
+    $body = $response->baseResponse instanceof StreamedResponse
         ? $response->streamedContent()
         : $response->getContent();
 

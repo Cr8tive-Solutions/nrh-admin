@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In — NRH Admin</title>
+    <title>Sign In — KYRO Admin</title>
     <link rel="icon" type="image/png" href="/images/nrh-logo.png">
     <script>(function(){var t=localStorage.getItem('nrh-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}());</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -289,7 +289,7 @@
         <div class="al-brand">
             <img src="/images/nrh-logo.png" alt="NRH" class="al-logo">
             <div>
-                <div class="al-brand-name">NRH <em>Intelligence</em></div>
+                <div class="al-brand-name">KYRO</div>
                 <div class="al-brand-sub">Admin Portal</div>
             </div>
         </div>
@@ -299,7 +299,7 @@
         <div class="al-hero">
             <div class="al-eyebrow">Staff-only access</div>
             <h2>Operate with <em>clarity</em> and control.</h2>
-            <p>The NRH Admin Portal gives your team full visibility over every screening request, customer account, invoice, and workflow — all in one place.</p>
+            <p>The KYRO Admin Portal gives your team full visibility over every screening request, customer account, invoice, and workflow — all in one place.</p>
             <div class="al-stats">
                 <div class="al-stat">
                     <div class="v">1.2<em>M</em></div>
@@ -342,7 +342,7 @@
                     <span>TLS 1.3</span>
                 </div>
                 <h1 class="auth-title" style="margin-top: 14px;">Welcome back, <em>admin.</em></h1>
-                <p class="auth-sub" style="margin-top: 8px;">Sign in to the <b>NRH Intelligence</b> admin portal. Your session is encrypted end-to-end.</p>
+                <p class="auth-sub" style="margin-top: 8px;">Sign in to the <b>KYRO</b> admin portal. Your session is encrypted end-to-end.</p>
             </div>
 
             <form method="POST" action="{{ route('login') }}" style="display: flex; flex-direction: column; gap: 16px;">
@@ -387,7 +387,7 @@
             </form>
 
             <div class="session-strip">
-                <span>Session · <b>NRH Admin</b></span>
+                <span>Session · <b>KYRO Admin</b></span>
                 <span>Encrypted · <b>TLS 1.3</b></span>
             </div>
         </div>

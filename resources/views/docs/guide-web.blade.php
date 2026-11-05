@@ -117,7 +117,7 @@
 
     <div>
         <div class="gw-intro">
-            <h2>NRH Admin Portal — Staff Guide</h2>
+            <h2>KYRO Admin Portal — Staff Guide</h2>
             <p>
                 Every module in the portal, the permission it needs, and exactly what each action does.
                 Jump to a section from the contents on the left, or

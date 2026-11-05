@@ -67,7 +67,7 @@
                 {{-- Footer --}}
                 <tr>
                     <td style="padding:18px 36px 28px; background:#fafaf7; border-top:1px solid #f0f0eb; font-size:11px; color:#999;">
-                        Sent by NRH Intelligence Sdn. Bhd. — internal staff portal at NRH Admin.<br>
+                        Sent by NRH Intelligence Sdn. Bhd.<br>
                         For account help, contact your administrator at <strong style="color:#666;">{{ $customer->name }}</strong>.
                     </td>
                 </tr>

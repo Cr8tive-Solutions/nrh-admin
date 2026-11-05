@@ -62,7 +62,7 @@ class GuideController extends Controller
 
         return response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="NRH-Admin-Portal-Guide.pdf"',
+            'Content-Disposition' => 'attachment; filename="KYRO-Admin-Portal-Guide.pdf"',
         ]);
     }
 

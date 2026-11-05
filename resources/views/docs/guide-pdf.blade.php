@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>NRH Admin Portal — Staff Guide</title>
+<title>KYRO Admin Portal — Staff Guide</title>
 <style>
 /* Layout mirrors reports/screening.blade.php so the two documents look like one
    family: Oswald for headers/labels, Courier Prime for body, same green/gold palette. */
@@ -128,7 +128,7 @@ code { font-family: 'Courier Prime', 'Courier', monospace; background: #f1f1ee;
 <div class="cov">
     @if($logoSrc)<img src="{{ $logoSrc }}" alt="NRH">@endif
     <div class="cov-title">ADMIN PORTAL GUIDE</div>
-    <div class="cov-sub">NRH Intelligence &mdash; Staff Operating Manual</div>
+    <div class="cov-sub">KYRO Admin &mdash; Staff Operating Manual</div>
     <div class="cov-rule"></div>
     <div class="cov-meta">
         {{ $sectionCount }} SECTIONS<br>

@@ -24,14 +24,14 @@ class SecurityController extends Controller
         $qrSvg = null;
 
         if ($pendingSetup) {
-            $google2fa = new Google2FA();
+            $google2fa = new Google2FA;
             $otpauthUrl = $google2fa->getQRCodeUrl(
-                config('app.name', 'NRH Admin'),
+                config('app.name', 'KYRO Admin'),
                 $admin->email,
                 $admin->two_factor_secret,
             );
 
-            $renderer = new ImageRenderer(new RendererStyle(220, 1), new SvgImageBackEnd());
+            $renderer = new ImageRenderer(new RendererStyle(220, 1), new SvgImageBackEnd);
             $writer = new Writer($renderer);
             $qrSvg = base64_encode($writer->writeString($otpauthUrl));
         }
@@ -52,12 +52,13 @@ class SecurityController extends Controller
             return back()->withErrors(['enable' => 'Two-factor authentication is already enabled.']);
         }
 
-        $google2fa = new Google2FA();
+        $google2fa = new Google2FA;
         $admin->two_factor_secret = $google2fa->generateSecretKey();
         $admin->two_factor_confirmed_at = null;
         $admin->save();
 
         AdminAuditLog::record('two_factor.setup_started', $admin);
+
         return redirect()->route('account.security');
     }
 
@@ -77,7 +78,7 @@ class SecurityController extends Controller
             'code' => 'required|string',
         ]);
 
-        $google2fa = new Google2FA();
+        $google2fa = new Google2FA;
         if (! $google2fa->verifyKey($admin->two_factor_secret, trim($data['code']), 1)) {
             throw ValidationException::withMessages(['code' => 'Invalid code. Try the next one your app displays.']);
         }
@@ -107,6 +108,7 @@ class SecurityController extends Controller
         $admin->two_factor_secret = null;
         $admin->save();
         AdminAuditLog::record('two_factor.setup_cancelled', $admin);
+
         return redirect()->route('account.security');
     }
 
@@ -132,6 +134,7 @@ class SecurityController extends Controller
         $admin->save();
 
         AdminAuditLog::record('two_factor.disabled', $admin);
+
         return redirect()->route('account.security')->with('success', 'Two-factor authentication disabled.');
     }
 
@@ -161,6 +164,7 @@ class SecurityController extends Controller
         AdminAuditLog::record('two_factor.recovery_codes_regenerated', $admin);
 
         $request->session()->flash('two_factor.recovery_codes', $codes);
+
         return redirect()->route('account.security')->with('success', 'New recovery codes generated.');
     }
 }

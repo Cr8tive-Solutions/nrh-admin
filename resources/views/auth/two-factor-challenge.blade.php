@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Two-factor verification — NRH Admin</title>
+    <title>Two-factor verification — KYRO Admin</title>
     <link rel="icon" type="image/png" href="/images/nrh-logo.png">
     <script>(function(){var t=localStorage.getItem('nrh-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}());</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -105,14 +105,14 @@
 <div class="tfa-card">
     <div class="tfa-brand">
         <img src="/images/nrh-logo.png" alt="NRH">
-        <span class="tfa-brand-text">NRH <em>Intelligence</em></span>
+        <span class="tfa-brand-text">KYRO <em>Admin</em></span>
     </div>
 
     <div>
         <div class="tfa-kicker"><span class="dot"></span> Two-factor verification</div>
         <h1 class="tfa-title" style="margin-top: 10px;" x-show="!recovery">Enter your <em>code</em>.</h1>
         <h1 class="tfa-title" style="margin-top: 10px;" x-show="recovery" x-cloak>Use a <em>recovery</em> code.</h1>
-        <p class="tfa-sub" style="margin-top: 8px;" x-show="!recovery">Open your authenticator app and enter the 6-digit code shown for NRH Admin.</p>
+        <p class="tfa-sub" style="margin-top: 8px;" x-show="!recovery">Open your authenticator app and enter the 6-digit code shown for KYRO Admin (or NRH Admin, if you set it up before the rename).</p>
         <p class="tfa-sub" style="margin-top: 8px;" x-show="recovery" x-cloak>Enter one of the recovery codes you saved when enabling 2FA. Each code can only be used once.</p>
     </div>
 

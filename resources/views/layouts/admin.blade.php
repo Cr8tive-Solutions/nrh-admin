@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'NRH Admin') — NRH Intelligence</title>
+    <title>@yield('title', 'Dashboard') — KYRO Admin</title>
     <link rel="icon" type="image/png" href="/images/nrh-logo.png">
     <script>(function(){var t=localStorage.getItem('nrh-theme');if(t==='dark')document.documentElement.setAttribute('data-theme','dark');}());</script>
+    <script>(function(){try{if(localStorage.getItem('nrh-sidebar-collapsed')==='1')document.documentElement.classList.add('sb-collapsed');}catch(e){}}());</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
@@ -76,7 +77,7 @@
         body { background: var(--paper); color: var(--ink-900); font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 
         /* ── Shell ── */
-        .admin-shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+        .admin-shell { --topbar-h: 64px; display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; transition: grid-template-columns 200ms ease; }
 
         /* ── Dark Sidebar ── */
         .admin-sidebar {
@@ -97,7 +98,7 @@
         .sb-inner { padding: 20px 14px; display: flex; flex-direction: column; gap: 20px; flex: 1; }
 
         /* Brand */
-        .sb-brand { display: flex; gap: 10px; align-items: center; padding-bottom: 18px; border-bottom: 1px solid rgba(212,175,55,0.14); }
+        .sb-brand { display: flex; gap: 10px; align-items: center; height: var(--topbar-h); margin-top: -20px; flex-shrink: 0; border-bottom: 1px solid rgba(212,175,55,0.14); }
         .sb-logo { width: 40px; height: 40px; flex-shrink: 0; object-fit: contain; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4)); }
         .sb-brand-text { line-height: 1.15; }
         .sb-brand-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; color: #f5ecd1; letter-spacing: 0.01em; }
@@ -189,7 +190,8 @@
         /* Topbar */
         .admin-topbar {
             display: flex; align-items: center; gap: 16px;
-            padding: 12px 28px;
+            height: var(--topbar-h);
+            padding: 0 28px;
             border-bottom: 1px solid var(--line);
             background: var(--paper);
             position: sticky; top: 0; z-index: 30;
@@ -255,6 +257,21 @@
         .topbar-user-name { font-size: 12px; font-weight: 600; color: var(--ink-900); }
         .topbar-user-role { font-size: 10px; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.1em; }
 
+        /* ── Collapsed sidebar: icon rail, toggled from the topbar menu button ── */
+        html.sb-collapsed .admin-shell { grid-template-columns: 68px 1fr; }
+        html.sb-collapsed .admin-sidebar { overflow-x: hidden; }
+        html.sb-collapsed .sb-inner { padding: 20px 10px; }
+        html.sb-collapsed .sb-brand { justify-content: center; }
+        html.sb-collapsed .sb-brand-text,
+        html.sb-collapsed .sb-user-meta { display: none; }
+        html.sb-collapsed .sb-section-label { height: 0; padding: 0; margin-top: 10px; margin-bottom: 8px; font-size: 0; border-top: 1px solid rgba(212,175,55,0.14); }
+        html.sb-collapsed .sb-section-label:first-child { margin-top: 0; border-top: none; }
+        html.sb-collapsed .sb-link,
+        html.sb-collapsed .sb-signout { justify-content: center; gap: 0; padding: 10px 0; font-size: 0; }
+        html.sb-collapsed .sb-link svg { width: 17px; height: 17px; }
+        html.sb-collapsed .sb-count { position: absolute; top: 2px; right: 4px; margin: 0; font-size: 9px; }
+        html.sb-collapsed .sb-user { justify-content: center; padding: 8px 0; }
+
         /* Content wrapper */
         .admin-content { flex: 1; overflow-y: auto; padding: 28px; display: flex; flex-direction: column; gap: 20px; }
 
@@ -286,6 +303,10 @@
         this.dark = !this.dark;
         document.documentElement.setAttribute('data-theme', this.dark ? 'dark' : 'light');
         localStorage.setItem('nrh-theme', this.dark ? 'dark' : 'light');
+    },
+    toggleSidebar() {
+        const collapsed = document.documentElement.classList.toggle('sb-collapsed');
+        try { localStorage.setItem('nrh-sidebar-collapsed', collapsed ? '1' : '0'); } catch (e) {}
     }
 }">
 
@@ -299,7 +320,7 @@
             <div class="sb-brand">
                 <img src="/images/nrh-logo.png" alt="NRH" class="sb-logo">
                 <div class="sb-brand-text">
-                    <div class="sb-brand-name">NRH <em>Intelligence</em></div>
+                    <div class="sb-brand-name">KYRO</div>
                     <div class="sb-brand-sub">Admin Portal</div>
                 </div>
             </div>
@@ -310,13 +331,13 @@
                 <div class="sb-section-label">Operations</div>
 
                 <a href="{{ route('dashboard') }}"
-                   class="sb-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" title="Dashboard">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                     Dashboard
                 </a>
 
                 <a href="{{ route('requests.index') }}"
-                   class="sb-link {{ request()->routeIs('requests.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('requests.*') ? 'active' : '' }}" title="Request Queue">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
                     Request Queue
                     @if(isset($pendingCount) && $pendingCount > 0)
@@ -325,14 +346,14 @@
                 </a>
 
                 <a href="{{ route('customers.index') }}"
-                   class="sb-link {{ request()->routeIs('customers.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('customers.*') ? 'active' : '' }}" title="Customers">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
                     Customers
                 </a>
 
                 @allowed('customer.manage')
                 <a href="{{ route('registrations.index') }}"
-                   class="sb-link {{ request()->routeIs('registrations.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('registrations.*') ? 'active' : '' }}" title="Registrations">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
                     Registrations
                     @if(($pendingRegistrationCount ?? 0) > 0)
@@ -342,7 +363,7 @@
                 @endallowed
 
                 <a href="{{ route('packages.index') }}"
-                   class="sb-link {{ request()->routeIs('packages.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('packages.*') ? 'active' : '' }}" title="Packages">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
                     Packages
                 </a>
@@ -350,19 +371,19 @@
                 <div class="sb-section-label">Finance</div>
 
                 <a href="{{ route('pricing.index') }}"
-                   class="sb-link {{ request()->routeIs('pricing.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('pricing.*') ? 'active' : '' }}" title="Scope Pricing">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v.5M12 17.5V18M9 9a3 3 0 0 1 6 0c0 2-3 2.5-3 5"/></svg>
                     Scope Pricing
                 </a>
 
                 <a href="{{ route('invoices.index') }}"
-                   class="sb-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}" title="Invoices">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
                     Invoices
                 </a>
 
                 <a href="{{ route('transactions.index') }}"
-                   class="sb-link {{ request()->routeIs('transactions.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('transactions.*') ? 'active' : '' }}" title="Transactions">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     Transactions
                 </a>
@@ -373,7 +394,7 @@
 
                 @allowed('config.scopes')
                 <a href="{{ route('config.scopes.index') }}"
-                   class="sb-link {{ request()->routeIs('config.scopes.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('config.scopes.*') ? 'active' : '' }}" title="Scope Types">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>
                     Scope Types
                 </a>
@@ -381,7 +402,7 @@
 
                 @allowed('config.countries')
                 <a href="{{ route('config.countries.index') }}"
-                   class="sb-link {{ request()->routeIs('config.countries.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('config.countries.*') ? 'active' : '' }}" title="Countries">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                     Countries
                 </a>
@@ -389,7 +410,7 @@
 
                 @allowed('config.scopes')
                 <a href="{{ route('config.holidays.index') }}"
-                   class="sb-link {{ request()->routeIs('config.holidays.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('config.holidays.*') ? 'active' : '' }}" title="Holidays">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                     Holidays
                 </a>
@@ -397,7 +418,7 @@
 
                 @allowed('invoice.manage')
                 <a href="{{ route('config.billing.index') }}"
-                   class="sb-link {{ request()->routeIs('config.billing.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('config.billing.*') ? 'active' : '' }}" title="Billing &amp; SST">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                     Billing &amp; SST
                 </a>
@@ -412,7 +433,7 @@
 
                 @allowed('pdpa.dsar')
                 <a href="{{ route('compliance.dsar.index') }}"
-                   class="sb-link {{ request()->routeIs('compliance.dsar.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('compliance.dsar.*') ? 'active' : '' }}" title="Data Subject Requests">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
                     Data Subject Requests
                 </a>
@@ -420,7 +441,7 @@
 
                 @allowed('pdpa.retention')
                 <a href="{{ route('compliance.retention.index') }}"
-                   class="sb-link {{ request()->routeIs('compliance.retention.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('compliance.retention.*') ? 'active' : '' }}" title="Retention &amp; Purge">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                     Retention &amp; Purge
                 </a>
@@ -429,13 +450,13 @@
 
                 @allowed('staff.manage')
                 <a href="{{ route('staff.index') }}"
-                   class="sb-link {{ request()->routeIs('staff.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('staff.*') ? 'active' : '' }}" title="Staff Accounts">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                     Staff Accounts
                 </a>
 
                 <a href="{{ route('audit.index') }}"
-                   class="sb-link {{ request()->routeIs('audit.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('audit.*') ? 'active' : '' }}" title="Audit Log">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13l2 2 4-4"/></svg>
                     Audit Log
                 </a>
@@ -443,7 +464,7 @@
 
                 @allowed('permissions.manage')
                 <a href="{{ route('permissions.index') }}"
-                   class="sb-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('permissions.*') ? 'active' : '' }}" title="Roles &amp; Permissions">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
                     Roles &amp; Permissions
                 </a>
@@ -452,7 +473,7 @@
                 <div class="sb-section-label">Help</div>
 
                 <a href="{{ route('guide.show') }}"
-                   class="sb-link {{ request()->routeIs('guide.*') ? 'active' : '' }}">
+                   class="sb-link {{ request()->routeIs('guide.*') ? 'active' : '' }}" title="Admin Guide">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/></svg>
                     Admin Guide
                 </a>
@@ -462,7 +483,7 @@
             {{-- Footer --}}
             @php $me = current_admin(); $myAvatar = $me?->avatarUrl(); @endphp
             <div class="sb-footer">
-                <a href="{{ route('account.profile') }}" class="sb-user" style="text-decoration: none; color: inherit;">
+                <a href="{{ route('account.profile') }}" class="sb-user" title="My Profile" style="text-decoration: none; color: inherit;">
                     <div class="sb-avatar" style="overflow: hidden;">
                         @if($myAvatar)
                             <img src="{{ $myAvatar }}" alt="" style="width:100%; height:100%; object-fit:cover;">
@@ -477,7 +498,7 @@
                 </a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="sb-signout">
+                    <button type="submit" class="sb-signout" title="Sign out">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
                         Sign out
                     </button>
@@ -492,6 +513,10 @@
 
         {{-- Topbar --}}
         <header class="admin-topbar">
+            <button type="button" class="topbar-icon-btn" @click="toggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+            </button>
+
             <div class="topbar-crumbs">
                 <span>NRH</span>
                 <span class="sep">/</span>
