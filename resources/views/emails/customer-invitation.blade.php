@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Activate your account — NRH Intelligence</title>
+    <title>Activate your account — KYRO</title>
 </head>
 <body style="margin:0; padding:0; background:#f4f4f1; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif; color:#1a1a1a; line-height:1.5;">
 
@@ -16,7 +16,8 @@
                 <tr>
                     <td style="padding:32px 36px 24px; border-bottom:1px solid #f0f0eb;">
                         <div style="font-family:'Times New Roman',Georgia,serif; font-size:18px; font-weight:600; color:#0d4a36; letter-spacing:-0.005em;">
-                            NRH <em style="color:#a8842f;">Intelligence</em>
+                            KYRO
+                            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif; font-size:10px; font-weight:400; letter-spacing:0.18em; text-transform:uppercase; color:#999; margin-top:4px;">by NRH Intelligence</div>
                         </div>
                     </td>
                 </tr>
@@ -28,7 +29,7 @@
                             Welcome, {{ $user->name }}.
                         </h1>
                         <p style="font-size:14px; color:#666; margin:0 0 20px; line-height:1.55;">
-                            An account has been created for you at <strong style="color:#1a1a1a;">{{ $customer->name }}</strong> on the NRH Intelligence client portal.
+                            An account has been created for you at <strong style="color:#1a1a1a;">{{ $customer->name }}</strong> on KYRO, the NRH Intelligence client portal.
                         </p>
 
                         <p style="font-size:14px; color:#1a1a1a; margin:0 0 8px;">To activate your account and set a password, click the button below:</p>

@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\CustomerRegistration;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -23,15 +24,14 @@ class CustomerRegistrationMail extends Mailable
         public CustomerRegistration $registration,
         public string $kind,
         public ?string $url = null,
-    ) {
-    }
+    ) {}
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: match ($this->kind) {
-            'invite' => "You're invited to register on NRH Intelligence",
-            'approved' => 'Your NRH Intelligence account is approved',
-            'rejected' => 'Your NRH Intelligence registration',
+        return new Envelope(from: new Address(config('mail.from.address'), 'KYRO'), subject: match ($this->kind) {
+            'invite' => "You're invited to register on KYRO",
+            'approved' => 'Your KYRO account is approved',
+            'rejected' => 'Your KYRO registration',
         });
     }
 
@@ -45,7 +45,7 @@ class CustomerRegistrationMail extends Mailable
                 'title' => 'Register your organisation',
                 'heading' => $r->contact_name ? 'Hello, '.$r->contact_name.'.' : 'Hello.',
                 'paragraphs' => [
-                    'NRH Intelligence has invited you to register '.$company.' on our client portal for background screening services.',
+                    'NRH Intelligence has invited you to register '.$company.' on KYRO, our client portal for background screening services.',
                     'Click the button below to enter your company and contact details and choose a password. Our team will verify your details and email you once your account is approved.',
                 ],
                 'buttonLabel' => 'Register now',
@@ -57,7 +57,7 @@ class CustomerRegistrationMail extends Mailable
                 'heading' => 'Welcome aboard, '.$r->contact_name.'.',
                 'paragraphs' => [
                     'Your registration for <strong style="color:#1a1a1a;">'.$company.'</strong> has been verified and approved.',
-                    'You can now sign in to the client portal with <strong>'.e($r->email).'</strong> and the password you chose when registering.',
+                    'You can now sign in to KYRO with <strong>'.e($r->email).'</strong> and the password you chose when registering.',
                 ],
                 'buttonLabel' => 'Sign in',
                 'note' => null,

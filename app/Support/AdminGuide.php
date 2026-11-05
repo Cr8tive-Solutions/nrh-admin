@@ -64,7 +64,7 @@ class AdminGuide
             'summary' => 'What this document covers and how to move around it.',
             'blocks' => [
                 ['type' => 'p', 'text' => 'This is the operating manual for the <b>NRH Admin Portal</b> — the internal staff portal at <code>admin.nrhintelligence.com</code>. It covers every module in the sidebar, the permission each one requires, and the exact effect of the actions you can take.'],
-                ['type' => 'p', 'text' => 'The admin portal shares its database with the client portal (<code>app.nrhintelligence.com</code>), which is where customers submit screening requests and upload documents. Anything you change here is visible to customers immediately, so read the callouts on irreversible actions.'],
+                ['type' => 'p', 'text' => 'The admin portal shares its database with the client portal, <b>KYRO</b> (<code>app.nrhintelligence.com</code>), which is where customers submit screening requests and upload documents. Anything you change here is visible to customers immediately, so read the callouts on irreversible actions.'],
                 ['type' => 'sub', 'text' => 'How to use this document'],
                 ['type' => 'list', 'items' => [
                     '<b>The contents page is clickable.</b> Select any entry to jump straight to that section — this works in the PDF as well as on screen.',
