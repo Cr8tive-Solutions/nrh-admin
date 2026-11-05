@@ -3,12 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Admin;
-use App\Models\Setting;
 use App\Models\AdminNotification;
-use App\Models\CustomerRegistration;
 use App\Models\Agreement;
 use App\Models\Country;
 use App\Models\Customer;
+use App\Models\CustomerRegistration;
 use App\Models\CustomerScopePrice;
 use App\Models\CustomerUser;
 use App\Models\CustomerUserInvitation;
@@ -20,11 +19,14 @@ use App\Models\Permission;
 use App\Models\RequestCandidate;
 use App\Models\ScopeType;
 use App\Models\ScreeningRequest;
+use App\Models\Setting;
 use App\Models\Transaction;
 use App\Observers\AuditObserver;
 use App\Observers\PaymentReceiptNotificationObserver;
 use App\Observers\ScreeningRequestNotificationObserver;
 use App\Support\EncryptedFilesystemAdapter;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Hashids\Hashids;
 use Illuminate\Filesystem\LocalFilesystemAdapter;
 use Illuminate\Foundation\Console\ServeCommand;
@@ -59,6 +61,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerLocalMountDriver();
+        $this->registerDisplayTimezoneMacro();
 
         // SST rate is admin-configurable (app_settings); override the static
         // config default so every config('billing.sst_rate') call site uses it.
@@ -109,6 +112,21 @@ class AppServiceProvider extends ServiceProvider
                 ? CustomerRegistration::where('status', 'submitted')->count()
                 : 0);
         });
+    }
+
+    /**
+     * `->inDisplayTz()` — a copy of the date in the display timezone. Storage
+     * and arithmetic stay UTC; call this only to show a time or to take
+     * "today" for a business date. Keep identical to the client portal.
+     */
+    private function registerDisplayTimezoneMacro(): void
+    {
+        $toDisplayTimezone = function () {
+            return $this->copy()->setTimezone(config('app.display_timezone'));
+        };
+
+        Carbon::macro('inDisplayTz', $toDisplayTimezone);
+        CarbonImmutable::macro('inDisplayTz', $toDisplayTimezone);
     }
 
     /**

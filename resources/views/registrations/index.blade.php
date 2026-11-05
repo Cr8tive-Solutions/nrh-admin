@@ -107,10 +107,10 @@
                 </td>
                 <td>@include('registrations._status')</td>
                 <td>
-                    <div class="text-gray-700">{{ $registration->created_at->format('d M Y') }}</div>
+                    <div class="text-gray-700">{{ $registration->created_at->inDisplayTz()->format('d M Y') }}</div>
                     <div class="text-xs text-gray-400">by {{ $registration->invitedBy?->name ?? '—' }}</div>
                 </td>
-                <td class="text-gray-700">{{ $registration->submitted_at?->format('d M Y, H:i') ?? '—' }}</td>
+                <td class="text-gray-700">{{ $registration->submitted_at?->inDisplayTz()->format('d M Y, H:i') ?? '—' }}</td>
                 <td class="text-right">
                     <a href="{{ route('registrations.show', $registration) }}" class="text-sm font-semibold" style="color: var(--emerald-700);">
                         {{ $registration->isAwaitingReview() ? 'Review →' : 'View →' }}

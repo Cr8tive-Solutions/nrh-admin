@@ -416,7 +416,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 <table class="pt">
     <tr><th class="pt-lbl" style="width:48%;">REPORT REF NO</th>      <td class="pt-val bold">{{ $reference }}</td></tr>
     <tr><th class="pt-lbl">ENGAGING COMPANY</th>                       <td class="pt-val">{{ $customer->name ?? '—' }}</td></tr>
-    <tr><th class="pt-lbl">REQUEST DATE</th>                           <td class="pt-val">{{ $request->created_at->format('d F Y') }}</td></tr>
+    <tr><th class="pt-lbl">REQUEST DATE</th>                           <td class="pt-val">{{ $request->created_at->inDisplayTz()->format('d F Y') }}</td></tr>
     <tr><th class="pt-lbl">INFO TYPE</th>                              <td class="pt-val">{{ strtoupper(str_replace('_', ' ', $request->type ?? 'DATA & SKILL SCREENING')) }}</td></tr>
     <tr><th class="pt-lbl">AUTHORIZED REQUESTOR</th>                  <td class="pt-val">{{ $customer->contact_name ?? '—' }}</td></tr>
     <tr><th class="pt-lbl">REQUESTOR EMAIL</th>                        <td class="pt-val">{{ $customer->contact_email ?? '—' }}</td></tr>

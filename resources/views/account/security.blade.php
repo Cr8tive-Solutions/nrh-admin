@@ -106,7 +106,7 @@
         {{-- ── State: enabled ── --}}
         @if($admin->hasEnabledTwoFactor())
         <div class="border-t border-gray-100 mt-4 pt-4 text-sm text-gray-600">
-            <p>2FA was enabled on <strong>{{ $admin->two_factor_confirmed_at->format('d M Y, H:i') }}</strong>.</p>
+            <p>2FA was enabled on <strong>{{ $admin->two_factor_confirmed_at->inDisplayTz()->format('d M Y, H:i') }}</strong>.</p>
             <p class="mt-1">Recovery codes remaining: <strong>{{ count($admin->two_factor_recovery_codes ?? []) }} / 8</strong></p>
         </div>
         @endif

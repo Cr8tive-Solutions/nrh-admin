@@ -43,7 +43,7 @@
         <tbody>
             @forelse($transactions as $tx)
             <tr>
-                <td class="text-gray-500 text-xs">{{ $tx->created_at->format('d M Y') }}</td>
+                <td class="text-gray-500 text-xs">{{ $tx->created_at->inDisplayTz()->format('d M Y') }}</td>
                 <td class="font-medium text-gray-900">
                     <a href="{{ route('customers.show', $tx->customer) }}" class="hover:text-emerald-700">{{ $tx->customer->name ?? '—' }}</a>
                 </td>

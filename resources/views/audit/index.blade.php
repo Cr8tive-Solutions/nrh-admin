@@ -38,7 +38,7 @@
             @forelse($logs as $log)
             <tr>
                 <td class="text-xs text-gray-500 whitespace-nowrap">
-                    {{ $log->created_at->format('d M Y, H:i:s') }}
+                    {{ $log->created_at->inDisplayTz()->format('d M Y, H:i:s') }}
                     <div class="text-gray-400">{{ $log->created_at->diffForHumans() }}</div>
                 </td>
                 <td>

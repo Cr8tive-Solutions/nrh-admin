@@ -46,8 +46,8 @@
             </div>
             <div class="text-right">
                 <span class="badge {{ $invoice->statusBadgeClass() }} text-sm">{{ strtoupper($invoice->status) }}</span>
-                <div class="text-xs text-gray-500 mt-2">Issued: {{ $invoice->issued_at->format('d M Y') }}</div>
-                <div class="text-xs text-gray-500">Due: {{ $invoice->due_at->format('d M Y') }}</div>
+                <div class="text-xs text-gray-500 mt-2">Issued: {{ $invoice->issued_at->inDisplayTz()->format('d M Y') }}</div>
+                <div class="text-xs text-gray-500">Due: {{ $invoice->due_at->inDisplayTz()->format('d M Y') }}</div>
             </div>
         </div>
 
@@ -285,7 +285,7 @@
                 <div class="border-t {{ $receipt->status === 'verified' ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40' }} px-4 py-2.5 text-xs text-gray-600">
                     <span class="font-semibold {{ $receipt->status === 'verified' ? 'text-emerald-700' : 'text-rose-700' }}">{{ ucfirst($receipt->status) }}</span>
                     by {{ $receipt->verifiedBy?->name ?? 'Deleted admin' }}
-                    on {{ $receipt->verified_at?->format('d M Y, H:i') }}
+                    on {{ $receipt->verified_at?->inDisplayTz()->format('d M Y, H:i') }}
                     @if($receipt->verification_note)
                         — <span class="italic">{{ $receipt->verification_note }}</span>
                     @endif

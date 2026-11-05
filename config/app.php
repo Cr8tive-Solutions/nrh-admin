@@ -69,6 +69,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Timestamps are stored and computed in UTC (above). This is the zone they
+    | are shown in, and the zone that decides what "today" is for business
+    | dates such as invoice periods. Convert with ->inDisplayTz().
+    |
+    */
+
+    'display_timezone' => env('DISPLAY_TIMEZONE', 'Asia/Kuala_Lumpur'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

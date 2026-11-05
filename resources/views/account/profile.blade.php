@@ -270,7 +270,7 @@
             </div>
             <div class="pf-identity-meta-row">
                 <span>Member since</span>
-                <b>{{ $admin->created_at->format('M Y') }}</b>
+                <b>{{ $admin->created_at->inDisplayTz()->format('M Y') }}</b>
             </div>
             <div class="pf-identity-meta-row">
                 <span>2FA</span>

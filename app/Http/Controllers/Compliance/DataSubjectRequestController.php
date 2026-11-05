@@ -230,7 +230,7 @@ class DataSubjectRequestController extends Controller
 
         $dsar->update([
             'status' => 'completed',
-            'outcome' => "Candidate PII redacted under erasure request {$dsar->reference} on ".now()->format('d M Y, H:i').'. Issued report PDFs are immutable and were not modified.',
+            'outcome' => "Candidate PII redacted under erasure request {$dsar->reference} on ".now()->inDisplayTz()->format('d M Y, H:i').'. Issued report PDFs are immutable and were not modified.',
             'completed_at' => now(),
         ]);
 

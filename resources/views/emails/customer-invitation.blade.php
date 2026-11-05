@@ -56,7 +56,7 @@
                             <tr>
                                 <td style="font-size:12px; color:#888; line-height:1.5;">
                                     <strong style="color:#666;">Security info</strong><br>
-                                    This link expires on <strong>{{ $expiresAt->format('d M Y, H:i') }}</strong> ({{ $expiresAt->diffForHumans() }}).
+                                    This link expires on <strong>{{ $expiresAt->inDisplayTz()->format('d M Y, H:i') }}</strong> ({{ $expiresAt->diffForHumans() }}).
                                     If you didn't expect this invitation or weren't expecting an account at <strong>{{ $customer->name }}</strong>, you can safely ignore this email — the link will expire automatically.
                                 </td>
                             </tr>

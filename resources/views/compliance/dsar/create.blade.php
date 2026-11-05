@@ -67,7 +67,7 @@
             </div>
             <div>
                 <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-500); font-weight: 600; margin-bottom: 4px;">Received at <span style="color: var(--danger);">*</span></div>
-                <input type="datetime-local" name="received_at" required value="{{ old('received_at', now()->format('Y-m-d\TH:i')) }}"
+                <input type="datetime-local" name="received_at" required value="{{ old('received_at', now()->inDisplayTz()->format('Y-m-d\TH:i')) }}"
                        style="width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px; font-family: 'JetBrains Mono', monospace; outline: none;">
             </div>
             <div>

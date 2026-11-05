@@ -58,7 +58,7 @@
                 <td class="">
                     <span class="badge {{ $req->statusBadgeClass() }}">{{ str_replace('_', ' ', $req->status) }}</span>
                 </td>
-                <td class="text-gray-500 text-xs">{{ $req->created_at->format('d M Y') }}</td>
+                <td class="text-gray-500 text-xs">{{ $req->created_at->inDisplayTz()->format('d M Y') }}</td>
                 <td class="text-gray-500 text-xs">{{ $req->updated_at->diffForHumans() }}</td>
                 <td class="text-right">
                     <a href="{{ route('requests.show', $req) }}" class="text-emerald-700 hover:text-emerald-900 text-xs font-medium">View →</a>

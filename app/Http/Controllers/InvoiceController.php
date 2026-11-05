@@ -57,8 +57,8 @@ class InvoiceController extends Controller
             'request_ids' => 'nullable|string',
         ]);
 
-        $start = Carbon::parse($data['period_start'])->startOfDay();
-        $end = Carbon::parse($data['period_end'])->endOfDay();
+        $start = Carbon::parse($data['period_start'], config('app.display_timezone'))->startOfDay();
+        $end = Carbon::parse($data['period_end'], config('app.display_timezone'))->endOfDay();
 
         if (Invoice::where('customer_id', $data['customer_id'])->where('period_date', $start->toDateString())->exists()) {
             return back()->withInput()->withErrors(['period_start' => 'An invoice for this customer starting on that date already exists.']);
@@ -167,8 +167,8 @@ class InvoiceController extends Controller
             'period_end' => 'required|date|after_or_equal:period_start',
         ]);
 
-        $start = Carbon::parse($request->period_start)->startOfDay();
-        $end = Carbon::parse($request->period_end)->endOfDay();
+        $start = Carbon::parse($request->period_start, config('app.display_timezone'))->startOfDay();
+        $end = Carbon::parse($request->period_end, config('app.display_timezone'))->endOfDay();
 
         $result = $this->buildItemsForCustomer((int) $request->customer_id, $start, $end);
 
@@ -187,8 +187,8 @@ class InvoiceController extends Controller
             'period_end' => 'required|date|after_or_equal:period_start',
         ]);
 
-        $start = Carbon::parse($request->period_start)->startOfDay();
-        $end = Carbon::parse($request->period_end)->endOfDay();
+        $start = Carbon::parse($request->period_start, config('app.display_timezone'))->startOfDay();
+        $end = Carbon::parse($request->period_end, config('app.display_timezone'))->endOfDay();
 
         // Exclude every cash/per-request alias, not just the canonical value —
         // a raw != 'per_request' would sweep 'cash'/'prepaid' customers into
@@ -263,8 +263,8 @@ class InvoiceController extends Controller
             'customers.*.request_ids' => 'nullable|array',
         ]);
 
-        $start = Carbon::parse($data['period_start'])->startOfDay();
-        $end = Carbon::parse($data['period_end'])->endOfDay();
+        $start = Carbon::parse($data['period_start'], config('app.display_timezone'))->startOfDay();
+        $end = Carbon::parse($data['period_end'], config('app.display_timezone'))->endOfDay();
         $periodDisplay = $this->formatPeriodDisplay($start, $end);
         $created = 0;
 
@@ -357,8 +357,8 @@ class InvoiceController extends Controller
             'request_ids' => 'nullable|string',
         ]);
 
-        $start = Carbon::parse($data['period_start'])->startOfDay();
-        $end = Carbon::parse($data['period_end'])->endOfDay();
+        $start = Carbon::parse($data['period_start'], config('app.display_timezone'))->startOfDay();
+        $end = Carbon::parse($data['period_end'], config('app.display_timezone'))->endOfDay();
 
         $conflict = Invoice::where('customer_id', $invoice->customer_id)
             ->where('id', '!=', $invoice->id)
@@ -438,7 +438,8 @@ class InvoiceController extends Controller
             ->where('customer_id', $customerId)
             ->whereIn('status', ['in_progress', 'complete', 'updated'])
             ->whereNull('invoice_id')
-            ->whereBetween('created_at', [$start, $end])
+            // The period is in local days; created_at is stored in UTC.
+            ->whereBetween('created_at', [$start->copy()->utc(), $end->copy()->utc()])
             ->get();
 
         if ($requests->isEmpty()) {

@@ -19,7 +19,7 @@ class MarkOverdueInvoices extends Command
         $flipped = 0;
 
         Invoice::where('status', 'unpaid')
-            ->whereDate('due_at', '<', today())
+            ->whereDate('due_at', '<', now()->inDisplayTz())
             ->get()
             ->each(function (Invoice $invoice) use (&$flipped) {
                 $invoice->update(['status' => 'overdue']);

@@ -60,7 +60,7 @@
                 <td class="font-mono text-xs">{{ number_format($invoice->tax, 2) }}</td>
                 <td class="font-mono text-xs font-medium">MYR {{ number_format($invoice->total, 2) }}</td>
                 <td class=""><span class="badge {{ $invoice->statusBadgeClass() }}">{{ $invoice->status }}</span></td>
-                <td class="text-gray-500 text-xs">{{ $invoice->due_at->format('d M Y') }}</td>
+                <td class="text-gray-500 text-xs">{{ $invoice->due_at->inDisplayTz()->format('d M Y') }}</td>
                 <td class="text-right">
                     <a href="{{ route('invoices.show', $invoice) }}" class="text-emerald-700 hover:text-emerald-900 text-xs font-medium">View →</a>
                 </td>

@@ -9,10 +9,10 @@
 
 @section('content')
 <div x-data="{
-    periodStart: '{{ now()->startOfMonth()->format('Y-m-d') }}',
-    periodEnd: '{{ now()->format('Y-m-d') }}',
-    issuedAt: '{{ now()->format('Y-m-d') }}',
-    dueAt: '{{ now()->addDays(30)->format('Y-m-d') }}',
+    periodStart: '{{ now()->inDisplayTz()->startOfMonth()->format('Y-m-d') }}',
+    periodEnd: '{{ now()->inDisplayTz()->format('Y-m-d') }}',
+    issuedAt: '{{ now()->inDisplayTz()->format('Y-m-d') }}',
+    dueAt: '{{ now()->inDisplayTz()->addDays(30)->format('Y-m-d') }}',
     loading: false,
     generating: false,
     error: '',

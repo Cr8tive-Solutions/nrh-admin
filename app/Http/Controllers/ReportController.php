@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdminAuditLog;
-use App\Models\RequestCandidate;
 use App\Models\ReportVersion;
+use App\Models\RequestCandidate;
 use App\Models\ScreeningRequest;
 use App\Services\ReportSnapshot;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -69,7 +69,7 @@ class ReportController extends Controller
         $meta = $screeningRequest->meta ?? [];
         $completionAutofilled = false;
         if ($metaKey && empty($meta[$metaKey])) {
-            $meta[$metaKey] = now()->format('Y-m-d');
+            $meta[$metaKey] = now()->inDisplayTz()->format('Y-m-d');
             $screeningRequest->update(['meta' => $meta]);
             $screeningRequest->refresh();
             $completionAutofilled = true;
@@ -302,7 +302,7 @@ class ReportController extends Controller
             'completionBasic' => $fmtDate('completion_basic'),
             'completionPrelim' => $fmtDate('completion_prelim'),
             'completionFull' => $fmtDate('completion_full')
-                ?? ($screeningRequest->status === 'complete' ? $screeningRequest->updated_at->format('d F Y') : null),
+                ?? ($screeningRequest->status === 'complete' ? $screeningRequest->updated_at->inDisplayTz()->format('d F Y') : null),
             'reportType' => $stamps['reportType'] ?? null,
             'reportVersion' => $stamps['reportVersion'] ?? null,
             'reportHash' => $stamps['reportHash'] ?? null,

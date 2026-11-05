@@ -66,7 +66,7 @@ class Invoice extends Model
         // advisory lock; both call sites run inside DB::transaction().
         DB::select('SELECT pg_advisory_xact_lock(hashtext(?))', ['invoices.number']);
 
-        $year = now()->year;
+        $year = now()->inDisplayTz()->year;
         // Order by numeric tail so mixed-width sequences (e.g. legacy 3-digit + new 4-digit) sort correctly.
         $last = self::where('number', 'like', "INV-{$year}-%")
             ->orderByRaw('LENGTH(number) DESC, number DESC')

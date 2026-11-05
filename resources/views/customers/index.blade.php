@@ -98,10 +98,10 @@
                         </form>
                         @endallowed
                     @elseif($inv->isAccepted())
-                        <span class="badge badge-green" title="Accepted {{ $inv->accepted_at->format('d M Y, H:i') }}">accepted</span>
+                        <span class="badge badge-green" title="Accepted {{ $inv->accepted_at->inDisplayTz()->format('d M Y, H:i') }}">accepted</span>
                         <div class="text-xs text-gray-400" style="margin-top:3px;">{{ $inv->accepted_at->diffForHumans() }}</div>
                     @elseif($inv->isExpired())
-                        <span class="badge badge-red" title="Expired {{ $inv->expires_at->format('d M Y, H:i') }}">expired</span>
+                        <span class="badge badge-red" title="Expired {{ $inv->expires_at->inDisplayTz()->format('d M Y, H:i') }}">expired</span>
                         <div class="text-xs text-gray-400" style="margin-top:3px;">last sent {{ $inv->last_sent_at?->diffForHumans() ?? $inv->created_at->diffForHumans() }}</div>
                         @allowed('customer.manage')
                         <form method="POST" action="{{ route('customers.users.resend-invitation', [$customer, $primary]) }}" class="inline" style="margin-top:3px; display:block;"
@@ -112,7 +112,7 @@
                         @endallowed
                     @else
                         {{-- pending --}}
-                        <span class="badge badge-yellow" title="Expires {{ $inv->expires_at->format('d M Y, H:i') }}">pending</span>
+                        <span class="badge badge-yellow" title="Expires {{ $inv->expires_at->inDisplayTz()->format('d M Y, H:i') }}">pending</span>
                         <div class="text-xs text-gray-400" style="margin-top:3px;">sent {{ $inv->last_sent_at?->diffForHumans() ?? $inv->created_at->diffForHumans() }} · expires {{ $inv->expires_at->diffForHumans() }}</div>
                         @allowed('customer.manage')
                         <form method="POST" action="{{ route('customers.users.resend-invitation', [$customer, $primary]) }}" class="inline" style="margin-top:3px; display:block;"

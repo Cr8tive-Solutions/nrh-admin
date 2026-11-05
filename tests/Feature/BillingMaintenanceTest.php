@@ -18,10 +18,12 @@ beforeEach(function () {
 // ── invoices:mark-overdue ────────────────────────────────────────────────────
 
 it('flips unpaid invoices past their due date to overdue', function () {
-    $pastDue = Fixtures::invoice($this->customerId, ['due_at' => now()->subDays(3)->toDateString()]);
-    $dueToday = Fixtures::invoice($this->customerId, ['due_at' => now()->toDateString()]);
-    $future = Fixtures::invoice($this->customerId, ['due_at' => now()->addDays(3)->toDateString()]);
-    $paidPast = Fixtures::invoice($this->customerId, ['status' => 'paid', 'due_at' => now()->subDays(3)->toDateString()]);
+    // Due dates are Malaysian calendar days, which run ahead of UTC.
+    $today = now()->inDisplayTz();
+    $pastDue = Fixtures::invoice($this->customerId, ['due_at' => $today->copy()->subDays(3)->toDateString()]);
+    $dueToday = Fixtures::invoice($this->customerId, ['due_at' => $today->toDateString()]);
+    $future = Fixtures::invoice($this->customerId, ['due_at' => $today->copy()->addDays(3)->toDateString()]);
+    $paidPast = Fixtures::invoice($this->customerId, ['status' => 'paid', 'due_at' => $today->copy()->subDays(3)->toDateString()]);
 
     $this->artisan('invoices:mark-overdue')->assertSuccessful();
 

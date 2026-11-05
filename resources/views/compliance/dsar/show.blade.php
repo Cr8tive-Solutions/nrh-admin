@@ -86,7 +86,7 @@
                 </div>
                 <div>
                     <div class="dsar-info-label">Received</div>
-                    <div class="dsar-info-value">{{ $dsar->received_at->format('d M Y, H:i') }} · via {{ str_replace('_', ' ', $dsar->received_via) }}</div>
+                    <div class="dsar-info-value">{{ $dsar->received_at->inDisplayTz()->format('d M Y, H:i') }} · via {{ str_replace('_', ' ', $dsar->received_via) }}</div>
                 </div>
                 <div class="col-2">
                     <div class="dsar-info-label">Description</div>
@@ -158,7 +158,7 @@
             <div style="padding: 16px 20px; font-size: 13px; color: var(--ink-700); white-space: pre-wrap; line-height: 1.5;">{{ $dsar->outcome }}</div>
             @if($dsar->completed_at)
             <div style="padding: 0 20px 14px; font-size: 11px; color: var(--ink-500);">
-                Completed {{ $dsar->completed_at->format('d M Y, H:i') }}
+                Completed {{ $dsar->completed_at->inDisplayTz()->format('d M Y, H:i') }}
                 @if($dsar->handler) by {{ $dsar->handler->name }} @endif
             </div>
             @endif
@@ -178,13 +178,13 @@
                 </div>
 
                 <div style="font-size: 11px; color: var(--ink-500); border-top: 1px solid var(--line); padding-top: 10px;">
-                    <div style="margin-bottom: 4px;"><strong>Received:</strong> {{ $dsar->received_at->format('d M Y, H:i') }}</div>
+                    <div style="margin-bottom: 4px;"><strong>Received:</strong> {{ $dsar->received_at->inDisplayTz()->format('d M Y, H:i') }}</div>
                     @if($dsar->verified_at)
-                    <div style="margin-bottom: 4px;"><strong>ID verified:</strong> {{ $dsar->verified_at->format('d M Y, H:i') }}</div>
+                    <div style="margin-bottom: 4px;"><strong>ID verified:</strong> {{ $dsar->verified_at->inDisplayTz()->format('d M Y, H:i') }}</div>
                     @endif
                     @if($dsar->due_at)
                     <div style="margin-bottom: 4px;">
-                        <strong>Due:</strong> {{ $dsar->due_at->format('d M Y') }}
+                        <strong>Due:</strong> {{ $dsar->due_at->inDisplayTz()->format('d M Y') }}
                         @if($dsar->isOverdue())
                             <span style="color: var(--danger); font-weight: 600;">· {{ abs($dsar->daysToRespond()) }}d overdue</span>
                         @elseif(in_array($dsar->status, ['received','verifying_identity','in_progress']))
@@ -193,7 +193,7 @@
                     </div>
                     @endif
                     @if($dsar->completed_at)
-                    <div><strong>Closed:</strong> {{ $dsar->completed_at->format('d M Y, H:i') }}</div>
+                    <div><strong>Closed:</strong> {{ $dsar->completed_at->inDisplayTz()->format('d M Y, H:i') }}</div>
                     @endif
                 </div>
             </div>

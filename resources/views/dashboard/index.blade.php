@@ -22,7 +22,7 @@
             @if($stats['flagged_cases'] > 0)
                 <span style="color: var(--danger); font-weight: 600;">{{ $stats['flagged_cases'] }} {{ $stats['flagged_cases'] === 1 ? 'case requires' : 'cases require' }} your attention</span> &middot;
             @endif
-            {{ $stats['active_requests'] }} active &middot; {{ $stats['total_customers'] }} customers &middot; {{ now()->format('d M Y') }}
+            {{ $stats['active_requests'] }} active &middot; {{ $stats['total_customers'] }} customers &middot; {{ now()->inDisplayTz()->format('d M Y') }}
         </div>
     </div>
     <div style="display: flex; gap: 8px;">
@@ -246,7 +246,7 @@
                     </div>
                 </td>
                 <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-700);">{{ $req->reference }}</td>
-                <td style="font-size: 12px; color: var(--ink-500);">{{ $req->updated_at->format('d M Y') }}</td>
+                <td style="font-size: 12px; color: var(--ink-500);">{{ $req->updated_at->inDisplayTz()->format('d M Y') }}</td>
                 <td>
                     <span class="nrh-pill nrh-pill-flagged">{{ $req->candidates->count() }} {{ Str::plural('candidate', $req->candidates->count()) }}</span>
                 </td>
@@ -294,7 +294,7 @@
                     </div>
                 </td>
                 <td style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-700);">{{ $req->reference }}</td>
-                <td style="font-size: 12px; color: var(--ink-500);">{{ $req->created_at->format('d M Y') }}</td>
+                <td style="font-size: 12px; color: var(--ink-500);">{{ $req->created_at->inDisplayTz()->format('d M Y') }}</td>
                 <td>
                     @php
                         $sc = match($req->status) {

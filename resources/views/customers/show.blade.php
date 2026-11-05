@@ -468,7 +468,7 @@
             </div>
             <div>
                 <div class="ch-info-label">Customer Since</div>
-                <div class="ch-info-value">{{ $customer->created_at->format('d M Y') }} <span style="color: var(--ink-400); font-size: 11px;">({{ $customer->created_at->diffForHumans() }})</span></div>
+                <div class="ch-info-value">{{ $customer->created_at->inDisplayTz()->format('d M Y') }} <span style="color: var(--ink-400); font-size: 11px;">({{ $customer->created_at->diffForHumans() }})</span></div>
             </div>
         </div>
     </div>
@@ -840,11 +840,11 @@
                         @if(!$inv)
                             <span class="badge badge-gray">no invitation</span>
                         @elseif($inv->isAccepted())
-                            <span class="badge badge-green" title="Accepted {{ $inv->accepted_at->format('d M Y') }}">accepted</span>
+                            <span class="badge badge-green" title="Accepted {{ $inv->accepted_at->inDisplayTz()->format('d M Y') }}">accepted</span>
                         @elseif($inv->isExpired())
-                            <span class="badge badge-red" title="Expired {{ $inv->expires_at->format('d M Y') }}">expired</span>
+                            <span class="badge badge-red" title="Expired {{ $inv->expires_at->inDisplayTz()->format('d M Y') }}">expired</span>
                         @else
-                            <span class="badge badge-yellow" title="Expires {{ $inv->expires_at->format('d M Y, H:i') }}">pending · {{ $inv->expires_at->diffForHumans() }}</span>
+                            <span class="badge badge-yellow" title="Expires {{ $inv->expires_at->inDisplayTz()->format('d M Y, H:i') }}">pending · {{ $inv->expires_at->diffForHumans() }}</span>
                         @endif
                     </td>
                     @allowed('customer.manage')
@@ -922,7 +922,7 @@
                     <td style="color: var(--ink-500);">{{ $req->type ?? '—' }}</td>
                     <td style="color: var(--ink-500);">{{ $req->candidates->count() }}</td>
                     <td><span class="badge {{ $req->statusBadgeClass() }}">{{ str_replace('_', ' ', $req->status) }}</span></td>
-                    <td style="color: var(--ink-500); font-size: 12px;">{{ $req->created_at->format('d M Y') }}</td>
+                    <td style="color: var(--ink-500); font-size: 12px;">{{ $req->created_at->inDisplayTz()->format('d M Y') }}</td>
                     <td style="text-align: right;"><a href="{{ route('requests.show', $req) }}" style="color: var(--emerald-700); font-size: 11px; font-weight: 600; text-decoration: none;">View →</a></td>
                 </tr>
                 @endforeach
@@ -974,7 +974,7 @@
                     <td style="color: var(--ink-500);">{{ $invoice->period }}</td>
                     <td style="font-weight: 500;">MYR {{ number_format($invoice->total, 2) }}</td>
                     <td><span class="badge {{ $invoice->statusBadgeClass() }}">{{ $invoice->status }}</span></td>
-                    <td style="color: var(--ink-500); font-size: 12px;">{{ $invoice->due_at->format('d M Y') }}</td>
+                    <td style="color: var(--ink-500); font-size: 12px;">{{ $invoice->due_at->inDisplayTz()->format('d M Y') }}</td>
                     <td style="text-align: right;"><a href="{{ route('invoices.show', $invoice) }}" style="color: var(--emerald-700); font-size: 11px; font-weight: 600; text-decoration: none;">View →</a></td>
                 </tr>
                 @endforeach
@@ -1022,7 +1022,7 @@
             <tbody>
                 @foreach($customer->transactions as $tx)
                 <tr>
-                    <td style="color: var(--ink-500); font-size: 12px;">{{ $tx->created_at->format('d M Y') }}</td>
+                    <td style="color: var(--ink-500); font-size: 12px;">{{ $tx->created_at->inDisplayTz()->format('d M Y') }}</td>
                     <td style="color: var(--ink-700);">
                         <span class="badge {{ $tx->type === 'topup' ? 'badge-green' : ($tx->type === 'adjustment' ? 'badge-blue' : 'badge-gray') }}">{{ $tx->type }}</span>
                     </td>

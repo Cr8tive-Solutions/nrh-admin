@@ -194,7 +194,7 @@
     {{-- ── Invoiced-to / invoice meta ── --}}
     @php
         $cust = $invoice->customer;
-        $issued = $invoice->issued_at?->format('d/m/Y') ?? '';
+        $issued = $invoice->issued_at?->inDisplayTz()->format('d/m/Y') ?? '';
     @endphp
     <table class="meta">
         <tr>

@@ -97,7 +97,7 @@
                         </p>
                         <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
                             <span style="font-size:10px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:{{ $iconColor }};background:{{ $iconBg }};padding:2px 7px;border-radius:4px;">{{ $typeLabel }}</span>
-                            <span style="font-size:11px;color:var(--ink-400);font-family:var(--font-mono);">{{ $notif->created_at->format('d M Y') }}</span>
+                            <span style="font-size:11px;color:var(--ink-400);font-family:var(--font-mono);">{{ $notif->created_at->inDisplayTz()->format('d M Y') }}</span>
                         </div>
                     </div>
                     <p style="font-size:12px;color:var(--ink-600);margin:4px 0 0;line-height:1.5;">{{ $notif->body }}</p>

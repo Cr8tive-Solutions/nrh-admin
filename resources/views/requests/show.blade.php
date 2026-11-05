@@ -518,7 +518,7 @@
             <span style="color: var(--ink-500);">(incl. {{ rtrim(rtrim(number_format(config('billing.sst_rate') * 100, 1), '0'), '.') }}% SST MYR {{ number_format($request->calculateTax(), 2) }})</span>
             · reference <strong style="font-family: 'JetBrains Mono', monospace; color: var(--ink-900);">{{ $request->reference }}</strong>.
             @if($hasSlip)
-                Customer uploaded a slip on {{ $request->payment_slip_uploaded_at?->format('d M Y · H:i') }} — review and verify below.
+                Customer uploaded a slip on {{ $request->payment_slip_uploaded_at?->inDisplayTz()->format('d M Y · H:i') }} — review and verify below.
             @else
                 Waiting for the customer to upload their bank-transfer slip. Verification is blocked until they do.
             @endif
@@ -570,7 +570,7 @@
     <div style="flex: 1;">
         <div style="font-size: 12px; font-weight: 600; color: var(--ink-900);">Payment slip uploaded</div>
         <div style="font-size: 11px; color: var(--ink-600); margin-top: 2px;">
-            {{ $request->payment_slip_uploaded_at?->format('d M Y · H:i') }}
+            {{ $request->payment_slip_uploaded_at?->inDisplayTz()->format('d M Y · H:i') }}
             · file: <span style="font-family: 'JetBrains Mono', monospace;">{{ basename($request->payment_slip_path) }}</span>
         </div>
     </div>
@@ -630,7 +630,7 @@
                 @endif
                 <span class="rq-meta-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    {{ $request->created_at->format('d M Y, H:i') }} · {{ $request->created_at->diffForHumans() }}
+                    {{ $request->created_at->inDisplayTz()->format('d M Y, H:i') }} · {{ $request->created_at->diffForHumans() }}
                 </span>
             </div>
         </div>
@@ -738,9 +738,9 @@
                 @php $consent = $candidate->latestConsent; @endphp
                 <div style="margin-top: 6px; display: flex; align-items: center; gap: 6px;">
                     @if($consent)
-                        <span style="font-size: 10px; color: var(--emerald-700); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="Consent on file: {{ $consent->consented_at->format('d M Y') }} via {{ \App\Models\ConsentRecord::evidenceTypes()[$consent->evidence_type] ?? $consent->evidence_type }}">
+                        <span style="font-size: 10px; color: var(--emerald-700); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="Consent on file: {{ $consent->consented_at->inDisplayTz()->format('d M Y') }} via {{ \App\Models\ConsentRecord::evidenceTypes()[$consent->evidence_type] ?? $consent->evidence_type }}">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
-                            Consent · {{ $consent->consented_at->format('d M Y') }}
+                            Consent · {{ $consent->consented_at->inDisplayTz()->format('d M Y') }}
                         </span>
                     @else
                         <span style="font-size: 10px; color: var(--gold-700, #b8860b); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="No consent record on file — required by PDPA">
@@ -812,7 +812,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <div>
                             <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-500); font-weight: 600; margin-bottom: 4px;">Consented at <span style="color: var(--danger);">*</span></div>
-                            <input type="datetime-local" name="consented_at" required value="{{ now()->format('Y-m-d\TH:i') }}"
+                            <input type="datetime-local" name="consented_at" required value="{{ now()->inDisplayTz()->format('Y-m-d\TH:i') }}"
                                    style="width: 100%; padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; outline: none;">
                         </div>
                         <div>
@@ -849,7 +849,7 @@
 
                 @if($consent)
                 <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 11px; color: var(--ink-500);">
-                    <strong>Latest record:</strong> {{ $consent->consented_at->format('d M Y, H:i') }}
+                    <strong>Latest record:</strong> {{ $consent->consented_at->inDisplayTz()->format('d M Y, H:i') }}
                     via {{ \App\Models\ConsentRecord::evidenceTypes()[$consent->evidence_type] ?? $consent->evidence_type }}
                     · captured by {{ $consent->capturedBy?->name ?? '—' }}
                     @if($consent->evidence_file_path)
@@ -1894,7 +1894,7 @@
                                 @endif
                             </div>
                             <div class="rq-version-meta">
-                                {{ $v->generated_at->format('d M Y, H:i') }} · {{ $v->generatedBy?->name ?? 'Deleted admin' }} · SHA {{ $v->shortHash() }}
+                                {{ $v->generated_at->inDisplayTz()->format('d M Y, H:i') }} · {{ $v->generatedBy?->name ?? 'Deleted admin' }} · SHA {{ $v->shortHash() }}
                             </div>
                             @if($v->supersedes_id && $v->supersede_reason)
                             <div style="font-size: 10px; color: var(--ink-500); font-style: italic; margin-top: 3px;">
@@ -2037,7 +2037,7 @@
                     <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--emerald-600); margin-top: 4px;"></span>
                     <div>
                         <div style="font-weight: 500;">Request submitted</div>
-                        <div style="color: var(--ink-400); font-size: 11px; margin-top: 2px;">{{ $request->created_at->format('d M Y, H:i') }} · {{ $request->created_at->diffForHumans() }}</div>
+                        <div style="color: var(--ink-400); font-size: 11px; margin-top: 2px;">{{ $request->created_at->inDisplayTz()->format('d M Y, H:i') }} · {{ $request->created_at->diffForHumans() }}</div>
                     </div>
                 </div>
                 @if($request->updated_at->ne($request->created_at))
@@ -2045,7 +2045,7 @@
                     <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--gold-500, #d4af37); margin-top: 4px;"></span>
                     <div>
                         <div style="font-weight: 500;">Last updated</div>
-                        <div style="color: var(--ink-400); font-size: 11px; margin-top: 2px;">{{ $request->updated_at->format('d M Y, H:i') }} · {{ $request->updated_at->diffForHumans() }}</div>
+                        <div style="color: var(--ink-400); font-size: 11px; margin-top: 2px;">{{ $request->updated_at->inDisplayTz()->format('d M Y, H:i') }} · {{ $request->updated_at->diffForHumans() }}</div>
                     </div>
                 </div>
                 @endif

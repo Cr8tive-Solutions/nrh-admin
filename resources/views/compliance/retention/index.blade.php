@@ -71,7 +71,7 @@
         @if($threshold)
         <p style="font-size: 13px; color: var(--ink-700); line-height: 1.6;">
             With the current candidate retention of <strong>{{ $policies->firstWhere('entity_type', 'candidate')->retention_days }} days</strong>,
-            the cutoff is <strong style="font-family: 'JetBrains Mono', monospace;">{{ $threshold->format('d M Y') }}</strong>.
+            the cutoff is <strong style="font-family: 'JetBrains Mono', monospace;">{{ $threshold->inDisplayTz()->format('d M Y') }}</strong>.
             <br>
             <strong>{{ number_format($eligibleForPurge) }}</strong> candidate {{ Str::plural('record', $eligibleForPurge) }}
             currently {{ $eligibleForPurge === 1 ? 'matches' : 'match' }} the purge criteria.

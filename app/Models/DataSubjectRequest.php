@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class DataSubjectRequest extends Model
 {
     use HasHashid;
+
     protected $fillable = [
         'reference', 'request_candidate_id',
         'subject_name', 'subject_email', 'subject_identity_number',
@@ -19,10 +20,10 @@ class DataSubjectRequest extends Model
     ];
 
     protected $casts = [
-        'received_at'  => 'datetime',
-        'verified_at'  => 'datetime',
+        'received_at' => 'datetime',
+        'verified_at' => 'datetime',
         'completed_at' => 'datetime',
-        'due_at'       => 'datetime',
+        'due_at' => 'datetime',
     ];
 
     public function candidate(): BelongsTo
@@ -38,10 +39,10 @@ class DataSubjectRequest extends Model
     public static function types(): array
     {
         return [
-            'access'           => 'Access (DSAR — request copy of data)',
-            'erasure'          => 'Erasure / Right to be forgotten',
-            'rectification'    => 'Rectification — correct inaccurate data',
-            'portability'      => 'Portability — provide data in machine-readable form',
+            'access' => 'Access (DSAR — request copy of data)',
+            'erasure' => 'Erasure / Right to be forgotten',
+            'rectification' => 'Rectification — correct inaccurate data',
+            'portability' => 'Portability — provide data in machine-readable form',
             'cease_processing' => 'Cease processing',
         ];
     }
@@ -49,31 +50,32 @@ class DataSubjectRequest extends Model
     public static function statuses(): array
     {
         return [
-            'received'           => 'Received',
+            'received' => 'Received',
             'verifying_identity' => 'Verifying identity',
-            'in_progress'        => 'In progress',
-            'completed'          => 'Completed',
-            'rejected'           => 'Rejected',
+            'in_progress' => 'In progress',
+            'completed' => 'Completed',
+            'rejected' => 'Rejected',
         ];
     }
 
     public static function relations(): array
     {
         return [
-            'self'                     => 'Self',
-            'authorised_representative'=> 'Authorised representative',
-            'guardian'                 => 'Guardian (minor)',
-            'parent'                   => 'Parent',
+            'self' => 'Self',
+            'authorised_representative' => 'Authorised representative',
+            'guardian' => 'Guardian (minor)',
+            'parent' => 'Parent',
         ];
     }
 
     public static function nextReference(): string
     {
-        $year = now()->year;
+        $year = now()->inDisplayTz()->year;
         $last = self::where('reference', 'like', "DSR-{$year}-%")
             ->orderByRaw('LENGTH(reference) DESC, reference DESC')
             ->first();
         $seq = $last ? ((int) substr(strrchr($last->reference, '-'), 1)) + 1 : 1;
+
         return "DSR-{$year}-".str_pad($seq, 4, '0', STR_PAD_LEFT);
     }
 
@@ -86,7 +88,10 @@ class DataSubjectRequest extends Model
 
     public function daysToRespond(): ?int
     {
-        if (! $this->due_at) return null;
+        if (! $this->due_at) {
+            return null;
+        }
+
         return (int) round(now()->diffInDays($this->due_at, false));
     }
 }

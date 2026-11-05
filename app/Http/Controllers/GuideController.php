@@ -32,7 +32,7 @@ class GuideController extends Controller
             'sections' => $sections,
             'sectionCount' => count($sections),
             'logoSrc' => $this->logoSrc(),
-            'generatedAt' => now()->format('d F Y'),
+            'generatedAt' => now()->inDisplayTz()->format('d F Y'),
             'portalUrl' => config('app.url'),
         ])
             ->setPaper('a4', 'portrait')

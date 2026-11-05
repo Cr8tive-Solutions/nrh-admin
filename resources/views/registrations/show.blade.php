@@ -137,20 +137,20 @@
         <div class="nrh-card-head"><h3>Status</h3> @include('registrations._status')</div>
         <dl style="padding: 16px 20px; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 12px;">
             <dt class="text-gray-500">Invited</dt>
-            <dd style="margin: 0;">{{ $r->created_at->format('d M Y, H:i') }}<br><span class="text-gray-400">by {{ $r->invitedBy?->name ?? '—' }}</span></dd>
+            <dd style="margin: 0;">{{ $r->created_at->inDisplayTz()->format('d M Y, H:i') }}<br><span class="text-gray-400">by {{ $r->invitedBy?->name ?? '—' }}</span></dd>
             @if($r->isOpenInvite())
             <dt class="text-gray-500">Link {{ $r->isExpired() ? 'expired' : 'expires' }}</dt>
-            <dd style="margin: 0;">{{ $r->expires_at->format('d M Y, H:i') }}</dd>
+            <dd style="margin: 0;">{{ $r->expires_at->inDisplayTz()->format('d M Y, H:i') }}</dd>
             <dt class="text-gray-500">Emails sent</dt>
             <dd style="margin: 0;">{{ $r->sent_count }}@if($r->last_sent_at) <span class="text-gray-400">· last {{ $r->last_sent_at->diffForHumans() }}</span>@endif</dd>
             @endif
             @if($r->submitted_at)
             <dt class="text-gray-500">Submitted</dt>
-            <dd style="margin: 0;">{{ $r->submitted_at->format('d M Y, H:i') }}</dd>
+            <dd style="margin: 0;">{{ $r->submitted_at->inDisplayTz()->format('d M Y, H:i') }}</dd>
             @endif
             @if($r->reviewed_at)
             <dt class="text-gray-500">{{ ucfirst($r->status) }}</dt>
-            <dd style="margin: 0;">{{ $r->reviewed_at->format('d M Y, H:i') }}<br><span class="text-gray-400">by {{ $r->reviewedBy?->name ?? '—' }}</span></dd>
+            <dd style="margin: 0;">{{ $r->reviewed_at->inDisplayTz()->format('d M Y, H:i') }}<br><span class="text-gray-400">by {{ $r->reviewedBy?->name ?? '—' }}</span></dd>
             @endif
             @if($r->customer)
             <dt class="text-gray-500">Customer</dt>

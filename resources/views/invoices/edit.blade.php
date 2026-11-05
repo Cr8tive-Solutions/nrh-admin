@@ -58,7 +58,7 @@
                         Period From <span style="color:var(--danger);">*</span>
                     </label>
                     <input type="date" name="period_start" form="invoice-form"
-                           value="{{ old('period_start', $invoice->period_date?->format('Y-m-d') ?? now()->startOfMonth()->format('Y-m-d')) }}"
+                           value="{{ old('period_start', $invoice->period_date?->format('Y-m-d') ?? now()->inDisplayTz()->startOfMonth()->format('Y-m-d')) }}"
                            required class="nrh-input">
                     @error('period_start')<p style="margin-top:4px;font-size:11px;color:var(--danger);">{{ $message }}</p>@enderror
                 </div>
@@ -67,7 +67,7 @@
                         Period To <span style="color:var(--danger);">*</span>
                     </label>
                     <input type="date" name="period_end" form="invoice-form"
-                           value="{{ old('period_end', $invoice->period_end?->format('Y-m-d') ?? now()->format('Y-m-d')) }}"
+                           value="{{ old('period_end', $invoice->period_end?->format('Y-m-d') ?? now()->inDisplayTz()->format('Y-m-d')) }}"
                            required class="nrh-input">
                     @error('period_end')<p style="margin-top:4px;font-size:11px;color:var(--danger);">{{ $message }}</p>@enderror
                 </div>
@@ -76,14 +76,14 @@
                         Issue Date <span style="color:var(--danger);">*</span>
                     </label>
                     <input type="date" name="issued_at" form="invoice-form"
-                           value="{{ old('issued_at', $invoice->issued_at->format('Y-m-d')) }}" required class="nrh-input">
+                           value="{{ old('issued_at', $invoice->issued_at->inDisplayTz()->format('Y-m-d')) }}" required class="nrh-input">
                 </div>
                 <div>
                     <label style="display:block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:var(--ink-500); margin-bottom:6px;">
                         Due Date <span style="color:var(--danger);">*</span>
                     </label>
                     <input type="date" name="due_at" form="invoice-form"
-                           value="{{ old('due_at', $invoice->due_at->format('Y-m-d')) }}" required class="nrh-input">
+                           value="{{ old('due_at', $invoice->due_at->inDisplayTz()->format('Y-m-d')) }}" required class="nrh-input">
                 </div>
             </div>
         </div>

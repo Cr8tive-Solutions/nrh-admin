@@ -104,7 +104,7 @@
     <div class="dsar-row {{ $r->isOverdue() ? 'is-overdue' : '' }}">
         <div>
             <div class="dsar-ref">{{ $r->reference }}</div>
-            <div style="font-size: 10px; color: var(--ink-400); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;">{{ $r->received_at->format('d M Y') }}</div>
+            <div style="font-size: 10px; color: var(--ink-400); font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;">{{ $r->received_at->inDisplayTz()->format('d M Y') }}</div>
         </div>
         <div>
             <div style="font-weight: 500; color: var(--ink-900);">{{ $r->subject_name }}</div>

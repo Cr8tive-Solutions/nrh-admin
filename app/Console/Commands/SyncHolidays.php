@@ -23,7 +23,7 @@ class SyncHolidays extends Command
 
     public function handle(CalendarificProvider $provider): int
     {
-        $year = (int) ($this->option('year') ?: now()->year);
+        $year = (int) ($this->option('year') ?: now()->inDisplayTz()->year);
         $country = strtoupper($this->option('country'));
 
         $this->line("Fetching {$country} holidays for {$year} from Calendarific…");
@@ -32,11 +32,13 @@ class SyncHolidays extends Command
             $holidays = $provider->fetch($year, $country);
         } catch (\Throwable $e) {
             $this->error('Fetch failed: '.$e->getMessage());
+
             return self::FAILURE;
         }
 
         if (empty($holidays)) {
             $this->warn("No holidays returned. The API may not yet have data for {$year}/{$country}.");
+
             return self::SUCCESS;
         }
 
@@ -47,6 +49,7 @@ class SyncHolidays extends Command
         foreach ($holidays as $h) {
             if (BusinessHoliday::where('date', $h['date'])->exists()) {
                 $skipped++;
+
                 continue;
             }
             BusinessHoliday::create($h);
@@ -57,8 +60,8 @@ class SyncHolidays extends Command
         BusinessHours::flushHolidayCache();
 
         AdminAuditLog::record('holidays.synced', null, [
-            'source'  => 'calendarific',
-            'year'    => $year,
+            'source' => 'calendarific',
+            'year' => $year,
             'country' => $country,
             'created' => $created,
             'skipped' => $skipped,
@@ -66,6 +69,7 @@ class SyncHolidays extends Command
         ]);
 
         $this->info("Done. Added {$created}, skipped {$skipped}.");
+
         return self::SUCCESS;
     }
 }
