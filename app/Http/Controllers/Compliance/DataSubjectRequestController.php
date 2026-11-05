@@ -57,6 +57,10 @@ class DataSubjectRequestController extends Controller
 
     public function store(Request $request)
     {
+        // received_at is typed as local wall-clock time: compare it with local
+        // now, then store it as UTC like every other timestamp.
+        $displayTimezone = config('app.display_timezone');
+
         $data = $request->validate([
             'subject_name' => 'required|string|max:255',
             'subject_email' => 'nullable|email|max:255',
@@ -64,7 +68,7 @@ class DataSubjectRequestController extends Controller
             'relation' => 'required|in:'.implode(',', array_keys(DataSubjectRequest::relations())),
             'type' => 'required|in:'.implode(',', array_keys(DataSubjectRequest::types())),
             'received_via' => 'required|in:email,post,phone,in_person',
-            'received_at' => 'required|date|before_or_equal:now',
+            'received_at' => 'required|date|before_or_equal:'.now()->inDisplayTz()->toDateTimeString(),
             'description' => 'required|string|max:4000',
             'evidence_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'request_candidate_id' => 'nullable|integer|exists:request_candidates,id',
@@ -75,6 +79,8 @@ class DataSubjectRequestController extends Controller
             $filePath = $request->file('evidence_file')->store('dsar', 'local');
         }
 
+        $receivedAt = Carbon::parse($data['received_at'], $displayTimezone);
+
         $dsar = DataSubjectRequest::create([
             'reference' => DataSubjectRequest::nextReference(),
             'subject_name' => $data['subject_name'],
@@ -83,9 +89,9 @@ class DataSubjectRequestController extends Controller
             'relation' => $data['relation'],
             'type' => $data['type'],
             'received_via' => $data['received_via'],
-            'received_at' => $data['received_at'],
+            'received_at' => $receivedAt->copy()->utc(),
             // PDPA-aligned: respond within 21 working days
-            'due_at' => Carbon::parse($data['received_at'])->addWeekdays(21),
+            'due_at' => $receivedAt->copy()->addWeekdays(21)->utc(),
             'description' => $data['description'],
             'evidence_file_path' => $filePath,
             'request_candidate_id' => $data['request_candidate_id'] ?? null,

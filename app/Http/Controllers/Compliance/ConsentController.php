@@ -7,6 +7,7 @@ use App\Models\AdminAuditLog;
 use App\Models\ConsentRecord;
 use App\Models\ScreeningRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class ConsentController extends Controller
@@ -35,8 +36,12 @@ TXT;
     {
         $candidate = $screeningRequest->candidates()->findOrFail($candidateId);
 
+        // consented_at is typed as local wall-clock time: compare it with local
+        // now, then store it as UTC like every other timestamp.
+        $displayTimezone = config('app.display_timezone');
+
         $data = $request->validate([
-            'consented_at' => 'required|date|before_or_equal:now',
+            'consented_at' => 'required|date|before_or_equal:'.now()->inDisplayTz()->toDateTimeString(),
             'evidence_type' => 'required|in:digital_form,paper_signed,email,verbal_recorded',
             'evidence_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'consent_version' => 'nullable|string|max:40',
@@ -53,8 +58,8 @@ TXT;
 
         ConsentRecord::create([
             'request_candidate_id' => $candidate->id,
-            'consented_at' => $data['consented_at'],
-            'consent_version' => $data['consent_version'] ?: self::CURRENT_VERSION,
+            'consented_at' => Carbon::parse($data['consented_at'], $displayTimezone)->utc(),
+            'consent_version' => ($data['consent_version'] ?? null) ?: self::CURRENT_VERSION,
             'consent_text_snapshot' => self::STANDARD_TEXT,
             'evidence_type' => $data['evidence_type'],
             'evidence_file_path' => $filePath,

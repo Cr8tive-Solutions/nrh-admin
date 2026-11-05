@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\ConsentRecord;
 use App\Models\DataSubjectRequest;
 use App\Models\Invoice;
+use App\Models\ScreeningRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\Fixtures;
@@ -86,6 +88,51 @@ it('counts requests on the dashboard chart by their Malaysian day', function () 
 
             return $today['label'] === 'Fri' && $today['count'] >= 1;
         });
+});
+
+it('reads a typed DSAR received time as Malaysian time and stores it in UTC', function () {
+    // 06:00 on 6 Nov in Malaysia, still 5 Nov in UTC.
+    Carbon::setTestNow(Carbon::parse('2026-11-05 22:00:00', 'UTC'));
+
+    ($this->as)()->post(route('compliance.dsar.store'), [
+        'subject_name' => 'Ahmad Faizal bin Rahman',
+        'relation' => array_key_first(DataSubjectRequest::relations()),
+        'type' => array_key_first(DataSubjectRequest::types()),
+        'received_via' => 'email',
+        // 05:30 local: earlier today in Malaysia, so not in the future.
+        'received_at' => '2026-11-06T05:30',
+        'description' => 'Access request.',
+    ])->assertSessionHasNoErrors();
+
+    $dsar = DataSubjectRequest::latest('id')->first();
+
+    expect($dsar->getRawOriginal('received_at'))->toBe('2026-11-05 21:30:00')
+        ->and($dsar->received_at->inDisplayTz()->format('Y-m-d H:i'))->toBe('2026-11-06 05:30');
+});
+
+it('reads a typed consent time as Malaysian time and stores it in UTC', function () {
+    Carbon::setTestNow(Carbon::parse('2026-11-05 22:00:00', 'UTC'));
+    $requestId = Fixtures::screeningRequest($this->customerId, $this->userId);
+    $candidateId = Fixtures::candidate($requestId, $this->identityTypeId);
+
+    ($this->as)()->post(route('compliance.consent.store', [ScreeningRequest::find($requestId), $candidateId]), [
+        'consented_at' => '2026-11-06T05:30',
+        'evidence_type' => 'verbal_recorded',
+    ])->assertSessionHasNoErrors();
+
+    expect(ConsentRecord::where('request_candidate_id', $candidateId)->first()->getRawOriginal('consented_at'))
+        ->toBe('2026-11-05 21:30:00');
+});
+
+it('still rejects a typed time that is in the future in Malaysia', function () {
+    Carbon::setTestNow(Carbon::parse('2026-11-05 22:00:00', 'UTC'));
+    $requestId = Fixtures::screeningRequest($this->customerId, $this->userId);
+    $candidateId = Fixtures::candidate($requestId, $this->identityTypeId);
+
+    ($this->as)()->post(route('compliance.consent.store', [ScreeningRequest::find($requestId), $candidateId]), [
+        'consented_at' => '2026-11-06T07:00',
+        'evidence_type' => 'verbal_recorded',
+    ])->assertSessionHasErrors('consented_at');
 });
 
 it('converts every stored timestamp a view formats', function () {
