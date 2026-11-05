@@ -18,6 +18,9 @@
 /public/storage
 /storage/*.key
 /storage/pail
+# dompdf regenerates metric caches for its built-in fonts on demand; the
+# custom .ttf fonts and installed-fonts.json beside them stay committed.
+/storage/fonts/*.afm.json
 /vendor
 _ide_helper.php
 Homestead.json
