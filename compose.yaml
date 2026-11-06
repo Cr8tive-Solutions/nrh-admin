@@ -35,6 +35,26 @@ services:
             kyro-edge:
                 aliases:
                     - stg-admin-app
+    # Runs the Laravel scheduler (routes/console.php): PDPA retention purge,
+    # overdue invoices, system notifications, holiday sync. Same image, code
+    # and storage as the app; no network exposure.
+    scheduler:
+        image: sail-8.5/app
+        restart: unless-stopped
+        command: ['php', 'artisan', 'schedule:work']
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+            CLIENT_STORAGE_PATH: /mnt/client-storage
+        volumes:
+            - '.:/var/www/html'
+            - '../stg-nrh-intelligence/storage/app/private:/mnt/client-storage'
+        networks:
+            - sail
+        depends_on:
+            - laravel.test
 networks:
     sail:
         driver: bridge
