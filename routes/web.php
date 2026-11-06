@@ -10,9 +10,9 @@ use App\Http\Controllers\CandidateDocumentController;
 use App\Http\Controllers\Compliance\ConsentController;
 use App\Http\Controllers\Compliance\DataSubjectRequestController;
 use App\Http\Controllers\Compliance\RetentionController;
+use App\Http\Controllers\Config\BillingSettingController;
 use App\Http\Controllers\Config\BusinessHolidayController;
 use App\Http\Controllers\Config\CountryController;
-use App\Http\Controllers\Config\BillingSettingController;
 use App\Http\Controllers\Config\ScopeTypeController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -64,10 +64,16 @@ Route::middleware('admin.auth')->group(function () {
 
     Route::get('/account/security', [SecurityController::class, 'show'])->name('account.security');
     Route::post('/account/security/two-factor', [SecurityController::class, 'enable'])->name('account.two-factor.enable');
-    Route::post('/account/security/two-factor/confirm', [SecurityController::class, 'confirm'])->name('account.two-factor.confirm');
     Route::delete('/account/security/two-factor/setup', [SecurityController::class, 'cancelSetup'])->name('account.two-factor.cancel');
-    Route::delete('/account/security/two-factor', [SecurityController::class, 'disable'])->name('account.two-factor.disable');
-    Route::post('/account/security/two-factor/recovery-codes', [SecurityController::class, 'regenerateRecoveryCodes'])->name('account.two-factor.regenerate-codes');
+
+    // Code- and password-checking actions: throttled (5/min per admin) against
+    // guessing from a hijacked session.
+    Route::middleware('throttle:account-security')->group(function () {
+        Route::post('/account/security/two-factor/confirm', [SecurityController::class, 'confirm'])->name('account.two-factor.confirm');
+        Route::delete('/account/security/two-factor', [SecurityController::class, 'disable'])->name('account.two-factor.disable');
+        Route::post('/account/security/two-factor/recovery-codes', [SecurityController::class, 'regenerateRecoveryCodes'])->name('account.two-factor.regenerate-codes');
+        Route::put('/account/security/password', [SecurityController::class, 'updatePassword'])->name('account.password.update');
+    });
 
     // ── Read-only routes (any admin role, including viewer) ──────────────────
     Route::get('/requests', [RequestQueueController::class, 'index'])->name('requests.index');

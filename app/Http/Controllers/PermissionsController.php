@@ -26,9 +26,9 @@ class PermissionsController extends Controller
     public function update(Request $request)
     {
         $data = $request->validate([
-            'matrix'           => 'array',
-            'matrix.*'         => 'array',
-            'matrix.*.*'       => 'integer|exists:admin_permissions,id',
+            'matrix' => 'array',
+            'matrix.*' => 'array',
+            'matrix.*.*' => 'integer|exists:admin_permissions,id',
         ]);
 
         $allRoles = Permission::roles();
@@ -40,6 +40,15 @@ class PermissionsController extends Controller
             ->groupBy('role')
             ->map(fn ($rows) => $rows->pluck('admin_permission_id')->sort()->values()->all())
             ->toArray();
+
+        // Nobody edits the permissions of their own role — that would let a
+        // permissions.manage holder grant themselves anything. (super_admin is
+        // never editable here at all.)
+        $ownRole = current_admin()->role;
+        $ownSubmitted = collect($submitted[$ownRole] ?? [])->map(fn ($v) => (int) $v)->unique()->sort()->values()->all();
+        if ($ownRole !== 'super_admin' && $ownSubmitted !== ($before[$ownRole] ?? [])) {
+            return back()->with('error', 'You cannot change the permissions of your own role. Ask a super admin.');
+        }
 
         DB::transaction(function () use ($allRoles, $submitted) {
             foreach ($allRoles as $role) {
@@ -53,10 +62,10 @@ class PermissionsController extends Controller
                 $ids = $submitted[$role] ?? [];
                 foreach (array_unique($ids) as $pid) {
                     DB::table('admin_role_permissions')->insert([
-                        'role'                => $role,
+                        'role' => $role,
                         'admin_permission_id' => (int) $pid,
-                        'created_at'          => now(),
-                        'updated_at'          => now(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
                 }
             }
@@ -68,7 +77,7 @@ class PermissionsController extends Controller
 
         AdminAuditLog::record('permissions.role_matrix_updated', null, [
             'before' => $before,
-            'after'  => $after,
+            'after' => $after,
         ]);
 
         return redirect()->route('permissions.index')->with('success', 'Role permissions updated.');

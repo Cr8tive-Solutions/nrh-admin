@@ -29,7 +29,9 @@
             <select name="role" required
                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
                 <option value="">Select role…</option>
+                @if(current_admin()->isSuperAdmin())
                 <option value="super_admin" {{ old('role') === 'super_admin' ? 'selected' : '' }}>Super Admin</option>
+                @endif
                 <option value="operations" {{ old('role') === 'operations' ? 'selected' : '' }}>Operations</option>
                 <option value="finance" {{ old('role') === 'finance' ? 'selected' : '' }}>Finance</option>
                 <option value="viewer" {{ old('role') === 'viewer' ? 'selected' : '' }}>Viewer</option>
@@ -38,8 +40,9 @@
 
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Password <span class="text-red-500">*</span></label>
-            <input type="password" name="password" required minlength="8"
+            <input type="password" name="password" required minlength="12"
                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+            <p class="text-xs text-gray-500 mt-1">At least 12 characters, with upper- and lower-case letters and a number. They must choose their own at first sign-in.</p>
         </div>
 
         <div>

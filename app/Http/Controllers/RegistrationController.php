@@ -126,9 +126,11 @@ class RegistrationController extends Controller
         if ($registration->isAwaitingReview()) {
             $similar = Customer::query()
                 ->where(function ($q) use ($registration) {
-                    $q->where('name', 'ilike', $registration->company_name);
+                    // Case-insensitive equality: escape LIKE wildcards so a
+                    // submitted '%' or '_' cannot match unrelated customers.
+                    $q->where('name', 'ilike', self::escapeLike($registration->company_name));
                     if ($registration->registration_no) {
-                        $q->orWhere('registration_no', 'ilike', $registration->registration_no);
+                        $q->orWhere('registration_no', 'ilike', self::escapeLike($registration->registration_no));
                     }
                 })
                 ->limit(5)
@@ -193,7 +195,7 @@ class RegistrationController extends Controller
             'company_name' => ['required', 'string', 'max:255'],
             'registration_no' => ['required', 'string', 'max:100'],
             'address' => ['required', 'string', 'max:2000'],
-            'country' => ['required', 'string', 'max:100'],
+            'country' => ['required', 'string', 'max:100', Rule::exists('countries', 'name')],
             'industry' => ['nullable', 'string', 'max:100'],
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_designation' => ['nullable', 'string', 'max:100'],
@@ -294,6 +296,12 @@ class RegistrationController extends Controller
         return back()->with($sent
             ? ['success' => "Registration rejected; {$registration->email} has been emailed the reason."]
             : ['warning' => "Registration rejected, but the email to {$registration->email} could not be sent."]);
+    }
+
+    /** Escape LIKE/ILIKE wildcards (and the escape character itself) for a literal match. */
+    private static function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 
     private function send(CustomerRegistration $registration, string $kind, ?string $url = null): bool

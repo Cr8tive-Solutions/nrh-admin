@@ -18,6 +18,8 @@ beforeEach(function () {
     Fixtures::seedPermissions();
     Fixtures::portalRoles();
     Mail::fake();
+    // approve() only accepts a country that exists in the countries table.
+    Fixtures::country(['name' => 'Malaysia']);
 
     $this->admin = Fixtures::admin(['role' => 'super_admin']);
 });
@@ -222,4 +224,42 @@ it('renders all three emails', function () {
         ->and($approved)->toContain('https://portal.test/login')->toContain('Maju Jaya Sdn Bhd')
         // Staff-entered reason is escaped, not injected as HTML.
         ->and($rejected)->toContain('Details &lt;b&gt;did not&lt;/b&gt; match.');
+});
+
+it('rejects an approval whose country is not in the countries table', function () {
+    $r = submittedRegistration();
+
+    Fixtures::actingAs($this, $this->admin)
+        ->post(route('registrations.approve', $r), reviewPayload($r, ['country' => '<img src=x onerror=alert(1)>']))
+        ->assertSessionHasErrors('country');
+
+    expect($r->fresh()->status)->toBe('submitted');
+});
+
+it('matches similar customers literally, not as a LIKE pattern', function () {
+    Fixtures::customer(['name' => 'Totally Unrelated Holdings']);
+    $exact = Fixtures::customer(['name' => '100% Halal_Foods']);
+    $r = submittedRegistration(['company_name' => '%', 'registration_no' => null]);
+    $literal = submittedRegistration(['company_name' => '100% halal_foods', 'registration_no' => null]);
+
+    Fixtures::actingAs($this, $this->admin)
+        ->get(route('registrations.show', $r))
+        ->assertOk()
+        ->assertDontSee('Totally Unrelated Holdings');
+
+    Fixtures::actingAs($this, $this->admin)
+        ->get(route('registrations.show', $literal))
+        ->assertOk()
+        ->assertSee(Customer::findOrFail($exact)->name);
+});
+
+it('escapes the contact name in every email heading', function () {
+    $r = submittedRegistration(['contact_name' => '<script>alert(1)</script>']);
+
+    foreach (['invite', 'approved', 'rejected'] as $kind) {
+        $html = (new CustomerRegistrationMail($r, $kind, 'https://portal.test/x'))->render();
+
+        expect($html)->not->toContain('<script>alert(1)</script>')
+            ->toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    }
 });

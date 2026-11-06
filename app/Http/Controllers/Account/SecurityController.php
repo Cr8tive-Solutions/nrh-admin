@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Account;
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\AdminAuditLog;
+use App\Support\AuthSession;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
@@ -55,6 +56,7 @@ class SecurityController extends Controller
         $google2fa = new Google2FA;
         $admin->two_factor_secret = $google2fa->generateSecretKey();
         $admin->two_factor_confirmed_at = null;
+        $admin->two_factor_last_used_timestep = null;
         $admin->save();
 
         AdminAuditLog::record('two_factor.setup_started', $admin);
@@ -78,8 +80,7 @@ class SecurityController extends Controller
             'code' => 'required|string',
         ]);
 
-        $google2fa = new Google2FA;
-        if (! $google2fa->verifyKey($admin->two_factor_secret, trim($data['code']), 1)) {
+        if (! $admin->consumeTotpCode($data['code'])) {
             throw ValidationException::withMessages(['code' => 'Invalid code. Try the next one your app displays.']);
         }
 
@@ -113,14 +114,23 @@ class SecurityController extends Controller
     }
 
     /**
-     * Disable 2FA — requires current password.
+     * Disable 2FA — requires the current password and a current authenticator
+     * code (or an unused recovery code). 2FA is mandatory for staff, so this is
+     * a reset: AdminAuth sends the admin straight back to enrolment.
      */
     public function disable(Request $request)
     {
         $admin = current_admin();
 
+        if (! $admin->hasEnabledTwoFactor()) {
+            return back();
+        }
+
         $data = $request->validate([
             'password' => 'required|string',
+            'code' => 'required|string',
+        ], [
+            'code.required' => 'Enter a code from your authenticator app or a recovery code.',
         ]);
 
         if (! $admin->verifyPassword($data['password'])) {
@@ -128,14 +138,22 @@ class SecurityController extends Controller
             throw ValidationException::withMessages(['password' => 'Incorrect password.']);
         }
 
+        $code = trim($data['code']);
+        if (! $admin->consumeTotpCode($code) && ! $admin->consumeRecoveryCode($code)) {
+            AdminAuditLog::record('two_factor.disable_code_failed', $admin);
+            throw ValidationException::withMessages(['code' => 'Invalid authenticator or recovery code.']);
+        }
+
         $admin->two_factor_secret = null;
         $admin->two_factor_recovery_codes = null;
         $admin->two_factor_confirmed_at = null;
+        $admin->two_factor_last_used_timestep = null;
         $admin->save();
 
         AdminAuditLog::record('two_factor.disabled', $admin);
 
-        return redirect()->route('account.security')->with('success', 'Two-factor authentication disabled.');
+        return redirect()->route('account.security')
+            ->with('success', 'Two-factor authentication has been reset. Set it up again with your new device to continue.');
     }
 
     /**
@@ -166,5 +184,39 @@ class SecurityController extends Controller
         $request->session()->flash('two_factor.recovery_codes', $codes);
 
         return redirect()->route('account.security')->with('success', 'New recovery codes generated.');
+    }
+
+    /**
+     * Self-service password change. On success every other session of this
+     * admin is signed out (AdminAuth checks the password fingerprint) and this
+     * session's id is rotated. Also clears a pending forced change.
+     */
+    public function updatePassword(Request $request)
+    {
+        $admin = current_admin();
+
+        $data = $request->validateWithBag('updatePassword', [
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'confirmed', 'different:current_password', Admin::passwordRule()],
+        ], [
+            'password.different' => 'Choose a password different from your current one.',
+        ]);
+
+        if (! $admin->verifyPassword($data['current_password'])) {
+            AdminAuditLog::record('auth.password_change_failed', $admin);
+            throw ValidationException::withMessages(['current_password' => 'Incorrect password.'])
+                ->errorBag('updatePassword');
+        }
+
+        $admin->password = $data['password'];
+        $admin->must_change_password = false;
+        $admin->save();
+
+        AuthSession::refreshAfterPasswordChange($admin);
+
+        AdminAuditLog::record('auth.password_changed', $admin);
+
+        return redirect()->route('account.security')
+            ->with('success', 'Password changed. Any other signed-in sessions have been signed out.');
     }
 }

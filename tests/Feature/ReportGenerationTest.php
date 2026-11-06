@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\AdminAuditLog;
 use App\Models\ReportVersion;
+use App\Models\RequestCandidate;
 use App\Models\ScreeningRequest;
 use App\Services\ReportSnapshot;
 use Illuminate\Support\Facades\DB;
@@ -97,7 +99,7 @@ it('ignores the workflow status when fingerprinting, but keeps it in the snapsho
 
     // ...but re-hashing the request now (status = 'complete') yields the same
     // fingerprint, which is exactly what makes the dedup guard reliable.
-    $current = ReportSnapshot::build(ScreeningRequest::find($this->requestId), App\Models\RequestCandidate::find($this->candidateId));
+    $current = ReportSnapshot::build(ScreeningRequest::find($this->requestId), RequestCandidate::find($this->candidateId));
     expect($current['request']['status'])->toBe('complete')
         ->and(ReportSnapshot::hash($current))->toBe($version->content_hash);
 });
@@ -168,6 +170,43 @@ it('serves a live preview without persisting a version', function () {
     expect(ReportVersion::where('screening_request_id', $this->requestId)->count())->toBe(0);
 });
 
+it('audit-logs a report preview', function () {
+    ($this->as)()->get(route('requests.report.preview', [$this->req, $this->candidateId]))->assertOk();
+
+    $log = AdminAuditLog::where('action', 'report.previewed')->latest('id')->firstOrFail();
+    expect($log->details)->toMatchArray(['request_id' => $this->requestId, 'candidate_id' => $this->candidateId])
+        ->and($log->actor_admin_id)->toBe($this->admin->id);
+});
+
+it('escapes an unrecognised validation match term in the report template', function () {
+    $academicScopeId = Fixtures::scopeType(Fixtures::country(), ['name' => 'Academic Qualification '.Fixtures::uniq()]);
+    Fixtures::attachScope($this->candidateId, $academicScopeId, [
+        'status' => 'complete',
+        'findings' => json_encode(['credentials' => [[
+            'institution' => 'Universiti Test',
+            'validation' => [['aspect' => 'LEVEL', 'verified' => 'Degree', 'match' => '<b>injected</b>', 'risk' => 'low']],
+        ]]]),
+    ]);
+
+    $request = ScreeningRequest::with(['customer', 'candidates.identityType', 'candidates.scopeTypes'])->find($this->requestId);
+    $html = view('reports.screening', [
+        'request' => $request,
+        'reference' => $request->reference,
+        'customer' => $request->customer,
+        'candidates' => $request->candidates,
+        'logoSrc' => '',
+        'completionBasic' => null,
+        'completionPrelim' => null,
+        'completionFull' => null,
+        'reportType' => null,
+        'reportVersion' => null,
+        'reportHash' => null,
+    ])->render();
+
+    expect($html)->toContain('&lt;B&gt;INJECTED&lt;/B&gt;')
+        ->not->toContain('<B>INJECTED</B>');
+});
+
 it('blocks a viewer from previewing, viewing, downloading or generating reports', function () {
     ($this->as)()->post(route('requests.report.generate', [$this->req, $this->candidateId]), ['type' => 'full']);
     $version = ReportVersion::where('screening_request_id', $this->requestId)->firstOrFail();
@@ -197,7 +236,7 @@ it('re-downloads the exact stored bytes of a version', function () {
 
 it('tags each report to its candidate and completes the request only when all candidates have a full report', function () {
     // Add a second candidate to the same request.
-    $identityTypeId = App\Models\RequestCandidate::find($this->candidateId)->identity_type_id;
+    $identityTypeId = RequestCandidate::find($this->candidateId)->identity_type_id;
     $candidate2 = Fixtures::candidate($this->requestId, $identityTypeId);
     Fixtures::attachScope($candidate2, $this->scopeTypeId, ['status' => 'complete', 'completed_at' => now()]);
 

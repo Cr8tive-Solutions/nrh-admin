@@ -28,9 +28,12 @@ use App\Support\EncryptedFilesystemAdapter;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Hashids\Hashids;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Filesystem\LocalFilesystemAdapter;
 use Illuminate\Foundation\Console\ServeCommand;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -66,6 +69,13 @@ class AppServiceProvider extends ServiceProvider
         // SST rate is admin-configurable (app_settings); override the static
         // config default so every config('billing.sst_rate') call site uses it.
         config(['billing.sst_rate' => Setting::sstRate((float) config('billing.sst_rate', 0.06))]);
+
+        // Account-security actions that check a password or 2FA code: 5 a
+        // minute per signed-in admin, so staff sharing an office IP don't
+        // throttle each other.
+        RateLimiter::for('account-security', function (Request $request) {
+            return Limit::perMinute(5)->by('account-security:'.($request->session()->get('admin_id') ?: $request->ip()));
+        });
 
         // @allowed('invoice.manage') ... @endallowed — RBAC/UBAC permission check.
         Blade::if('allowed', function (string $key) {

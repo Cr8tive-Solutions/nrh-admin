@@ -34,6 +34,14 @@ return [
 
     'lifetime' => (int) env('SESSION_LIFETIME', 120),
 
+    /*
+    | Absolute lifetime: AdminAuth signs staff out this many minutes after they
+    | signed in, however active the session has been. The idle lifetime above
+    | still applies within it.
+    */
+
+    'absolute_lifetime_minutes' => (int) env('SESSION_ABSOLUTE_LIFETIME', 720),
+
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 
     /*

@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Mail\CustomerUserInvitationMail;
+use App\Models\AdminAuditLog;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\CustomerUser;
 use App\Models\CustomerUserInvitation;
 use App\Models\Package;
-use App\Models\PortalRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +18,9 @@ use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
+    /** Shown when an invitation email fails; the link itself is never shown to staff. */
+    private const INVITATION_EMAIL_FAILED = 'The invitation was created but the email could not be sent. Check the address and use Resend invitation to try again.';
+
     public function index(Request $request)
     {
         $query = Customer::withCount(['screeningRequests', 'invoices'])
@@ -108,7 +111,7 @@ class CustomerController extends Controller
             'name' => 'required|string|max:255',
             'registration_no' => 'nullable|string|max:100',
             'address' => 'nullable|string',
-            'country' => 'nullable|string|max:100',
+            'country' => ['nullable', 'string', 'max:100', Rule::exists('countries', 'name')],
             'industry' => 'nullable|string|max:100',
             'contact_name' => 'nullable|string|max:255',
             'contact_email' => 'nullable|email|max:255',
@@ -133,7 +136,7 @@ class CustomerController extends Controller
             'name' => 'required|string|max:255',
             'registration_no' => 'nullable|string|max:100',
             'address' => 'nullable|string',
-            'country' => 'nullable|string|max:100',
+            'country' => ['nullable', 'string', 'max:100', Rule::exists('countries', 'name')],
             'industry' => 'nullable|string|max:100',
             'contact_name' => 'nullable|string|max:255',
             'contact_email' => 'nullable|email|max:255',
@@ -142,10 +145,10 @@ class CustomerController extends Controller
         ]);
 
         $sendInvitation = ! empty($data['send_invitation']);
-        $invitationUrl = null;
+        $invitationSent = null;
         $invitationError = null;
 
-        $customer = DB::transaction(function () use ($data, $sendInvitation, &$invitationUrl, &$invitationError) {
+        $customer = DB::transaction(function () use ($data, $sendInvitation, &$invitationSent, &$invitationError) {
             $customer = Customer::create(collect($data)->except('send_invitation')->all());
 
             if ($sendInvitation && ! empty($data['contact_email']) && ! empty($data['contact_name'])) {
@@ -170,8 +173,7 @@ class CustomerController extends Controller
                 // Same as provisionPrimaryUser: this is the account owner.
                 $this->assignPortalRole($user, 'Owner');
 
-                $invitation = $this->createInvitation($user);
-                $invitationUrl = $invitation->url();
+                $invitationSent = $this->createInvitation($user, 'customer_user.invited', ['portal_role' => 'Owner']);
             }
 
             return $customer;
@@ -181,9 +183,10 @@ class CustomerController extends Controller
 
         if ($invitationError) {
             $flash['warning'] = $invitationError;
-        } elseif ($invitationUrl) {
+        } elseif ($invitationSent === true) {
             $flash['success'] = 'Customer created and invitation sent.';
-            $flash['invitation_url'] = $invitationUrl;
+        } elseif ($invitationSent === false) {
+            $flash['error'] = self::INVITATION_EMAIL_FAILED;
         }
 
         return redirect()->route('customers.show', $customer)->with($flash);
@@ -221,12 +224,11 @@ class CustomerController extends Controller
         // log in and see almost nothing, since every client route is permission-gated.
         $this->assignPortalRole($user, 'Owner');
 
-        $invitation = $this->createInvitation($user);
+        if (! $this->createInvitation($user, 'customer_user.invited', ['portal_role' => 'Owner'])) {
+            return back()->with('error', self::INVITATION_EMAIL_FAILED);
+        }
 
-        return back()->with([
-            'success' => "Primary user created and invitation sent to {$user->email}.",
-            'invitation_url' => $invitation->url(),
-        ]);
+        return back()->with('success', "Primary user created and invitation sent to {$user->email}.");
     }
 
     /**
@@ -267,12 +269,11 @@ class CustomerController extends Controller
             return $user;
         });
 
-        $invitation = $this->createInvitation($user);
+        if (! $this->createInvitation($user, 'customer_user.invited', ['portal_role' => $data['portal_role']])) {
+            return back()->with('error', self::INVITATION_EMAIL_FAILED);
+        }
 
-        return back()->with([
-            'success' => "{$user->name} invited as {$data['portal_role']}; invitation sent to {$user->email}.",
-            'invitation_url' => $invitation->url(),
-        ]);
+        return back()->with('success', "{$user->name} invited as {$data['portal_role']}; invitation sent to {$user->email}.");
     }
 
     /**
@@ -288,7 +289,16 @@ class CustomerController extends Controller
             'portal_role' => ['required', 'string', Rule::in(CustomerUser::PORTAL_ROLES)],
         ]);
 
+        $from = $user->portalRoleName();
         $this->assignPortalRole($user, $data['portal_role']);
+
+        AdminAuditLog::record('customer_user.role_changed', null, [
+            'customer_id' => $customer->id,
+            'customer_user_id' => $user->id,
+            'email' => $user->email,
+            'from' => $from,
+            'to' => $data['portal_role'],
+        ]);
 
         return back()->with('success', "{$user->name} is now {$data['portal_role']}.");
     }
@@ -311,7 +321,16 @@ class CustomerController extends Controller
             return back()->with('error', "{$user->name} is the only active Owner for {$customer->name}. Promote another user to Owner first.");
         }
 
+        $from = $user->status;
         $user->update(['status' => $data['status']]);
+
+        AdminAuditLog::record('customer_user.status_changed', null, [
+            'customer_id' => $customer->id,
+            'customer_user_id' => $user->id,
+            'email' => $user->email,
+            'from' => $from,
+            'to' => $data['status'],
+        ]);
 
         return back()->with(
             'success',
@@ -357,28 +376,40 @@ class CustomerController extends Controller
         // Expire previous tokens by setting expires_at to now (a clean revoke).
         $user->invitations()->whereNull('accepted_at')->update(['expires_at' => now()->subSecond()]);
 
-        $invitation = $this->createInvitation($user);
+        if (! $this->createInvitation($user, 'customer_user.invitation_resent')) {
+            return back()->with('error', self::INVITATION_EMAIL_FAILED);
+        }
 
-        return back()->with([
-            'success' => "Fresh invitation sent to {$user->email}.",
-            'invitation_url' => $invitation->url(),
-        ]);
+        return back()->with('success', "Fresh invitation sent to {$user->email}.");
     }
 
-    private function createInvitation(CustomerUser $user): CustomerUserInvitation
+    /**
+     * Issue a 14-day invitation and email it, returning whether the email went.
+     *
+     * Only the SHA-256 of the token is stored; the raw token exists solely in
+     * the emailed link, which is never shown to staff. If the email fails the
+     * invitation stays on file and staff can resend it.
+     *
+     * @param  array<string, mixed>  $details  Extra audit-log context.
+     */
+    private function createInvitation(CustomerUser $user, string $auditAction, array $details = []): bool
     {
+        $rawToken = Str::random(64);
+
         $invitation = CustomerUserInvitation::create([
             'customer_user_id' => $user->id,
-            'token' => Str::random(64),
+            'token' => CustomerUserInvitation::hashToken($rawToken),
             'expires_at' => now()->addDays(14),
             'sent_count' => 1,
             'last_sent_at' => now(),
         ]);
 
+        $sent = true;
+
         try {
-            Mail::to($user->email)->send(new CustomerUserInvitationMail($invitation));
+            Mail::to($user->email)->send(new CustomerUserInvitationMail($invitation, CustomerUserInvitation::urlFor($rawToken)));
         } catch (\Throwable $e) {
-            // Log but don't fail; admin can copy link manually from the success message.
+            $sent = false;
             Log::warning('Failed to send invitation email', [
                 'customer_user_id' => $user->id,
                 'email' => $user->email,
@@ -386,6 +417,13 @@ class CustomerController extends Controller
             ]);
         }
 
-        return $invitation;
+        AdminAuditLog::record($auditAction, null, [
+            'customer_id' => $user->customer_id,
+            'customer_user_id' => $user->id,
+            'email' => $user->email,
+            'email_sent' => $sent,
+        ] + $details);
+
+        return $sent;
     }
 }

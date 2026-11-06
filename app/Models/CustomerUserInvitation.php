@@ -13,8 +13,8 @@ class CustomerUserInvitation extends Model
     ];
 
     protected $casts = [
-        'expires_at'   => 'datetime',
-        'accepted_at'  => 'datetime',
+        'expires_at' => 'datetime',
+        'accepted_at' => 'datetime',
         'last_sent_at' => 'datetime',
     ];
 
@@ -44,13 +44,27 @@ class CustomerUserInvitation extends Model
     {
         return match (true) {
             $this->isAccepted() => 'accepted',
-            $this->isExpired()  => 'expired',
-            default             => 'pending',
+            $this->isExpired() => 'expired',
+            default => 'pending',
         };
     }
 
-    public function url(): string
+    /**
+     * The stored form of a raw invitation token. Only this SHA-256 hex digest is
+     * kept in `token`; the client portal hashes the token from the URL the
+     * same way before looking the invitation up.
+     */
+    public static function hashToken(string $rawToken): string
     {
-        return rtrim(config('services.client_portal.url'), '/').'/invitation/'.$this->token;
+        return hash('sha256', $rawToken);
+    }
+
+    /**
+     * The emailed accept link. Built from the raw token at creation time — it
+     * cannot be rebuilt later from the stored hash.
+     */
+    public static function urlFor(string $rawToken): string
+    {
+        return rtrim(config('services.client_portal.url'), '/').'/invitation/'.$rawToken;
     }
 }

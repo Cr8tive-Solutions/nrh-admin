@@ -34,6 +34,47 @@
     </div>
     @endif
 
+    {{-- ── Password change ── --}}
+    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-4" @if($admin->must_change_password) style="border-color: #f59e0b;" @endif>
+        <h2 class="text-base font-semibold text-gray-900">Change Password</h2>
+        <p class="text-xs text-gray-500 mt-1 mb-4">
+            @if($admin->must_change_password)
+                Your account was created with a temporary password. Choose your own before continuing.
+            @else
+                Changing your password signs out every other session on your account.
+            @endif
+            At least 12 characters, with upper- and lower-case letters and a number.
+        </p>
+
+        <form method="POST" action="{{ route('account.password.update') }}" class="flex flex-col gap-3 max-w-xs">
+            @csrf @method('PUT')
+            <div class="flex flex-col gap-1">
+                <label for="current_password" class="text-xs font-medium text-gray-600 uppercase tracking-wide">Current password</label>
+                <input type="password" id="current_password" name="current_password" required autocomplete="current-password"
+                       class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 {{ $errors->updatePassword->has('current_password') ? 'border-red-400' : '' }}">
+                @error('current_password', 'updatePassword')
+                    <span class="text-xs text-red-600">{{ $message }}</span>
+                @enderror
+            </div>
+            <div class="flex flex-col gap-1">
+                <label for="new_password" class="text-xs font-medium text-gray-600 uppercase tracking-wide">New password</label>
+                <input type="password" id="new_password" name="password" required autocomplete="new-password" minlength="12"
+                       class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 {{ $errors->updatePassword->has('password') ? 'border-red-400' : '' }}">
+                @error('password', 'updatePassword')
+                    <span class="text-xs text-red-600">{{ $message }}</span>
+                @enderror
+            </div>
+            <div class="flex flex-col gap-1">
+                <label for="new_password_confirmation" class="text-xs font-medium text-gray-600 uppercase tracking-wide">Confirm new password</label>
+                <input type="password" id="new_password_confirmation" name="password_confirmation" required autocomplete="new-password"
+                       class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+            </div>
+            <div>
+                <button type="submit" class="nrh-btn nrh-btn-primary">Change Password</button>
+            </div>
+        </form>
+    </div>
+
     {{-- ── Two-factor authentication card ── --}}
     <div class="bg-white rounded-lg border border-gray-200 p-6">
         <div class="flex items-start justify-between mb-1">
@@ -46,7 +87,7 @@
             @elseif($pendingSetup)
                 <span class="badge badge-yellow">Setup pending</span>
             @else
-                <span class="badge badge-gray">Disabled</span>
+                <span class="badge badge-gray">Required</span>
             @endif
         </div>
 
@@ -54,7 +95,7 @@
         @if(! $admin->hasEnabledTwoFactor() && ! $pendingSetup)
         <div class="border-t border-gray-100 mt-4 pt-4">
             <p class="text-sm text-gray-600 mb-3">
-                When 2FA is enabled, you'll need a 6-digit code from an authenticator app (Google Authenticator, Authy, 1Password, etc.) every time you sign in.
+                Two-factor authentication is required for every staff account. Once it is set up, you'll need a 6-digit code from an authenticator app (Google Authenticator, Authy, 1Password, etc.) every time you sign in.
             </p>
             <form method="POST" action="{{ route('account.two-factor.enable') }}">
                 @csrf
@@ -130,10 +171,10 @@
     </div>
 
     <div class="bg-white rounded-lg border border-red-200 p-6 mt-4">
-        <h2 class="text-base font-semibold text-red-700">Disable Two-Factor Authentication</h2>
-        <p class="text-xs text-gray-500 mt-1 mb-4">Removing 2FA leaves your account protected only by your password. Re-enter your password to confirm.</p>
+        <h2 class="text-base font-semibold text-red-700">Reset Two-Factor Authentication</h2>
+        <p class="text-xs text-gray-500 mt-1 mb-4">Use this when moving to a new device. Two-factor is required, so you will be asked to set it up again straight away. Confirm with your password and a current authenticator code (or a recovery code).</p>
 
-        <form method="POST" action="{{ route('account.two-factor.disable') }}" class="flex items-end gap-2">
+        <form method="POST" action="{{ route('account.two-factor.disable') }}" class="flex items-end gap-2 flex-wrap">
             @csrf @method('DELETE')
             <div class="flex flex-col gap-1 flex-1 max-w-xs">
                 <label class="text-xs font-medium text-gray-600 uppercase tracking-wide">Current password</label>
@@ -143,9 +184,17 @@
                     <span class="text-xs text-red-600">{{ $message }}</span>
                 @enderror
             </div>
+            <div class="flex flex-col gap-1 w-40">
+                <label class="text-xs font-medium text-gray-600 uppercase tracking-wide">Code</label>
+                <input type="text" name="code" required autocomplete="one-time-code"
+                       class="border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-600 {{ $errors->has('code') ? 'border-red-400' : '' }}">
+                @error('code')
+                    <span class="text-xs text-red-600">{{ $message }}</span>
+                @enderror
+            </div>
             <button type="submit" class="nrh-btn" style="background: #c4453a; color: white;"
-                    onclick="return confirm('Disable 2FA for your account?');">
-                Disable 2FA
+                    onclick="return confirm('Reset 2FA for your account? You will need to set it up again immediately.');">
+                Reset 2FA
             </button>
         </form>
     </div>

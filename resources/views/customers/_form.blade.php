@@ -390,7 +390,7 @@
             <div class="cf-preview-row">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 <div class="cf-preview-row-text" :class="{ 'muted': !country && !address }">
-                    <span x-show="country" x-html="countryFlag + ' ' + country"></span>
+                    <span x-show="country"><span x-text="countryFlag"></span> <span x-text="country"></span></span>
                     <div x-show="address" x-text="address" style="white-space: pre-wrap; margin-top: 2px; color: var(--ink-500);"></div>
                     <span x-show="!country && !address" x-cloak>No address yet</span>
                 </div>

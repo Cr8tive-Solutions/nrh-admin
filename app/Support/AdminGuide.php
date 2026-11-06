@@ -88,11 +88,13 @@ class AdminGuide
                 ['type' => 'sub', 'text' => 'Signing in'],
                 ['type' => 'steps', 'items' => [
                     'Go to <code>/login</code> and enter your work email and password.',
-                    'If two-factor authentication is enabled on your account you are redirected to <code>/two-factor-challenge</code>. Enter the 6-digit code from your authenticator app.',
+                    'You are then redirected to <code>/two-factor-challenge</code>. Enter the 6-digit code from your authenticator app within 5 minutes. After 5 wrong codes you are sent back to sign in again.',
                     'If you cannot reach your authenticator, enter one of your recovery codes instead. <b>Each recovery code works once</b> and is consumed as soon as it is used.',
                 ]],
-                ['type' => 'warn', 'title' => 'Rate limiting', 'text' => 'Both the login form and the two-factor challenge allow 5 attempts per minute. If you trip the limit, wait a minute rather than retrying — repeated attempts extend the lockout.'],
+                ['type' => 'warn', 'title' => 'Rate limiting', 'text' => 'Both the login form and the two-factor challenge allow 5 attempts per minute. After 10 failed sign-ins an account is locked for 15 minutes. If you trip a limit, wait rather than retrying — repeated attempts extend the lockout.'],
+                ['type' => 'p', 'text' => 'You are signed out automatically 12 hours after signing in, however active you have been.'],
                 ['type' => 'sub', 'text' => 'Setting up two-factor authentication'],
+                ['type' => 'p', 'text' => 'Two-factor authentication is <b>required</b> for every staff account. Until it is set up, every page redirects to <b>My Account → Security</b>. A new account must also replace the initial password it was given before it can go anywhere else.'],
                 ['type' => 'steps', 'items' => [
                     'Open <b>My Account → Security</b>.',
                     'Select <b>Enable two-factor authentication</b>. A QR code and a set of recovery codes are shown.',
@@ -101,7 +103,7 @@ class AdminGuide
                     '<b>Save your recovery codes somewhere safe and offline.</b> They are the only way back in if you lose your phone.',
                 ]],
                 ['type' => 'p', 'text' => 'You can regenerate recovery codes at any time from the same page. Regenerating invalidates every previously issued code.'],
-                ['type' => 'note', 'title' => 'Locked out?', 'text' => 'A colleague with the <code>staff.manage</code> permission can reset your two-factor from <b>Staff → Reset 2FA</b>. This clears your authenticator binding so you can enrol a fresh device on your next sign-in. It does not reset your password.'],
+                ['type' => 'note', 'title' => 'Locked out?', 'text' => 'A super admin can reset your two-factor from <b>Staff → Reset 2FA</b>. This clears your authenticator binding so you can enrol a fresh device on your next sign-in. It does not reset your password.'],
                 ['type' => 'links', 'items' => [
                     ['label' => 'My Account → Security', 'route' => 'account.security'],
                 ]],
@@ -134,7 +136,7 @@ class AdminGuide
                     ['<code>transaction.manage</code>', 'Record transactions; verify or reject customer payment slips and receipts.'],
                     ['<code>config.scopes</code>', 'Manage scope types and business holidays.'],
                     ['<code>config.countries</code>', 'Manage the country list.'],
-                    ['<code>staff.manage</code>', 'Create staff, activate/deactivate accounts, set per-user permissions, reset 2FA, view the audit log.'],
+                    ['<code>staff.manage</code>', 'Create staff, activate/deactivate accounts, set per-user permissions, view the audit log. (Resetting another admin\'s 2FA is super admin only.)'],
                     ['<code>permissions.manage</code>', 'Edit the role → permission matrix.'],
                     ['<code>pdpa.consent</code>', 'Record candidate consent and download consent evidence.'],
                     ['<code>pdpa.dsar</code>', 'Handle Data Subject Requests, including erasure.'],
@@ -541,10 +543,10 @@ class AdminGuide
             'summary' => 'Admin accounts, per-user permissions and 2FA resets.',
             'blocks' => [
                 ['type' => 'steps', 'items' => [
-                    '<b>Add staff</b> — create the account with a name, work email, role and initial password. They set up their own two-factor on first sign-in.',
+                    '<b>Add staff</b> — create the account with a name, work email, role and initial password. On first sign-in they must choose their own password and set up two-factor. Only a super admin can create, change or deactivate a super admin, and nobody can change their own status or permissions.',
                     '<b>Activate / deactivate</b> — deactivating blocks sign-in immediately while preserving the account and its audit history. This is the correct way to handle someone leaving.',
                     '<b>Permissions</b> — override individual permissions for one person on top of their role. Each permission can be explicitly granted or explicitly revoked.',
-                    '<b>Reset 2FA</b> — clears their authenticator binding so they can enrol a new device. Use when someone loses their phone.',
+                    '<b>Reset 2FA</b> (super admins only) — clears their authenticator binding so they can enrol a new device. Use when someone loses their phone.',
                 ]],
                 ['type' => 'note', 'title' => 'Overrides beat the role', 'text' => 'A per-user override wins over the role default in both directions — it can grant a permission the role lacks, or take away one the role has. If someone\'s access looks wrong, check their overrides before changing the role matrix for everyone.'],
                 ['type' => 'warn', 'title' => 'super_admin bypasses everything', 'text' => 'A super_admin passes every permission check, including permissions added in future. Grant the role sparingly and prefer targeted permissions.'],
@@ -587,9 +589,9 @@ class AdminGuide
             'blocks' => [
                 ['type' => 'list', 'items' => [
                     '<b>Profile</b> — update your name, email and avatar. Removing your avatar falls back to your initials.',
-                    '<b>Security</b> — enable or disable two-factor authentication and regenerate recovery codes.',
+                    '<b>Security</b> — change your password (this signs out your other sessions), set up or reset two-factor authentication and regenerate recovery codes.',
                 ]],
-                ['type' => 'warn', 'title' => 'Think before disabling two-factor', 'text' => 'You hold access to candidate personal data, financial records and the erasure tools. Keep two-factor on unless you have a specific reason not to, and re-enable it as soon as that reason passes.'],
+                ['type' => 'warn', 'title' => 'Two-factor is mandatory', 'text' => 'You hold access to candidate personal data, financial records and the erasure tools. Resetting two-factor (password plus a current code or recovery code) is only for moving to a new device — you are asked to set it up again straight away.'],
                 ['type' => 'links', 'items' => [
                     ['label' => 'Profile', 'route' => 'account.profile'],
                     ['label' => 'Security', 'route' => 'account.security'],

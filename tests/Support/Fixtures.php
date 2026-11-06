@@ -5,8 +5,10 @@ namespace Tests\Support;
 use App\Models\Admin;
 use App\Models\CustomerUser;
 use App\Models\Permission;
+use App\Support\AuthSession;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Support\Facades\DB;
+use PragmaRX\Google2FA\Google2FA;
 
 /**
  * Row builders for the shared schema.
@@ -34,6 +36,11 @@ class Fixtures
         }
     }
 
+    /**
+     * An active admin who has enrolled in 2FA, since AdminAuth sends anyone
+     * without it to enrolment. Pass two_factor_secret / two_factor_confirmed_at
+     * as null to build an un-enrolled admin.
+     */
     public static function admin(array $attrs = []): Admin
     {
         return Admin::create(array_merge([
@@ -42,6 +49,8 @@ class Fixtures
             'password' => 'secret-password',
             'role' => 'super_admin',
             'status' => 'active',
+            'two_factor_secret' => (new Google2FA)->generateSecretKey(),
+            'two_factor_confirmed_at' => now(),
         ], $attrs));
     }
 
@@ -238,6 +247,8 @@ class Fixtures
             'admin_name' => $admin->name,
             'admin_role' => $admin->role,
             'admin_email' => $admin->email,
+            'admin_logged_in_at' => now()->getTimestamp(),
+            'admin_password_fp' => AuthSession::passwordFingerprint($admin),
         ]);
     }
 }

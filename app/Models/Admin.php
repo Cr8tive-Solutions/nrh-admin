@@ -9,14 +9,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
+use PragmaRX\Google2FA\Google2FA;
 
 class Admin extends Model
 {
     use HasHashid;
+
     protected $fillable = [
         'name',
         'email',
         'password',
+        'must_change_password',
         'role',
         'status',
         'avatar',
@@ -28,10 +32,11 @@ class Admin extends Model
     protected $hidden = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'];
 
     protected $casts = [
-        'password'                  => 'hashed',
-        'two_factor_secret'         => 'encrypted',
+        'password' => 'hashed',
+        'must_change_password' => 'boolean',
+        'two_factor_secret' => 'encrypted',
         'two_factor_recovery_codes' => 'encrypted:array',
-        'two_factor_confirmed_at'   => 'datetime',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     /** Memoized per-request set of effective permission keys. */
@@ -66,6 +71,7 @@ class Admin extends Model
         if (! $this->avatar) {
             return null;
         }
+
         return Storage::disk('public')->url($this->avatar);
     }
 
@@ -74,7 +80,18 @@ class Admin extends Model
         $parts = preg_split('/\s+/', trim($this->name ?? ''));
         $first = $parts[0][0] ?? '';
         $last = isset($parts[1]) ? $parts[1][0] : '';
+
         return strtoupper($first.$last) ?: 'A';
+    }
+
+    /**
+     * Policy for every newly set staff password (self-service change and
+     * accounts created by another admin). No breached-password lookup: the
+     * portal makes no external calls.
+     */
+    public static function passwordRule(): Password
+    {
+        return Password::min(12)->letters()->mixedCase()->numbers();
     }
 
     public function verifyPassword(string $password): bool
@@ -152,15 +169,54 @@ class Admin extends Model
     }
 
     /**
+     * Verify an authenticator (TOTP) code and burn its time-step.
+     *
+     * A ±1 step window tolerates clock drift, but a code is only accepted if
+     * its step is newer than the last one used, so a code (or an older one
+     * from the window) can never be replayed. The accepted step is persisted.
+     */
+    public function consumeTotpCode(string $code): bool
+    {
+        if (! $this->two_factor_secret) {
+            return false;
+        }
+
+        $timestep = (new Google2FA)->verifyKeyNewer(
+            $this->two_factor_secret,
+            trim($code),
+            (int) $this->two_factor_last_used_timestep,
+            1,
+        );
+
+        if ($timestep === false) {
+            return false;
+        }
+
+        $this->two_factor_last_used_timestep = $timestep;
+        $this->save();
+
+        return true;
+    }
+
+    /**
      * If $code matches one of this admin's recovery codes, consume it
      * (remove from the list, persist) and return true.
+     *
+     * Every stored code is compared in constant time, so response timing does
+     * not reveal how much of a guess matched.
      */
     public function consumeRecoveryCode(string $code): bool
     {
         $codes = $this->two_factor_recovery_codes ?? [];
         $normalized = trim($code);
 
-        $idx = array_search($normalized, $codes, true);
+        $idx = false;
+        foreach ($codes as $i => $stored) {
+            if (hash_equals((string) $stored, $normalized) && $idx === false) {
+                $idx = $i;
+            }
+        }
+
         if ($idx === false) {
             return false;
         }

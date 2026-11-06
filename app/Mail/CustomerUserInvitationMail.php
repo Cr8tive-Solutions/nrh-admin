@@ -14,7 +14,14 @@ class CustomerUserInvitationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public CustomerUserInvitation $invitation) {}
+    /**
+     * @param  string  $invitationUrl  The accept link carrying the raw token; the
+     *                                 invitation row only holds its hash.
+     */
+    public function __construct(
+        public CustomerUserInvitation $invitation,
+        public string $invitationUrl,
+    ) {}
 
     public function envelope(): Envelope
     {
@@ -35,7 +42,7 @@ class CustomerUserInvitationMail extends Mailable
             with: [
                 'user' => $user,
                 'customer' => $user->customer,
-                'invitationUrl' => $this->invitation->url(),
+                'invitationUrl' => $this->invitationUrl,
                 'expiresAt' => $this->invitation->expires_at,
             ],
         );

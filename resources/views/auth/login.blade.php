@@ -348,6 +348,10 @@
             <form method="POST" action="{{ route('login') }}" style="display: flex; flex-direction: column; gap: 16px;">
                 @csrf
 
+                @if(session('error'))
+                    <span class="field-error" role="alert">{{ session('error') }}</span>
+                @endif
+
                 <div class="field">
                     <label class="field-label" for="email">Email address</label>
                     <div class="input-wrap">

@@ -43,6 +43,26 @@ if (! function_exists('hdecode')) {
     {
         $decoded = app('hashids')->decode($hash);
         abort_if(empty($decoded), 404);
+
         return $decoded[0];
+    }
+}
+
+if (! function_exists('mask_tail')) {
+    /**
+     * Mask a personal identifier, keeping only its last $visible letters or
+     * digits and its separators: "900101-01-1234" → "******-**-1234".
+     */
+    function mask_tail(?string $value, int $visible = 4): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        $toMask = max(0, preg_match_all('/[\p{L}\p{N}]/u', $value) - $visible);
+
+        return preg_replace_callback('/[\p{L}\p{N}]/u', function (array $m) use (&$toMask): string {
+            return $toMask-- > 0 ? '*' : $m[0];
+        }, $value);
     }
 }

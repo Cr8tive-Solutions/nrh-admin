@@ -53,6 +53,14 @@ class RequestQueueController extends Controller
             'complete' => $screeningRequest->candidates->where('status', 'complete')->count(),
         ];
 
+        // Every staff role can open this page, but screening findings are only
+        // for those who work on them or may read reports. For everyone else
+        // the findings are neither loaded into report snapshots nor emitted.
+        $canSeeFindings = admin_can('request.update') || admin_can('report.view');
+
+        // Full identity / mobile numbers only for PDPA document handlers.
+        $canSeeFullIdentity = admin_can('pdpa.documents');
+
         // Reports are issued per individual candidate — assemble the version
         // history, current snapshot hash, and per-type freshness for each one.
         $allVersions = ReportVersion::with('generatedBy', 'supersededBy')
@@ -62,7 +70,7 @@ class RequestQueueController extends Controller
             ->get()
             ->groupBy('request_candidate_id');
 
-        $reportByCandidate = $screeningRequest->candidates->mapWithKeys(function ($candidate) use ($screeningRequest, $allVersions) {
+        $reportByCandidate = ! $canSeeFindings ? [] : $screeningRequest->candidates->mapWithKeys(function ($candidate) use ($screeningRequest, $allVersions) {
             $versions = $allVersions->get($candidate->id, collect());
             $hash = ReportSnapshot::hash(ReportSnapshot::build($screeningRequest, $candidate));
             $latestPerType = $versions->groupBy('type')->map(fn ($g) => $g->sortByDesc('version')->first());
@@ -96,6 +104,8 @@ class RequestQueueController extends Controller
             'isCashBilled' => $isCashBilled,
             'awaitingPayment' => $awaitingPayment,
             'paymentAmount' => $paymentAmount,
+            'canSeeFindings' => $canSeeFindings,
+            'canSeeFullIdentity' => $canSeeFullIdentity,
         ]);
     }
 

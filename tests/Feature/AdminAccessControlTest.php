@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AdminAuditLog;
+use App\Models\Permission;
 use App\Models\ScreeningRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -99,4 +100,81 @@ it('lets super_admin download regardless of explicit grants', function () {
     Fixtures::actingAs($this, $super)
         ->get(documentUrl($this->requestId, $this->candidateId, $docId))
         ->assertOk();
+});
+
+// ── Request page: identity masking and findings visibility ──────────────────
+
+/** Give the beforeEach candidate a known ID, mobile and a scope with findings. */
+function seedSensitiveCandidate($test): void
+{
+    DB::table('request_candidates')->where('id', $test->candidateId)->update([
+        'identity_number' => '900101-01-1234',
+        'mobile' => '+60 12-345 6789',
+    ]);
+
+    $scopeTypeId = Fixtures::scopeType(Fixtures::country());
+    Fixtures::attachScope($test->candidateId, $scopeTypeId, [
+        'findings' => json_encode([
+            'result_type' => 'record_identified',
+            'risk_level' => 'high',
+            'risk_status_text' => 'SECRET-FINDING-TEXT',
+        ]),
+    ]);
+}
+
+function requestPage($test, $admin)
+{
+    return Fixtures::actingAs($test, $admin)->get(route('requests.show', ScreeningRequest::find($test->requestId)));
+}
+
+it('masks the identity and mobile numbers for staff without pdpa.documents', function () {
+    seedSensitiveCandidate($this);
+
+    foreach (['viewer', 'finance'] as $role) {
+        requestPage($this, Fixtures::admin(['role' => $role]))
+            ->assertOk()
+            ->assertSee('******-**-1234')
+            ->assertDontSee('900101-01-1234')
+            ->assertSee('+** **-*** 6789')
+            ->assertDontSee('+60 12-345 6789');
+    }
+});
+
+it('shows full identity and mobile numbers to staff with pdpa.documents', function () {
+    seedSensitiveCandidate($this);
+
+    requestPage($this, Fixtures::admin(['role' => 'operations']))
+        ->assertOk()
+        ->assertSee('900101-01-1234')
+        ->assertSee('+60 12-345 6789');
+});
+
+it('never emits findings to staff without request.update or report.view', function () {
+    seedSensitiveCandidate($this);
+
+    foreach (['viewer', 'finance'] as $role) {
+        requestPage($this, Fixtures::admin(['role' => $role]))
+            ->assertOk()
+            ->assertDontSee('SECRET-FINDING-TEXT')
+            ->assertDontSee('record_identified');
+    }
+});
+
+it('shows findings to staff who work requests or may read reports', function () {
+    seedSensitiveCandidate($this);
+
+    requestPage($this, Fixtures::admin(['role' => 'operations']))->assertSee('SECRET-FINDING-TEXT');
+
+    $reportReader = Fixtures::admin(['role' => 'viewer']);
+    DB::table('admin_user_permissions')->insert([
+        'admin_id' => $reportReader->id,
+        'admin_permission_id' => Permission::where('key', 'report.view')->value('id'),
+        'granted' => true,
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
+
+    requestPage($this, $reportReader)
+        ->assertSee('SECRET-FINDING-TEXT')
+        // report.view alone does not unmask the identity number.
+        ->assertDontSee('900101-01-1234');
 });

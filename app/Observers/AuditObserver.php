@@ -17,6 +17,7 @@ class AuditObserver
         'remember_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'token',
     ];
 
     public function created(Model $model): void
@@ -25,7 +26,7 @@ class AuditObserver
             $this->actionKey($model, 'created'),
             $model instanceof Admin ? $model : null,
             [
-                'id'         => $model->getKey(),
+                'id' => $model->getKey(),
                 'attributes' => $this->scrub($model->getAttributes()),
             ],
         );
@@ -50,7 +51,7 @@ class AuditObserver
             $this->actionKey($model, 'updated'),
             $model instanceof Admin ? $model : null,
             [
-                'id'      => $model->getKey(),
+                'id' => $model->getKey(),
                 'changes' => $diff,
             ],
         );
@@ -62,7 +63,7 @@ class AuditObserver
             $this->actionKey($model, 'deleted'),
             $model instanceof Admin ? $model : null,
             [
-                'id'       => $model->getKey(),
+                'id' => $model->getKey(),
                 'snapshot' => $this->scrub($model->getAttributes()),
             ],
         );
@@ -80,6 +81,7 @@ class AuditObserver
                 $attrs[$key] = $attrs[$key] === null ? null : '[redacted]';
             }
         }
+
         return $attrs;
     }
 
@@ -89,13 +91,15 @@ class AuditObserver
         foreach ($changes as $key => $newValue) {
             if (in_array($key, self::SENSITIVE, true)) {
                 $diff[$key] = ['changed' => true]; // value masked, transition only
+
                 continue;
             }
             $diff[$key] = [
                 'from' => $original[$key] ?? null,
-                'to'   => $newValue,
+                'to' => $newValue,
             ];
         }
+
         return $diff;
     }
 }

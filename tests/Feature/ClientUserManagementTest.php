@@ -1,8 +1,12 @@
 <?php
 
+use App\Mail\CustomerUserInvitationMail;
+use App\Models\AdminAuditLog;
 use App\Models\Customer;
 use App\Models\CustomerUser;
+use App\Models\CustomerUserInvitation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Tests\Support\Fixtures;
 
 /**
@@ -35,7 +39,8 @@ it('invites an additional user with the chosen role', function () {
             'portal_role' => 'HR',
         ])
         ->assertRedirect()
-        ->assertSessionHas('invitation_url');
+        // The set-password link goes only to the invitee's inbox, never to staff.
+        ->assertSessionMissing('invitation_url');
 
     $invited = CustomerUser::where('email', $email)->firstOrFail();
 
@@ -243,4 +248,112 @@ it('gives a provisioned primary user the Owner role', function () {
     // Without this the account could log in but every client route is
     // permission-gated, so they would see almost nothing.
     expect($provisioned->portalRoleName())->toBe('Owner');
+});
+
+// ── Invitation links: hashed at rest, emailed only, audit-logged ─────────────
+
+function inviteSomeone($test, $admin, Customer $customer): string
+{
+    $email = 'invitee-'.Fixtures::uniq().'@example.test';
+
+    Fixtures::actingAs($test, $admin)->post(route('customers.users.invite', $customer), [
+        'name' => 'Hashed Invitee',
+        'email' => $email,
+        'portal_role' => 'HR',
+    ]);
+
+    return $email;
+}
+
+it('stores only the SHA-256 of the invitation token and emails the raw-token link', function () {
+    Mail::fake();
+    config(['services.client_portal.url' => 'https://portal.example.test']);
+
+    $email = inviteSomeone($this, $this->admin, $this->customer);
+    $invited = CustomerUser::where('email', $email)->firstOrFail();
+    $stored = DB::table('customer_user_invitations')->where('customer_user_id', $invited->id)->value('token');
+
+    expect($stored)->toMatch('/^[0-9a-f]{64}$/');
+
+    Mail::assertSent(CustomerUserInvitationMail::class, function (CustomerUserInvitationMail $mail) use ($stored) {
+        $prefix = 'https://portal.example.test/invitation/';
+        $rawToken = substr($mail->invitationUrl, strlen($prefix));
+
+        return str_starts_with($mail->invitationUrl, $prefix)
+            && strlen($rawToken) === 64
+            && hash('sha256', $rawToken) === $stored
+            && $rawToken !== $stored;
+    });
+});
+
+it('never flashes the invitation link to staff on invite, resend or provision', function () {
+    Mail::fake();
+
+    $email = inviteSomeone($this, $this->admin, $this->customer);
+    $invited = CustomerUser::where('email', $email)->firstOrFail();
+
+    Fixtures::actingAs($this, $this->admin)
+        ->post(route('customers.users.resend-invitation', [$this->customer, $invited]))
+        ->assertSessionHas('success')
+        ->assertSessionMissing('invitation_url');
+
+    $freshId = Fixtures::customer(['contact_name' => 'Jane Owner', 'contact_email' => 'jane-'.Fixtures::uniq().'@example.test']);
+    Fixtures::actingAs($this, $this->admin)
+        ->post(route('customers.provision-primary-user', Customer::findOrFail($freshId)))
+        ->assertSessionHas('success')
+        ->assertSessionMissing('invitation_url');
+});
+
+it('shows a generic error, without the link, when the invitation email fails', function () {
+    Mail::shouldReceive('to')->andThrow(new RuntimeException('SMTP down'));
+
+    $email = 'invitee-'.Fixtures::uniq().'@example.test';
+    $response = Fixtures::actingAs($this, $this->admin)->post(route('customers.users.invite', $this->customer), [
+        'name' => 'Unlucky Invitee',
+        'email' => $email,
+        'portal_role' => 'HR',
+    ]);
+
+    $response->assertSessionHas('error')->assertSessionMissing('invitation_url');
+    expect(session('error'))->not->toContain('/invitation/')
+        ->and(CustomerUser::where('email', $email)->exists())->toBeTrue();
+});
+
+it('audit-logs invitations, resends, role and status changes', function () {
+    Mail::fake();
+
+    $email = inviteSomeone($this, $this->admin, $this->customer);
+    $invited = CustomerUser::where('email', $email)->firstOrFail();
+
+    $as = Fixtures::actingAs($this, $this->admin);
+    $as->post(route('customers.users.resend-invitation', [$this->customer, $invited]));
+    $as->patch(route('customers.users.role', [$this->customer, $this->user]), ['portal_role' => 'Viewer']);
+    $as->patch(route('customers.users.status', [$this->customer, $this->user]), ['status' => 'inactive']);
+
+    expect(AdminAuditLog::where('action', 'customer_user.invited')->where('details->customer_user_id', $invited->id)->exists())->toBeTrue()
+        ->and(AdminAuditLog::where('action', 'customer_user.invitation_resent')->where('details->customer_user_id', $invited->id)->exists())->toBeTrue()
+        ->and(AdminAuditLog::where('action', 'customer_user.role_changed')->where('details->to', 'Viewer')->exists())->toBeTrue()
+        ->and(AdminAuditLog::where('action', 'customer_user.status_changed')->where('details->to', 'inactive')->exists())->toBeTrue();
+});
+
+it('hashes existing plaintext invitation tokens so already-emailed links keep working', function () {
+    $plain = str_repeat('AbC123xYz', 7).'Q';
+    $id = DB::table('customer_user_invitations')->insertGetId([
+        'customer_user_id' => $this->userId,
+        'token' => $plain,
+        'expires_at' => now()->addDays(14),
+        'sent_count' => 1,
+        'created_at' => now(), 'updated_at' => now(),
+    ]);
+
+    $migration = require database_path('migrations/2026_11_06_000002_hash_customer_user_invitation_tokens.php');
+    $migration->up();
+
+    // The portal will look the invitation up by hash('sha256', $tokenFromUrl).
+    expect(DB::table('customer_user_invitations')->where('id', $id)->value('token'))->toBe(hash('sha256', $plain))
+        ->and(CustomerUserInvitation::where('token', CustomerUserInvitation::hashToken($plain))->value('id'))->toBe($id);
+
+    // Re-running leaves already-hashed rows alone.
+    $migration->up();
+    expect(DB::table('customer_user_invitations')->where('id', $id)->value('token'))->toBe(hash('sha256', $plain));
 });

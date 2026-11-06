@@ -721,13 +721,18 @@
             <div>
                 <div class="rq-cand-name">{{ $candidate->name }}</div>
                 <div class="rq-cand-meta">
+                    @php
+                        // Masked to the last 4 characters unless the admin may handle PDPA documents.
+                        $shownIdentity = $canSeeFullIdentity ? $candidate->identity_number : mask_tail($candidate->identity_number);
+                        $shownMobile = $canSeeFullIdentity ? $candidate->mobile : mask_tail($candidate->mobile);
+                    @endphp
                     @if($candidate->identityType)
-                    <span><b>{{ $candidate->identityType->name }}:</b> <span style="font-family: 'JetBrains Mono', monospace;">{{ $candidate->identity_number }}</span></span>
+                    <span><b>{{ $candidate->identityType->name }}:</b> <span style="font-family: 'JetBrains Mono', monospace;">{{ $shownIdentity }}</span></span>
                     @else
-                    <span style="font-family: 'JetBrains Mono', monospace;">{{ $candidate->identity_number }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace;">{{ $shownIdentity }}</span>
                     @endif
                     @if($candidate->mobile)
-                    <span>📱 {{ $candidate->mobile }}</span>
+                    <span>📱 {{ $shownMobile }}</span>
                     @endif
                     <span style="background: {{ $statusCfg['bg'] }}; color: {{ $statusCfg['color'] }}; padding: 1px 8px; border-radius: 99px; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;">{{ $statusCfg['label'] }}</span>
                 </div>
@@ -908,7 +913,8 @@
                         }
                     @endphp
                     @php
-                        $findings = $pivot->findings ?? [];
+                        // Never emit findings (not even into Alpine state) to roles that may not see them.
+                        $findings = $canSeeFindings ? ($pivot->findings ?? []) : [];
                         $existingResultType         = $findings['result_type'] ?? 'clean';
                         $existingRiskLevel          = $findings['risk_level'] ?? 'nil';
                         $existingRiskStatusText     = $findings['risk_status_text'] ?? '';

@@ -330,7 +330,7 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
             'partial'     => ['#00B0F0', 'Partial Match'],
             'no_record'   => ['#FFC000', 'No Record'],
             'discrepancy' => ['#CC0000', 'Discrepancy'],
-            default       => ['#BFBFBF', strtoupper($m)],
+            default       => ['#BFBFBF', e(strtoupper($m))],
         };
         return $dot($c).' <span class="bold">'.$label.'</span>';
     };

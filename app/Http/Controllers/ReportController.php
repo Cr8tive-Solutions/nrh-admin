@@ -33,6 +33,11 @@ class ReportController extends Controller
 
         $filename = 'NRH-Report-Preview-'.$screeningRequest->reference.'-'.$this->candidateSlug($candidate).'.pdf';
 
+        AdminAuditLog::record('report.previewed', null, [
+            'request_id' => $screeningRequest->id,
+            'candidate_id' => $candidate->id,
+        ]);
+
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="'.$filename.'"',
