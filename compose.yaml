@@ -9,8 +9,10 @@ services:
         restart: unless-stopped
         extra_hosts:
             - 'host.docker.internal:host-gateway'
-        ports:
-            - '8003:80'
+        # No host port: Caddy reaches this app over the shared kyro-edge
+        # network, so the app is never exposed without TLS.
+        expose:
+            - '80'
         environment:
             WWWUSER: '${WWWUSER}'
             LARAVEL_SAIL: 1
@@ -29,7 +31,12 @@ services:
             # erasure (RedactionService) deletes customer files through this disk.
             - '../stg-nrh-intelligence/storage/app/private:/mnt/client-storage'
         networks:
-            - sail
+            sail: {}
+            kyro-edge:
+                aliases:
+                    - stg-admin-app
 networks:
     sail:
         driver: bridge
+    kyro-edge:
+        external: true
