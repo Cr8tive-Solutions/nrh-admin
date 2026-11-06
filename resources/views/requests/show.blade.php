@@ -716,7 +716,7 @@
         @endphp
         <div class="rq-cand" x-data="{ open: false, consentOpen: false }" :class="open ? 'is-open' : ''">
             <div class="rq-cand-avatar {{ $candidate->status }}">
-                {{ strtoupper(substr($candidate->name, 0, 2)) }}
+                {{ initials($candidate->name) }}
             </div>
             <div>
                 <div class="rq-cand-name">{{ $candidate->name }}</div>

@@ -280,7 +280,7 @@
 
 {{-- ── Hero panel ── --}}
 <div class="ch-hero">
-    <div class="ch-avatar">{{ strtoupper(substr($customer->name, 0, 2)) }}</div>
+    <div class="ch-avatar">{{ initials($customer->name) }}</div>
 
     <div style="position: relative; z-index: 1;">
         <h1 class="ch-name">{{ $customer->name }}</h1>

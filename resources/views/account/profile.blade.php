@@ -148,7 +148,8 @@
         avatarPreview: @js($admin->avatarUrl()),
         get initials() {
             if (!this.name) return 'A';
-            return this.name.trim().split(/\s+/).slice(0, 2).map(s => s[0]).join('').toUpperCase();
+            const words = this.name.trim().split(/\s+/);
+            return (words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase();
         },
         onFile(e) {
             const file = e.target.files[0];

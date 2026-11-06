@@ -167,7 +167,8 @@
         contact_phone: @js($val('contact_phone') ?? ''),
         get initials() {
             if (!this.name) return '?';
-            return this.name.trim().split(/\s+/).slice(0, 2).map(s => s[0]).join('').toUpperCase();
+            const words = this.name.trim().split(/\s+/);
+            return (words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2)).toUpperCase();
         },
         get countryFlag() {
             const c = @js($countries->mapWithKeys(fn ($c) => [$c->name => $c->flag])->all());

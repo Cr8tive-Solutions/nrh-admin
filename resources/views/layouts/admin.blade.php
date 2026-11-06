@@ -488,7 +488,7 @@
                         @if($myAvatar)
                             <img src="{{ $myAvatar }}" alt="" style="width:100%; height:100%; object-fit:cover;">
                         @else
-                            {{ strtoupper(substr(session('admin_name', 'A'), 0, 2)) }}
+                            {{ initials(session('admin_name'), 'A') }}
                         @endif
                     </div>
                     <div class="sb-user-meta">
@@ -552,7 +552,7 @@
                         @if($myAvatar)
                             <img src="{{ $myAvatar }}" alt="" style="width:100%; height:100%; object-fit:cover;">
                         @else
-                            {{ strtoupper(substr(session('admin_name', 'A'), 0, 2)) }}
+                            {{ initials(session('admin_name'), 'A') }}
                         @endif
                     </div>
                     <div class="topbar-user-meta">

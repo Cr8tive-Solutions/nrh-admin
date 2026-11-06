@@ -237,7 +237,7 @@
                 <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <div style="width: 30px; height: 30px; border-radius: 50%; background: #fbeeec; color: var(--danger); display: grid; place-items: center; font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; flex-shrink: 0;">
-                            {{ strtoupper(substr($req->customer->name ?? 'X', 0, 2)) }}
+                            {{ initials($req->customer->name ?? null, 'X') }}
                         </div>
                         <div>
                             <div style="font-weight: 600; font-size: 13px; line-height: 1.2;">{{ $req->customer->name ?? '—' }}</div>
@@ -285,7 +285,7 @@
                 <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <div style="width: 30px; height: 30px; border-radius: 50%; background: var(--emerald-50); color: var(--emerald-800); display: grid; place-items: center; font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; flex-shrink: 0;">
-                            {{ strtoupper(substr($req->customer->name ?? 'X', 0, 2)) }}
+                            {{ initials($req->customer->name ?? null, 'X') }}
                         </div>
                         <div>
                             <div style="font-weight: 600; font-size: 13px; line-height: 1.2;">{{ $req->customer->name ?? '—' }}</div>

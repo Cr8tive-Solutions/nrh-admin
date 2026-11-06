@@ -77,11 +77,7 @@ class Admin extends Model
 
     public function initials(): string
     {
-        $parts = preg_split('/\s+/', trim($this->name ?? ''));
-        $first = $parts[0][0] ?? '';
-        $last = isset($parts[1]) ? $parts[1][0] : '';
-
-        return strtoupper($first.$last) ?: 'A';
+        return initials($this->name, 'A');
     }
 
     /**
