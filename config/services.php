@@ -41,7 +41,7 @@ return [
         // {url}/register/{token}. Always set CLIENT_PORTAL_URL per environment
         // (prod portal.*, staging stg-portal.*); the default is the production
         // portal as a safe fallback.
-        'url' => env('CLIENT_PORTAL_URL', 'https://portal.nrhintelligence.com'),
+        'url' => env('CLIENT_PORTAL_URL', 'https://kyro.nrhintelligence.com'),
     ],
 
     'calendarific' => [
