@@ -149,12 +149,12 @@
 
         /* ── Right panel ── */
         .auth-right {
-            display: flex; align-items: center; justify-content: center;
-            padding: 48px; background: var(--paper);
+            display: flex; align-items: flex-start; justify-content: center;
+            padding: max(48px, calc(50vh - 205px)) 48px 48px; background: var(--paper);
             position: relative;
         }
         .auth-right-top {
-            position: absolute; top: 28px; right: 32px;
+            position: absolute; top: 28px; right: 68px;
             font-size: 12px; color: var(--ink-500);
         }
         .auth-right-top span { color: var(--emerald-700); font-weight: 600; }
