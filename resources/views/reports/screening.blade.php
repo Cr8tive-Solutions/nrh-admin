@@ -1330,22 +1330,22 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         </tr>
         <tr>
             <td class="bold">AFFILIATED ORGANIZATION</td>
-            <td></td>
+            <td class="bold">{{ strtoupper($ref['provided']['affiliated_org'] ?? '-') }}</td>
             <td class="bold">{{ strtoupper($ref['affiliated_org'] ?? '—') }}</td>
         </tr>
         <tr>
             <td class="bold">REFEREE NAME</td>
-            <td></td>
+            <td class="bold">{{ strtoupper($ref['provided']['referee_name'] ?? '-') }}</td>
             <td class="bold">{{ strtoupper($ref['referee_name'] ?? '—') }}</td>
         </tr>
         <tr>
             <td class="bold">DESIGNATION</td>
-            <td></td>
+            <td class="bold">{{ strtoupper($ref['provided']['designation'] ?? '-') }}</td>
             <td class="bold">{{ strtoupper($ref['designation'] ?? '—') }}</td>
         </tr>
         <tr>
             <td class="bold">RELATIONSHIP</td>
-            <td class="bold">-</td>
+            <td class="bold">{{ strtoupper($ref['provided']['relationship'] ?? '-') }}</td>
             <td class="bold">{{ strtoupper($ref['relationship'] ?? '—') }}</td>
         </tr>
         <tr>

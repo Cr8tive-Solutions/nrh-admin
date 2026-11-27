@@ -301,3 +301,20 @@ it('includes the competency report when an education scope was chosen', function
 it('hides the compliance risk heatmap', function () {
     expect(renderScreeningReport($this->requestId))->not->toContain('COMPLIANCE RISK HEATMAP');
 });
+
+it('prints what the candidate provided in the referee credibility table', function () {
+    $refScopeId = Fixtures::scopeType(Fixtures::country(), ['name' => 'Two Reference Reviews '.Fixtures::uniq()]);
+    Fixtures::attachScope($this->candidateId, $refScopeId, [
+        'status' => 'complete',
+        'findings' => json_encode(['referees' => [[
+            'referee_name' => 'Ahmad bin Ali',
+            'relationship' => 'Ex-Superior',
+            'provided' => ['referee_name' => 'Ahmad Ali', 'relationship' => 'Former manager'],
+        ]]]),
+    ]);
+
+    expect(renderScreeningReport($this->requestId))
+        ->toContain('AHMAD ALI')
+        ->toContain('FORMER MANAGER')
+        ->toContain('AHMAD BIN ALI');
+});

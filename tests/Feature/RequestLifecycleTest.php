@@ -219,6 +219,31 @@ it('migrates a legacy single-object employment payload into employments[]', func
         ->and($findings)->not->toHaveKey('employer');
 });
 
+it('saves what the candidate provided for each referee field', function () {
+    $refScope = Fixtures::scopeType($this->countryId, ['name' => 'Two Reference Reviews']);
+    Fixtures::attachScope($this->candidateId, $refScope);
+
+    ($this->as)()->patchJson(
+        route('requests.scope.findings', [$this->req, $this->candidateId, $refScope]),
+        [
+            'result_type' => 'clean',
+            'structured_json' => json_encode(['referees' => [[
+                'referee_name' => 'Ahmad bin Ali',
+                'designation' => 'Chief Executive Officer',
+                'provided' => ['referee_name' => 'Ahmad Ali', 'designation' => 'CEO', 'relationship' => '', 'unknown' => 'dropped'],
+            ]]]),
+        ]
+    )->assertOk();
+
+    $findings = json_decode(
+        DB::table('candidate_scope_type')->where('request_candidate_id', $this->candidateId)->where('scope_type_id', $refScope)->value('findings'),
+        true
+    );
+
+    expect($findings['referees'][0]['designation'])->toBe('Chief Executive Officer')
+        ->and($findings['referees'][0]['provided'])->toEqual(['referee_name' => 'Ahmad Ali', 'designation' => 'CEO']);
+});
+
 it('blocks a viewer from changing status', function () {
     $viewer = Fixtures::admin(['role' => 'viewer']);
 

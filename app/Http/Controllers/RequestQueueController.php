@@ -591,10 +591,18 @@ class RequestQueueController extends Controller
             $referees = [];
             foreach ($s['referees'] ?? [] as $r) {
                 $ref = [];
+                $givenByCandidate = is_array($r['provided'] ?? null) ? $r['provided'] : [];
+                $provided = [];
                 foreach (['referee_name', 'designation', 'relationship', 'affiliated_org'] as $f) {
                     if ($str($r[$f] ?? '') !== '') {
                         $ref[$f] = $str($r[$f]);
                     }
+                    if (is_scalar($givenByCandidate[$f] ?? null) && $str($givenByCandidate[$f]) !== '') {
+                        $provided[$f] = $str($givenByCandidate[$f]);
+                    }
+                }
+                if (! empty($provided)) {
+                    $ref['provided'] = $provided;
                 }
                 if (in_array($r['contact_established'] ?? '', ['successful', 'unsuccessful'], true)) {
                     $ref['contact_established'] = $r['contact_established'];

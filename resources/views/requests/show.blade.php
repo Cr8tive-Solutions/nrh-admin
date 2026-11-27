@@ -1019,6 +1019,10 @@
                             'designation'        => $r['designation'] ?? '',
                             'relationship'       => $r['relationship'] ?? '',
                             'affiliated_org'     => $r['affiliated_org'] ?? '',
+                            'provided'           => array_merge(
+                                ['referee_name' => '', 'designation' => '', 'relationship' => '', 'affiliated_org' => ''],
+                                array_intersect_key($r['provided'] ?? [], array_flip(['referee_name', 'designation', 'relationship', 'affiliated_org']))
+                            ),
                             'contact_established'=> $r['contact_established'] ?? '',
                             'consent'            => $r['consent'] ?? '',
                             'independent'        => array_key_exists('independent', $r) ? (bool) $r['independent'] : true,
@@ -1035,6 +1039,7 @@
                         if ($scopeKind === 'referee' && empty($exReferees)) {
                             $exReferees = [[
                                 'referee_name' => '', 'designation' => '', 'relationship' => '', 'affiliated_org' => '',
+                                'provided' => ['referee_name' => '', 'designation' => '', 'relationship' => '', 'affiliated_org' => ''],
                                 'contact_established' => '', 'consent' => '', 'independent' => true, 'credibility_weight' => 5,
                                 'questions' => [], 'overall_strong' => '', 'overall_moderate' => '', 'overall_weak' => '',
                             ]];
@@ -1089,7 +1094,13 @@
                                 this.credentials[ci].validation = ['LEVEL','FIELD','DATES OF ATTENDANCE','GRADES'].map(a => ({ ...this.blankValidationRow(), aspect: a }));
                             },
                             /* referees */
-                            blankReferee() { return { referee_name: '', designation: '', relationship: '', affiliated_org: '', contact_established: '', consent: '', independent: true, credibility_weight: 5, questions: [], overall_strong: '', overall_moderate: '', overall_weak: '' }; },
+                            refereeFields: [
+                                { key: 'affiliated_org', label: 'Affiliated Organisation', placeholder: 'e.g. ABC Technologies Sdn Bhd' },
+                                { key: 'referee_name',   label: 'Referee Name',            placeholder: '' },
+                                { key: 'designation',    label: 'Designation',             placeholder: 'e.g. CEO' },
+                                { key: 'relationship',   label: 'Relationship',            placeholder: 'e.g. Ex-Superior' },
+                            ],
+                            blankReferee() { return { referee_name: '', designation: '', relationship: '', affiliated_org: '', provided: { referee_name: '', designation: '', relationship: '', affiliated_org: '' }, contact_established: '', consent: '', independent: true, credibility_weight: 5, questions: [], overall_strong: '', overall_moderate: '', overall_weak: '' }; },
                             addReferee() { this.referees.push(this.blankReferee()); },
                             removeReferee(ri) { this.referees.splice(ri, 1); },
                             addQuestion(ri) { this.referees[ri].questions.push({ category: '', rating: 3, reply: '' }); },
@@ -1515,24 +1526,24 @@
                                                 <button type="button" @click="removeReferee(ri)" class="rq-rec-rm-btn" x-show="referees.length > 1">× Remove</button>
                                             </div>
 
-                                            <div class="rq-findings-grid-2">
-                                                <div>
-                                                    <span class="rq-findings-sublabel" style="margin-top:0;">Referee Name</span>
-                                                    <input type="text" x-model="ref.referee_name" class="rq-findings-input">
+                                            <span class="rq-findings-sublabel" style="margin-top:0;">Credibility Validation</span>
+                                            <template x-for="field in refereeFields" :key="field.key">
+                                                <div class="rq-rec-card">
+                                                    <div class="rq-rec-card-head">
+                                                        <span class="rq-rec-label" x-text="field.label"></span>
+                                                    </div>
+                                                    <div class="rq-findings-grid-2">
+                                                        <div>
+                                                            <span class="rq-findings-sublabel">Candidate Provided</span>
+                                                            <input type="text" x-model="ref.provided[field.key]" class="rq-findings-input">
+                                                        </div>
+                                                        <div>
+                                                            <span class="rq-findings-sublabel">NRH Verified</span>
+                                                            <input type="text" x-model="ref[field.key]" :placeholder="field.placeholder" class="rq-findings-input">
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <span class="rq-findings-sublabel" style="margin-top:0;">Designation</span>
-                                                    <input type="text" x-model="ref.designation" placeholder="e.g. CEO" class="rq-findings-input">
-                                                </div>
-                                                <div>
-                                                    <span class="rq-findings-sublabel">Relationship</span>
-                                                    <input type="text" x-model="ref.relationship" placeholder="e.g. Ex-Superior" class="rq-findings-input">
-                                                </div>
-                                                <div>
-                                                    <span class="rq-findings-sublabel">Affiliated Organisation</span>
-                                                    <input type="text" x-model="ref.affiliated_org" class="rq-findings-input">
-                                                </div>
-                                            </div>
+                                            </template>
                                             <div class="rq-findings-grid-2" style="margin-top:6px;">
                                                 <div>
                                                     <span class="rq-findings-sublabel" style="margin-top:0;">Contact Established</span>
