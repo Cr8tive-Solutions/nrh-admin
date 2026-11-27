@@ -102,9 +102,10 @@
         color: #6b7280; text-transform: uppercase;
     }
 
-    .line-scopes { width: 100%; border-collapse: collapse; margin-top: 3px; }
-    .items .line-scopes td { border: none; padding: 1px 0; color: #444; font-size: inherit; }
-    .items .line-scopes td.num { text-align: right; width: 70px; font-family: 'Courier New', monospace; }
+    /* Grouped ala carte row: header cell + one borderless line per scope. */
+    .items td.grp-head { border-bottom: none; padding-bottom: 2px; }
+    .items td.grp-line { border-top: none; border-bottom: none; padding-top: 1px; padding-bottom: 1px; color: #444; }
+    .items td.grp-last { border-bottom: 1px solid #d8d8d8; padding-bottom: 7px; }
 
     /* ── Totals ── */
     .totals { width: 100%; border-collapse: collapse; margin-top: -1px; }
@@ -299,9 +300,15 @@
         @endphp
         <tbody>
             @foreach(array_values($rows) as $i => $row)
+                @php
+                    // A grouped ala carte row spans one table row per scope so each
+                    // scope's price lines up with it in the Per / Price column.
+                    $scopeCount = count($row['scopes']);
+                    $span = $scopeCount + 1;
+                @endphp
                 <tr>
-                    <td class="col-item num">{{ $i + 1 }}</td>
-                    <td>
+                    <td class="col-item num" rowspan="{{ $span }}">{{ $i + 1 }}</td>
+                    <td @class(['grp-head' => $scopeCount > 0])>
                         @if($row['repNo'])
                             <div class="line-rep">REP NO: {{ $row['repNo'] }}</div>
                         @endif
@@ -309,21 +316,21 @@
                             <div class="line-scope"><span class="tag">{{ count($row['candidates']) > 1 ? 'Candidates' : 'Candidate' }}:</span> {{ implode(', ', $row['candidates']) }}</div>
                         @endif
                         <div class="line-scope"><span class="tag">Scope Type:</span> {{ $row['scopeType'] }}</div>
-                        @if(! empty($row['scopes']))
-                            <table class="line-scopes">
-                                @foreach($row['scopes'] as $scope)
-                                    <tr>
-                                        <td>&bull; {{ $scope['name'] }}</td>
-                                        <td class="num">{{ number_format($scope['total'], 2) }}</td>
-                                    </tr>
-                                @endforeach
-                            </table>
-                        @endif
                     </td>
-                    <td class="col-qty num">{{ $row['qty'] }}</td>
-                    <td class="col-price num">{{ number_format($row['unitPrice'], 2) }}</td>
-                    <td class="col-amt num">{{ number_format($row['total'], 2) }}</td>
+                    <td class="col-qty num" rowspan="{{ $span }}">{{ $row['qty'] }}</td>
+                    @if($scopeCount > 0)
+                        <td class="col-price num grp-head"></td>
+                    @else
+                        <td class="col-price num">{{ number_format($row['unitPrice'], 2) }}</td>
+                    @endif
+                    <td class="col-amt num" rowspan="{{ $span }}">{{ number_format($row['total'], 2) }}</td>
                 </tr>
+                @foreach($row['scopes'] as $scope)
+                    <tr>
+                        <td @class(['grp-line', 'grp-last' => $loop->last])>&bull; {{ $scope['name'] }}</td>
+                        <td @class(['col-price', 'num', 'grp-line', 'grp-last' => $loop->last])>{{ number_format($scope['total'], 2) }}</td>
+                    </tr>
+                @endforeach
             @endforeach
         </tbody>
     </table>
