@@ -585,8 +585,10 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         $heatmapRows[$hDomain]['levels'][] = $hLv;
     }
     $domainOrder = ['LEGAL RISK','INTERNATIONAL RISK','FINANCIAL RISK','POLITICAL RISK','REPUTATIONAL RISK','REGULATORY RISK','OTHER'];
+    // Hidden from reports for now — flip to true to bring the heatmap back.
+    $showRiskHeatmap = false;
 @endphp
-@if(count($heatmapRows))
+@if($showRiskHeatmap && count($heatmapRows))
 <div style="font-family:'Oswald',sans-serif; font-weight:bold; font-size:9.5pt; letter-spacing:0.08em; color:#000; margin:12px 0 4px;">COMPLIANCE RISK HEATMAP</div>
 <table class="hmt">
     <tr>
@@ -798,11 +800,20 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
 @if(!$loop->last)<div class="pb"></div>@endif
 @endforeach
 
+{{-- ══════════════════════════════════════════
+     PROFESSIONAL COMPETENCY VALIDATION — only when an education scope was chosen
+═══════════════════════════════════════════ --}}
+@php
+    $isAcademicScope = fn($s) =>
+        collect(['academic','qualification','credential','education','degree','certificate','certification'])
+            ->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
+        && !collect(['referee','reference','employment','work history','loan'])
+            ->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw));
+    $hasAnyAcademic = $candidates->contains(fn($c) => $c->scopeTypes->filter($isAcademicScope)->count() > 0);
+@endphp
+@if($hasAnyAcademic)
 <div class="pb"></div>
 
-{{-- ══════════════════════════════════════════
-     PROFESSIONAL COMPETENCY VALIDATION
-═══════════════════════════════════════════ --}}
 <div class="sh-erm">PROFESSIONAL COMPETENCY VALIDATION REPORT</div>
 
 <table class="cmt" style="margin-top:6px;">
@@ -844,15 +855,11 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         <td class="bold">Potential fraud. Serious concern for credibility.</td>
     </tr>
 </table>
+@endif
 
 @foreach($candidates as $candidate)
 @php
-    $academicScopes    = $candidate->scopeTypes->filter(fn($s) =>
-        collect(['academic','qualification','credential','education','degree','certificate','certification'])
-            ->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
-        && !collect(['referee','reference','employment','work history','loan'])
-            ->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
-    );
+    $academicScopes    = $candidate->scopeTypes->filter($isAcademicScope);
     $employmentScopes  = $candidate->scopeTypes->filter(fn($s) =>
         collect(['employment','work history'])
             ->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
@@ -863,7 +870,6 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
         collect(['referee','reference'])
             ->contains(fn($kw) => str_contains(strtolower($s->name . ' ' . ($s->category ?? '')), $kw))
     );
-    $hasCompetency = $academicScopes->count() || $employmentScopes->count();
 @endphp
 
 {{-- ── Academic Credential Validation ── --}}
@@ -1012,15 +1018,6 @@ ol.dl li { margin-bottom: 5px; font-size: 8.5pt; line-height: 1.55; }
     </table>
     @endif
     @endforeach
-
-@elseif(!$hasCompetency)
-<div class="sh" style="margin-top:8px;">ACADEMIC CREDENTIAL VERIFICATION</div>
-<table class="rt" style="margin-top:4px;">
-    <tr>
-        <th class="lbl" style="width:38%;">PROVIDED INFORMATION</th>
-        <td class="val muted ital small">Academic and professional credential verification details will be reported upon completion of verification with the relevant institutions.</td>
-    </tr>
-</table>
 @endif
 
 {{-- ── Employment Validation ── --}}

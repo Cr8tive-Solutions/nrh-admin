@@ -259,3 +259,45 @@ it('tags each report to its candidate and completes the request only when all ca
     expect($v1->version)->toBe(1)
         ->and(ReportVersion::where('request_candidate_id', $candidate2)->first()->version)->toBe(1);
 });
+
+/** Render the screening report template for the test request. */
+function renderScreeningReport(int $requestId): string
+{
+    $request = ScreeningRequest::with(['customer', 'candidates.identityType', 'candidates.scopeTypes'])->find($requestId);
+
+    return view('reports.screening', [
+        'request' => $request,
+        'reference' => $request->reference,
+        'customer' => $request->customer,
+        'candidates' => $request->candidates,
+        'logoSrc' => '',
+        'completionBasic' => null,
+        'completionPrelim' => null,
+        'completionFull' => null,
+        'reportType' => null,
+        'reportVersion' => null,
+        'reportHash' => null,
+    ])->render();
+}
+
+it('leaves the competency report out but keeps the master index when no education scope was chosen', function () {
+    $html = renderScreeningReport($this->requestId);
+
+    expect($html)->not->toContain('PROFESSIONAL COMPETENCY VALIDATION REPORT')
+        ->not->toContain('ACADEMIC CREDENTIAL VERIFICATION')
+        ->toContain('MASTER INDEX OF COMPETENCY');
+});
+
+it('includes the competency report when an education scope was chosen', function () {
+    $academicScopeId = Fixtures::scopeType(Fixtures::country(), ['name' => 'Academic Qualification '.Fixtures::uniq()]);
+    Fixtures::attachScope($this->candidateId, $academicScopeId, ['status' => 'in_progress']);
+
+    $html = renderScreeningReport($this->requestId);
+
+    expect($html)->toContain('PROFESSIONAL COMPETENCY VALIDATION REPORT')
+        ->toContain('MASTER INDEX OF COMPETENCY');
+});
+
+it('hides the compliance risk heatmap', function () {
+    expect(renderScreeningReport($this->requestId))->not->toContain('COMPLIANCE RISK HEATMAP');
+});
