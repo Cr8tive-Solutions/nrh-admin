@@ -102,6 +102,10 @@
         color: #6b7280; text-transform: uppercase;
     }
 
+    .line-scopes { width: 100%; border-collapse: collapse; margin-top: 3px; }
+    .items .line-scopes td { border: none; padding: 1px 0; color: #444; font-size: inherit; }
+    .items .line-scopes td.num { text-align: right; width: 70px; font-family: 'Courier New', monospace; }
+
     /* ── Totals ── */
     .totals { width: 100%; border-collapse: collapse; margin-top: -1px; }
     .totals td { padding: 6px 8px; font-size: 10px; border: 1px solid #d8d8d8; }
@@ -242,49 +246,83 @@
                     ->mapWithKeys(fn ($r) => [$r->reference => $r->candidates->pluck('name')->filter()->values()->all()])
                 : collect();
         @endphp
-        <tbody>
-            @foreach($invoice->items as $i => $item)
-                @php
-                    // Two description shapes reach the invoice:
-                    //   cash  → "{candidate} — {scope}"  (REP NO lives on the request)
-                    //   admin → "{scope} – {REF}"        (ref embedded, no candidate)
-                    // Resolve each into REP NO / CANDIDATE lines; the scope type is
-                    // the billing kind, not the scope name — Package when the line was
-                    // generated from a bundle (tagged "(package)"), otherwise Ala Carte.
-                    $desc = (string) $item->description;
-                    $repNo = null;
-                    $candidate = null;
+        @php
+            // Two description shapes reach the invoice:
+            //   cash  → "{candidate} — {scope}"  (REP NO lives on the request)
+            //   admin → "{scope} – {REF}"        (ref embedded, no candidate)
+            // Resolve each into REP NO / CANDIDATE lines; the scope type is
+            // the billing kind, not the scope name — Package when the line was
+            // generated from a bundle (tagged "(package)"), otherwise Ala Carte.
+            // Ala carte cash lines (one per candidate × scope) fold into one row
+            // per candidate that lists each scope with its price.
+            $cashRepNo = optional($invoice->screeningRequests->first())->reference;
+            $rows = [];
+            foreach ($invoice->items as $item) {
+                $desc = (string) $item->description;
+                $repNo = null;
+                $candidate = null;
+                $scopeName = null;
 
-                    if (preg_match('/\bRE[PQ]-\d{4}-\d+/u', $desc, $m)) {
-                        $repNo = $m[0];
-                    } elseif (str_contains($desc, ' — ')) {
-                        [$candidate] = array_map('trim', explode(' — ', $desc, 2));
+                if (preg_match('/\bRE[PQ]-\d{4}-\d+/u', $desc, $m)) {
+                    $repNo = $m[0];
+                } elseif (str_contains($desc, ' — ')) {
+                    [$candidate, $scopeName] = array_map('trim', explode(' — ', $desc, 2));
+                }
+                // Cash lines carry no embedded ref — take it from the linked request.
+                $repNo = $repNo ?: $cashRepNo;
+                $scopeType = preg_match('/\(\s*package\s*\)/iu', $desc) ? 'Package' : 'Ala Carte';
+
+                if ($candidate !== null && $scopeType === 'Ala Carte') {
+                    $key = 'cand:'.$candidate;
+                    if (! isset($rows[$key])) {
+                        $rows[$key] = ['repNo' => $repNo, 'candidates' => [$candidate], 'scopeType' => $scopeType, 'scopes' => [], 'qty' => 1, 'unitPrice' => 0, 'total' => 0];
                     }
-                    // Cash lines carry no embedded ref — take it from the linked request.
-                    $repNo = $repNo ?: optional($invoice->screeningRequests->first())->reference;
+                    $rows[$key]['scopes'][] = ['name' => $scopeName, 'total' => (float) $item->total];
+                    $rows[$key]['unitPrice'] += (float) $item->total;
+                    $rows[$key]['total'] += (float) $item->total;
 
-                    // Cash lines name one candidate; aggregated lines name all of the
-                    // referenced request's candidates.
-                    $candidateNames = $candidate !== null
-                        ? [$candidate]
-                        : ($repNo ? ($candidatesByRef[$repNo] ?? []) : []);
+                    continue;
+                }
 
-                    $scopeType = preg_match('/\(\s*package\s*\)/iu', $desc) ? 'Package' : 'Ala Carte';
-                @endphp
+                // Cash lines name one candidate; aggregated lines name all of the
+                // referenced request's candidates.
+                $rows[] = [
+                    'repNo' => $repNo,
+                    'candidates' => $candidate !== null ? [$candidate] : ($repNo ? ($candidatesByRef[$repNo] ?? []) : []),
+                    'scopeType' => $scopeType,
+                    'scopes' => [],
+                    'qty' => $item->qty,
+                    'unitPrice' => (float) $item->unit_price,
+                    'total' => (float) $item->total,
+                ];
+            }
+        @endphp
+        <tbody>
+            @foreach(array_values($rows) as $i => $row)
                 <tr>
                     <td class="col-item num">{{ $i + 1 }}</td>
                     <td>
-                        @if($repNo)
-                            <div class="line-rep">REP NO: {{ $repNo }}</div>
+                        @if($row['repNo'])
+                            <div class="line-rep">REP NO: {{ $row['repNo'] }}</div>
                         @endif
-                        @if(! empty($candidateNames))
-                            <div class="line-scope"><span class="tag">{{ count($candidateNames) > 1 ? 'Candidates' : 'Candidate' }}:</span> {{ implode(', ', $candidateNames) }}</div>
+                        @if(! empty($row['candidates']))
+                            <div class="line-scope"><span class="tag">{{ count($row['candidates']) > 1 ? 'Candidates' : 'Candidate' }}:</span> {{ implode(', ', $row['candidates']) }}</div>
                         @endif
-                        <div class="line-scope"><span class="tag">Scope Type:</span> {{ $scopeType }}</div>
+                        <div class="line-scope"><span class="tag">Scope Type:</span> {{ $row['scopeType'] }}</div>
+                        @if(! empty($row['scopes']))
+                            <table class="line-scopes">
+                                @foreach($row['scopes'] as $scope)
+                                    <tr>
+                                        <td>&bull; {{ $scope['name'] }}</td>
+                                        <td class="num">{{ number_format($scope['total'], 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </table>
+                        @endif
                     </td>
-                    <td class="col-qty num">{{ $item->qty }}</td>
-                    <td class="col-price num">{{ number_format($item->unit_price, 2) }}</td>
-                    <td class="col-amt num">{{ number_format($item->total, 2) }}</td>
+                    <td class="col-qty num">{{ $row['qty'] }}</td>
+                    <td class="col-price num">{{ number_format($row['unitPrice'], 2) }}</td>
+                    <td class="col-amt num">{{ number_format($row['total'], 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
