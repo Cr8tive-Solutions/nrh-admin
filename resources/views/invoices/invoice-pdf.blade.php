@@ -252,8 +252,9 @@
             //   cash  → "{candidate} — {scope}"  (REP NO lives on the request)
             //   admin → "{scope} – {REF}"        (ref embedded, no candidate)
             // Resolve each into REP NO / CANDIDATE lines; the scope type is
-            // the billing kind, not the scope name — Package when the line was
-            // generated from a bundle (tagged "(package)"), otherwise Ala Carte.
+            // the billing kind, not the scope name — the package's name when the
+            // line was generated from a bundle (tagged "(package)"), otherwise
+            // Ala Carte.
             // Ala carte cash lines (one per candidate × scope) fold into one row
             // per candidate that lists each scope with its price.
             $cashRepNo = optional($invoice->screeningRequests->first())->reference;
@@ -271,9 +272,11 @@
                 }
                 // Cash lines carry no embedded ref — take it from the linked request.
                 $repNo = $repNo ?: $cashRepNo;
-                $scopeType = preg_match('/\(\s*package\s*\)/iu', $desc) ? 'Package' : 'Ala Carte';
+                // "{package} (package)" — the name is whatever precedes the tag.
+                $isPackage = preg_match('/^(.*?)\s*\(\s*package\s*\)/iu', $scopeName ?? $desc, $pm) === 1;
+                $scopeType = $isPackage ? (trim($pm[1]) ?: 'Package') : 'Ala Carte';
 
-                if ($candidate !== null && $scopeType === 'Ala Carte') {
+                if ($candidate !== null && ! $isPackage) {
                     $key = 'cand:'.$candidate;
                     if (! isset($rows[$key])) {
                         $rows[$key] = ['repNo' => $repNo, 'candidates' => [$candidate], 'scopeType' => $scopeType, 'scopes' => [], 'qty' => 1, 'unitPrice' => 0, 'total' => 0];
